@@ -1,16 +1,27 @@
 #include "libutil"
 
-impl Equatable for Color {
-    fn (Color c).equals(any o) {
-        return c 
-    }
-}
+struct Color {
+    float r
+    float g
+    float b
+    float a
+} with {
 
-fn (Color c).inverted() -> Color {
-    return c with {
-        r: 255 - c.r
-        g: 255 - c.g
-        b: 255 - c.b
+    fn @.luminosity() {
+        return @.r * 0.3 + @.g * 0.6 + @.b * 0.1
+    }
+
+    fn @.inverted() -> Color {
+        return @ with {
+            r: 255 - @.r
+            g: 255 - @.g
+            b: 255 - @.b
+        }
+    }
+
+} impl Equatable {
+    fn @.equals(any o) {
+        return @ == o
     }
 }
 
@@ -18,6 +29,20 @@ struct Image {
     Color[] pixels
     int width
     int height
+} with {
+    fn @.dimensions() -> int;int {
+        return @.width; @.height
+    }
+
+    fn mutable @.invert() {
+        for y in 0 .. @.height {
+            var index = y * @.width
+            for x in 0 .. @.width {
+                @.pixels[index]
+                index++
+            }
+        }
+    }
 }
 
 fn make_image(int width, int height) -> mutable Image {
@@ -29,16 +54,23 @@ fn make_image(int width, int height) -> mutable Image {
     }
 }
 
-fn (Image image).dimensions -> int;int {
-    return image.width; image.height
-}
+union Number {
+    float f;
+    int n;
+    byte b;
+} with {
+    fn @.to_int() -> int {
+        return switch @ {
+            float f -> round(f)
+            int n -> n
+            byte b -> (int) b
+        }
+    }
 
-fn (mutable Image img).invert() {
-    for y in 0 .. img.height {
-        var index = y * img.width
-        for x in 0 .. img.width {
-            img.pixels[index]
-            index++
+    fn @.is_int() -> bool {
+        return switch @ {
+            int n -> true
+            default -> false
         }
     }
 }
