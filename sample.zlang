@@ -1,0 +1,44 @@
+#include "libutil"
+
+impl Equatable for Color {
+    fn (Color c).equals(any o) {
+        return c 
+    }
+}
+
+fn (Color c).inverted() -> Color {
+    return c with {
+        r: 255 - c.r
+        g: 255 - c.g
+        b: 255 - c.b
+    }
+}
+
+struct Image {
+    Color[] pixels
+    int width
+    int height
+}
+
+fn make_image(int width, int height) -> mutable Image {
+    let size = width * height
+    return new Image {
+        pixels: new Color[size]
+        width: width
+        height: height
+    }
+}
+
+fn (Image image).dimensions -> int;int {
+    return image.width; image.height
+}
+
+fn (mutable Image img).invert() {
+    for y in 0 .. img.height {
+        var index = y * img.width
+        for x in 0 .. img.width {
+            img.pixels[index]
+            index++
+        }
+    }
+}

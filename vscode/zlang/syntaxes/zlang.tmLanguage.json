@@ -1,0 +1,251 @@
+{
+	"information_for_contributors": [
+		"This file has been converted from https://github.com/atom/language-zlang/blob/master/grammars/zlang.cson",
+		"If you want to provide a fix or improvement, please create a pull request against the original repository.",
+		"Once accepted there, we are happy to receive an update request."
+	],
+	"version": "https://github.com/atom/language-zlang/commit/b6fd68f74efa109679e31fe6f4a41ac105262d0e",
+	"name": "zlang",
+	"scopeName": "source.zlang",
+	"comment": "zlang language",
+	"patterns": [
+		{
+			"include": "#comments"
+		},
+		{
+			"comment": "Interpreted string literals",
+			"begin": "\"",
+			"beginCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.begin.zlang"
+				}
+			},
+			"end": "\"",
+			"endCaptures": {
+				"0": {
+					"name": "punctuation.definition.string.end.zlang"
+				}
+			},
+			"name": "string.quoted.double.zlang",
+			"patterns": [
+				{
+					"include": "#string_placeholder"
+				}
+			]
+		},
+		{
+			"comment": "Built-in functions",
+			"match": "\\b(rgb|srgb|rgba|srgba|sort_kernel|sort_list|hypot|hypot_rgb|sqrt|abs|resize|sin|cos|tan|asin|acos|atan|atan2|list|kernel|rect|polygon|convolute|min|max)\\b(?=\\()",
+			"name": "support.function.builtin.zlang"
+		},
+		{
+			"comment": "Floating-point literals",
+			"match": "(\\.\\d+([Ee][-+]\\d+)?i?)\\b|\\b\\d+\\.\\d*(([Ee][-+]\\d+)?i?\\b)?",
+			"name": "constant.numeric.floating-point.zlang"
+		},
+		{
+			"comment": "Integers",
+			"match": "\\b((0x[0-9a-fA-F]+)|(0[0-7]+i?)|(\\d+([Ee]\\d+)?i?)|(\\d+[Ee][-+]\\d+i?))\\b",
+			"name": "constant.numeric.integer.zlang"
+		},
+		{
+			"comment": "Colors",
+			"match": "\\#[0-9a-fA-F]+",
+			"name": "constant.numeric.color.zlang"
+		},
+		{
+			"comment": "Language constants",
+			"match": "\\b(true|false|nil)\\b",
+			"name": "constant.language.zlang"
+		},
+		{
+			"comment": "Function call",
+			"match": "(\\b(?!fn)(?:[A-Za-z0-9_]+))\\(",
+			"captures":{
+				"1": {
+					"name": "support.function.appdef.zlang"
+				}
+			}
+		},
+		{
+			"match": "\\b\\w+\\.(\\w+)",
+			"captures": {
+				"1": {
+					"name": "variable.other.property.zlang"
+				}
+			}
+		},
+		{
+			"match": "\\b(\\w+)\\b(?=\\s*:=)",
+			"captures": {
+				"1": {
+					"name": "variable.other.assignment.zlang"
+				}
+			}
+		},
+		{
+			"match": "\\b(\\w+)\\b(?=\\s*:)\\b",
+			"captures": {
+				"1": {
+					"name": "variable.assignment.zlang"
+				}
+			}
+		},
+		{
+			"comment": "Terminators",
+			"match": ";",
+			"name": "punctuation.terminator.zlang"
+		},
+		{
+			"include": "#brackets"
+		},
+		{
+			"include": "#delimiters"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#operators"
+		},
+		{
+			"include": "#storage_types"
+		}
+	],
+	"repository": {
+		"brackets": {
+			"patterns": [
+				{
+					"begin": "{",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.begin.bracket.curly.zlang"
+						}
+					},
+					"end": "}",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.end.bracket.curly.zlang"
+						}
+					},
+					"patterns": [
+						{
+							"include": "$self"
+						}
+					]
+				},
+				{
+					"begin": "\\(",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.begin.bracket.round.zlang"
+						}
+					},
+					"end": "\\)",
+					"endCaptures": {
+						"0": {
+							"name": "punctuation.definition.end.bracket.round.zlang"
+						}
+					},
+					"patterns": [
+						{
+							"include": "$self"
+						}
+					]
+				},
+				{
+					"match": "\\[|\\]",
+					"name": "punctuation.definition.bracket.square.zlang"
+				}
+			]
+		},
+		"comments": {
+			"patterns": [
+				{
+					"begin": "//",
+					"beginCaptures": {
+						"0": {
+							"name": "punctuation.definition.comment.zlang"
+						}
+					},
+					"end": "$",
+					"name": "comment.line.double-slash.zlang"
+				}
+			]
+		},
+		"delimiters": {
+			"patterns": [
+				{
+					"match": ",",
+					"name": "punctuation.other.comma.zlang"
+				},
+				{
+					"match": "\\.(?!\\.\\.)",
+					"name": "punctuation.other.period.zlang"
+				},
+				{
+					"match": ":(?!=)",
+					"name": "punctuation.other.colon.zlang"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"comment": "Flow control keywords",
+					"match": "\\b(else|for|if|in|return|yield|or|and|not|while)\\b",
+					"name": "keyword.control.zlang"
+				},
+				{
+					"match": "\\b(fn|impl)\\b",
+					"name": "keyword.function.zlang"
+				},
+				{
+					"match": "\\b(log|assert)\\b",
+					"name": "keyword.statements.zlang"
+				},
+				{
+					"match": "\\b(let|var|new|mutable|struct|record|int|float|string|bool|byte)\\b",
+					"name": "keyword.types.zlang"
+				},
+				{
+					"match": "\\b#(include|option)\\b",
+					"name": "keyword.preprocessor.zlang"
+				}
+			]
+		},
+		"operators": {
+			"comment": "Note that the order here is very important!",
+			"patterns": [
+				{
+					"match": "(==|!=|<=|>=|<(?!<)|>(?!>))",
+					"name": "keyword.operator.comparison.zlang"
+				},
+				{
+					"match": "(:=|=)",
+					"name": "keyword.operator.assignment.zlang"
+				},
+				{
+					"match": "(\\+|\\-|\\*|/|%|;)",
+					"name": "keyword.operator.arithmetic.zlang"
+				},
+				{
+					"match": "(&(?!\\^)|\\||\\^|&\\^|<<|>>|~)",
+					"name": "keyword.operator.arithmetic.bitwise.zlang"
+				},
+				{
+					"match": "@|\\$|(\\.\\.)|\\->",
+					"name": "keyword.operator.expression.zlang"
+				}
+			]
+		},
+		"string_placeholder": {
+			"patterns": [
+				{
+					"match": "%(\\[\\d+\\])?([\\+#\\-0\\x20]{,2}((\\d+|\\*)?(\\.?(\\d+|\\*|(\\[\\d+\\])\\*?)?(\\[\\d+\\])?)?))?[vT%tbcdoqxXUbeEfFgGsp]",
+					"name": "constant.other.placeholder.zlang"
+				}
+			]
+		}
+	}
+}
