@@ -38,7 +38,7 @@ struct Image {
         for y in 0 .. @.height {
             var index = y * @.width
             for x in 0 .. @.width {
-                @.pixels[index]
+                @.pixels[index] = @.pixels[index].inverted()
                 index++
             }
         }
