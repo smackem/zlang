@@ -5,42 +5,42 @@ struct Color {
     float g
     float b
     float a
-} with {
+} is Equatable, Comparable
 
-    fn @.luminosity() {
-        return @.r * 0.3 + @.g * 0.6 + @.b * 0.1
-    }
+fn Color::luminosity() -> float {
+    return self.r * 0.3 + self.g * 0.6 + self.b * 0.1
+}
 
-    fn @.inverted() -> Color {
-        return @ with {
-            r: 255 - @.r
-            g: 255 - @.g
-            b: 255 - @.b
-        }
-    }
+fn Color::r() -> self.r
 
-} impl Equatable {
-    fn @.equals(any o) {
-        return @ == o
+fn Color::inverted() -> Color {
+    return self with {
+        r: 255 - self.r
+        g: 255 - self.g
+        b: 255 - self.b
     }
+}
+
+interface Equatable {
+    fn equals(any obj) -> bool
 }
 
 struct Image {
     Color[] pixels
     int width
     int height
-} with {
-    fn @.dimensions() -> int;int {
-        return @.width; @.height
-    }
+}
 
-    fn mutable @.invert() {
-        for y in 0 .. @.height {
-            var index = y * @.width
-            for x in 0 .. @.width {
-                @.pixels[index] = @.pixels[index].inverted()
-                index++
-            }
+fn Image::dimensions() -> int;int {
+    return self.width; self.height
+}
+
+fn mutable Image::invert() {
+    for y in 0 .. self.height {
+        var index = y * self.width
+        for x in 0 .. self.width {
+            self.pixels[index] = self.pixels[index].inverted()
+            index++
         }
     }
 }
@@ -58,19 +58,24 @@ union Number {
     float f;
     int n;
     byte b;
-} with {
-    fn @.to_int() -> int {
-        return switch @ {
-            float f -> round(f)
-            int n -> n
-            byte b -> (int) b
-        }
-    }
+}
 
-    fn @.is_int() -> bool {
-        return switch @ {
-            int n -> true
-            default -> false
-        }
+fn Number::f() -> self.f
+fn mutable Number::f(v: float) {
+    self.f = v
+}
+
+fn Number::to_int() -> int {
+    return switch self {
+        float f -> round(f)
+        int n -> n
+        byte b -> (int) b
+    }
+}
+
+fn Number::is_int() -> bool {
+    return switch self {
+        int n -> true
+        default -> false
     }
 }
