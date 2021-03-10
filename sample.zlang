@@ -55,9 +55,9 @@ fn make_image(int width, int height) -> mutable Image {
 }
 
 union Number {
-    float f;
-    int n;
-    byte b;
+    float f
+    int n
+    byte b
 }
 
 fn Number::f() -> self.f
