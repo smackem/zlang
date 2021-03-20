@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/zlang.iml" filepath="$PROJECT_DIR$/zlang.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zlang-cli/zlang-cli.iml" filepath="$PROJECT_DIR$/zlang-cli/zlang-cli.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zlang-core/zlang-core.iml" filepath="$PROJECT_DIR$/zlang-core/zlang-core.iml" />
+    </modules>
+  </component>
+</project>

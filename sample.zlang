@@ -1,10 +1,10 @@
 #include "libutil"
 
 struct Color {
-    float r
-    float g
-    float b
-    float a
+    r: float
+    g: float
+    b: float
+    a: float
 } is Equatable, Comparable
 
 fn Color::luminosity() -> float {
@@ -22,31 +22,38 @@ fn Color::inverted() -> Color {
 }
 
 interface Equatable {
-    fn equals(any obj) -> bool
+    fn equals(obj: any) -> bool
 }
 
 struct Image {
-    Color[] pixels
-    int width
-    int height
+    pixels: Color[]
+    width: int
+    height: int
 }
 
 fn Image::dimensions() -> int;int {
     return self.width; self.height
 }
 
+fn Image::is_empty() -> bool {
+    return if self.width == 0 and self.height == 0 { true } else { false }
+}
+
+let empty_image: Image = make_image(0, 0)
+
 fn mutable Image::invert() {
-    for y in 0 .. self.height {
-        var index = y * self.width
-        for x in 0 .. self.width {
-            self.pixels[index] = self.pixels[index].inverted()
+    let px: mutable Color[] = self.pixels
+    for y: int in 0 .. self.height {
+        var index: int = y * self.width
+        for x: int in 0 .. self.width {
+            px[index] = px[index].inverted()
             index++
         }
     }
 }
 
-fn make_image(int width, int height) -> mutable Image {
-    let size = width * height
+fn make_image(width: int, height: int) -> mutable Image {
+    let size: int = width * height
     return new Image {
         pixels: new Color[size]
         width: width
@@ -55,9 +62,9 @@ fn make_image(int width, int height) -> mutable Image {
 }
 
 union Number {
-    float f
-    int n
-    byte b
+    f: float
+    n: int
+    b: byte
 }
 
 fn Number::f() -> self.f
@@ -67,15 +74,15 @@ fn mutable Number::f(v: float) {
 
 fn Number::to_int() -> int {
     return switch self {
-        float f -> round(f)
-        int n -> n
-        byte b -> (int) b
+        f: float -> round(f)
+        n: int -> n
+        b: byte -> (int) b
     }
 }
 
 fn Number::is_int() -> bool {
     return switch self {
-        int n -> true
-        default -> false
+        n: int -> true
+        else -> false
     }
 }
