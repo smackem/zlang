@@ -1,0 +1,2 @@
+#define zln_VERSION_MAJOR @zln_VERSION_MAJOR@
+#define zln_VERSION_MINOR @zln_VERSION_MINOR@

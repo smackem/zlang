@@ -31,12 +31,16 @@ struct Image {
     height: int
 }
 
-fn Image::dimensions() -> int;int {
-    return self.width; self.height
+fn Image::width() -> int {
+    return self.width
+}
+
+fn Image::height() -> int {
+    return self.height
 }
 
 fn Image::is_empty() -> bool {
-    return if self.width == 0 and self.height == 0 { true } else { false }
+    return true if self.width == 0 and self.height == 0 else false
 }
 
 let empty_image: Image = make_image(0, 0)

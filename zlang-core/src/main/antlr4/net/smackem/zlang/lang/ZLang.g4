@@ -108,7 +108,7 @@ arguments
     ;
 
 forStmt
-    : For Ident In expr whereClause? block
+    : For parameter In expr whereClause? block
     ;
 
 whereClause
@@ -140,8 +140,7 @@ returnStmt
     ;
 
 expr
-    : condition
-    | If condition LBrace expr RBrace Else LBrace expr RBrace
+    : condition (If condition Else expr)?
     ;
 
 condition
@@ -168,13 +167,8 @@ comparator
     ;
 
 tuple
-    : point
-    | range
+    : range
     | term
-    ;
-
-point
-    : term Pair term
     ;
 
 range
@@ -228,6 +222,7 @@ invocationSuffix
 
 atom
     : literal
+    | Self
     | Ident
     | list
     | functionInvocation
@@ -261,7 +256,6 @@ Gt          : '>';
 Ge          : '>=';
 Eq          : '==';
 Ne          : '!=';
-Pair        : ';';
 FromTo      : '..';
 Swap        : '<=>';
 Pipe        : '|';
