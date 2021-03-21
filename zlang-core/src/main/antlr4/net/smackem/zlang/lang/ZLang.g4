@@ -79,12 +79,12 @@ varDeclStmt
 
 assignStmt
     : Ident Beq expr
-    | atom atomSuffix+ Beq expr
+    | primary Beq expr
     ;
 
 invocationStmt
-    : Ident invocationSuffix
-    | atom atomSuffix+
+    : functionInvocation
+    | primary methodInvocationPostfix
     ;
 
 ifStmt
@@ -108,7 +108,20 @@ arguments
     ;
 
 forStmt
+    : forIteratorStmt
+    | forRangeStmt
+    ;
+
+forIteratorStmt
     : For parameter In expr whereClause? block
+    ;
+
+forRangeStmt
+    : For parameter In range block
+    ;
+
+range
+    : expr FromTo expr (FromTo expr)?
     ;
 
 whereClause
@@ -140,23 +153,26 @@ returnStmt
     ;
 
 expr
-    : condition (If condition Else expr)?
+    : conditionalOrExpr
+    | conditionalOrExpr If conditionalOrExpr Else expr
     ;
 
-condition
-    : comparison (conditionOp comparison)?
+conditionalOrExpr
+    : conditionalAndExpr
+    | conditionalAndExpr Or conditionalOrExpr
     ;
 
-conditionOp
-    : Or
-    | And
+conditionalAndExpr
+    : relationalExpr
+    | relationalExpr And conditionalAndExpr
     ;
 
-comparison
-    : tuple (comparator tuple)?
+relationalExpr
+    : additiveExpr
+    | additiveExpr relationalOp additiveExpr?
     ;
 
-comparator
+relationalOp
     : Eq
     | Lt
     | Le
@@ -166,67 +182,91 @@ comparator
     | In
     ;
 
-tuple
-    : range
-    | term
+additiveExpr
+    : multiplicativeExpr
+    | additiveExpr additiveOp multiplicativeExpr
     ;
 
-range
-    : term FromTo term (FromTo term)?
-    ;
-
-term
-    : product (termOp product)*
-    ;
-
-termOp
+additiveOp
     : Plus
     | Minus
     ;
 
-product
-    : molecule (productOp molecule)*
+multiplicativeExpr
+    : unaryExpr
+    | multiplicativeOp multiplicativeOp unaryExpr
     ;
 
-productOp
+multiplicativeOp
     : Times
     | Div
     | Mod
     ;
 
-molecule
-    : atomPrefix? atom atomSuffix*
+unaryExpr
+    : unaryOp unaryExpr
+    | castExpr
+    | postFixedPrimary
     ;
 
-atomPrefix
+unaryOp
     : Minus
+    | Plus
     | Not
     ;
 
-atomSuffix
-    : memberSuffix
-    | indexSuffix
+castExpr
+    : LParen type RParen unaryExpr
     ;
 
-memberSuffix
-    : (Dot Ident) invocationSuffix?
+postFixedPrimary
+    : primary
+    | postFixedPrimary methodInvocationPostfix
+    | postFixedPrimary fieldAccessPostfix
+    | postFixedPrimary arrayAccessPostfix
     ;
 
-indexSuffix
+methodInvocationPostfix
+    : Dot Ident LParen arguments? RParen
+    ;
+
+fieldAccessPostfix
+    : Dot Ident
+    ;
+
+arrayAccessPostfix
     : LBracket expr RBracket
     ;
 
-invocationSuffix
-    : LParen arguments? RParen
-    ;
-
-atom
+primary
     : literal
     | Self
     | Ident
     | list
     | functionInvocation
+    | instanceCreation
     | LParen expr RParen
+    ;
+
+functionInvocation
+    : Ident LParen arguments? RParen
+    ;
+
+instanceCreation
+    : structOrUnionInstanceCreation
+    | arrayInstanceCreation
+    ;
+
+structOrUnionInstanceCreation
+    : New Ident LBrace (fieldInitializer LineBreak)* RBrace
+    ;
+
+fieldInitializer
+    : Ident Colon expr
+    ;
+
+arrayInstanceCreation
+    : New simpleType LBracket expr RBracket
     ;
 
 literal
@@ -235,10 +275,6 @@ literal
     | True
     | False
     | Nil
-    ;
-
-functionInvocation
-    : Ident invocationSuffix
     ;
 
 list

@@ -10,6 +10,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 # child projects
+add_subdirectory(runtime)
 add_subdirectory(util)
 
 # reference libraries common to all targets
