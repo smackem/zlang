@@ -5,8 +5,7 @@
 #ifndef ZLN_RUNTIME_H
 #define ZLN_RUNTIME_H
 
-#include <stdint.h>
-#include <stdlib.h>
+#include <util.h>
 #include "opcode.h"
 #include "types.h"
 

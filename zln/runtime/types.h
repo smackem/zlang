@@ -6,11 +6,11 @@
 #define ZLN_TYPES_H
 
 typedef enum type {
-    INT32,
-    FLOAT64,
-    UINT8,
-    STRING,
-    REF,
+    TYPE_INT32,
+    TYPE_FLOAT64,
+    TYPE_UINT8,
+    TYPE_STRING,
+    TYPE_REF,
 } Type;
 
 #endif //ZLN_TYPES_H
