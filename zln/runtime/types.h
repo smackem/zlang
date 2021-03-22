@@ -5,12 +5,29 @@
 #ifndef ZLN_TYPES_H
 #define ZLN_TYPES_H
 
-typedef enum type {
-    TYPE_INT32,
+typedef uint8_t byte_t;
+typedef uint32_t addr_t;
+
+typedef enum type : byte_t {
+    TYPE_INT32 = 0,
     TYPE_FLOAT64,
     TYPE_UINT8,
     TYPE_STRING,
     TYPE_REF,
 } Type;
+
+#define get_byte(ptr, offset) *((ptr) + offset)
+#define set_byte(ptr, offset, b) (*((ptr) + offset) = b)
+
+#define get_int(ptr, offset) (*(int32_t *) ((ptr) + offset))
+#define set_int(ptr, offset, i) (*(int32_t *) ((ptr) + offset) = i)
+
+#define get_addr(ptr, offset) (*(addr_t *) ((ptr) + offset))
+#define set_addr(ptr, offset, a) (*(addr_t *) ((ptr) + offset) = a)
+
+#define get_float(ptr, offset) (*(double *) ((ptr) + offset))
+#define set_float(ptr, offset, f) (*(double *) ((ptr) + offset) = f)
+
+#define get_type(ptr, offset)  (*(Type *) ((ptr) + offset))
 
 #endif //ZLN_TYPES_H

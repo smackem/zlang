@@ -16,18 +16,20 @@ add_subdirectory(util)
 # reference libraries common to all targets
 link_libraries(
         util
+        runtime
 )
 
 # add include directories for all targets
 include_directories(
         "${PROJECT_BINARY_DIR}"
         "${PROJECT_SOURCE_DIR}/util"
+        "${PROJECT_SOURCE_DIR}/runtime"
 )
 
 # -------------------------------------
 # main target
 # -------------------------------------
-add_executable(zln_executable main.c)
+add_executable(zln_executable main.c emit.c)
 
 set_target_properties(zln_executable PROPERTIES OUTPUT_NAME "zln")
 

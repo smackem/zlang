@@ -9,6 +9,6 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-int util_function(int n);
+void assert(bool condition, const char *format, ...);
 
 #endif //ZLN_UTIL_H

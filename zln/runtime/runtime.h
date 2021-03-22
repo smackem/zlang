@@ -5,16 +5,6 @@
 #ifndef ZLN_RUNTIME_H
 #define ZLN_RUNTIME_H
 
-#include <util.h>
-#include "opcode.h"
-#include "types.h"
-
-typedef struct instruction {
-    OpCode opCode;
-    Type type;
-    int32_t int32_arg;
-    double float64_arg;
-    intptr_t ref_arg;
-} Instruction;
+#include "cpu.h"
 
 #endif //ZLN_RUNTIME_H
