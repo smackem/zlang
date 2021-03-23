@@ -32,11 +32,11 @@ typedef struct instruction {
  * Holds information about a function, stored in the const segment
  */
 typedef struct function_meta {
-    /// the base address of the module that defines the function
-    addr_t base_addr;
+    /// the base instruction address of the module that defines the function
+    addr_t base_pc;
 
-    /// the offset within the module
-    addr_t offset;
+    /// the offset of the function's first instruction within the module
+    addr_t pc;
 
     /// the number of local variables of the function
     int local_count;
@@ -62,6 +62,9 @@ typedef struct type_meta {
  * Describes a stack frame
  */
 typedef struct stack_frame {
+    /// pointer to meta information in const segment
+    const FunctionMeta *meta;
+
     /// the index of the register to store the function's return value
     addr_t ret_register_index;
 

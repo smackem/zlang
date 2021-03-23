@@ -17,3 +17,11 @@ void assert(bool condition, const char *format, ...) {
     }
     va_end(arg_ptr);
 }
+
+inline void assert_equal_i(int32_t actual, int32_t expected, const char *category) {
+    assert(actual == expected, "%s: failed equality check. actual: %d, expected: %d", category, actual, expected);
+}
+
+inline void assert_equal_f(double actual, double expected, const char *category) {
+    assert(actual == expected, "%s: failed equality check. actual: %lf, expected: %lf", category, actual, expected);
+}

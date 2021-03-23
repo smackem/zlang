@@ -8,13 +8,15 @@
 typedef uint8_t byte_t;
 typedef uint32_t addr_t;
 
-typedef enum type : byte_t {
+enum type {
     TYPE_INT32 = 0,
     TYPE_FLOAT64,
     TYPE_UINT8,
     TYPE_STRING,
     TYPE_REF,
-} Type;
+};
+
+typedef byte_t Type;
 
 #define get_byte(ptr, offset) *((ptr) + offset)
 #define set_byte(ptr, offset, b) (*((ptr) + offset) = b)

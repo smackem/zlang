@@ -29,9 +29,15 @@ include_directories(
 # -------------------------------------
 # main target
 # -------------------------------------
-add_executable(zln_executable main.c emit.c)
+add_executable(zln_executable main.c)
 
 set_target_properties(zln_executable PROPERTIES OUTPUT_NAME "zln")
+
+# -------------------------------------
+# test target
+# -------------------------------------
+add_executable(zln_test test.c emit.c)
+
 
 # -------------------------------------
 # lib target

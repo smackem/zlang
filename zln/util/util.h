@@ -11,4 +11,9 @@
 
 void assert(bool condition, const char *format, ...);
 
+#define assert_equal(actual, expected, category) \
+    _Generic((actual)+(expected), default: assert_equal_i, double: assert_equal_f)(actual, expected, category)
+void assert_equal_i(int32_t actual, int32_t expected, const char *category);
+void assert_equal_f(double actual, double expected, const char *category);
+
 #endif //ZLN_UTIL_H

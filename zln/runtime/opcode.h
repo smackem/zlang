@@ -7,7 +7,7 @@
 
 #include "types.h"
 
-typedef enum op_code : byte_t {
+enum op_code {
     /**
      * nop():
      */
@@ -188,6 +188,8 @@ typedef enum op_code : byte_t {
     OPC_NEW_ARR_F64,
     OPC_NEW_ARR_U8,
     OPC_NEW_ARR_REF,
-} OpCode;
+};
+
+typedef byte_t OpCode;
 
 #endif //ZLN_OPCODE_H
