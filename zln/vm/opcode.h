@@ -100,6 +100,62 @@ enum op_code {
     OPC_Div_u8,
 
     /**
+     * equals(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left == r_right
+     */
+    OPC_Eq_i32,
+    OPC_Eq_f64,
+    OPC_Eq_u8,
+    OPC_Eq_str,
+    OPC_Eq_ref,
+
+    /**
+     * not_equals(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left != r_right
+     */
+    OPC_Ne_i32,
+    OPC_Ne_f64,
+    OPC_Ne_u8,
+    OPC_Ne_str,
+    OPC_Ne_ref,
+
+    /**
+     * greater_than(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left > r_right
+     */
+    OPC_Gt_i32,
+    OPC_Gt_f64,
+    OPC_Gt_u8,
+    OPC_Gt_str,
+
+    /**
+     * greater_than_or_equal(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left >= r_right
+     */
+    OPC_Ge_i32,
+    OPC_Ge_f64,
+    OPC_Ge_u8,
+    OPC_Ge_str,
+
+    /**
+     * less_than(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left > r_right
+     */
+    OPC_Lt_i32,
+    OPC_Lt_f64,
+    OPC_Lt_u8,
+    OPC_Lt_str,
+
+    /**
+     * less_than_or_equal(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left >= r_right
+     */
+    OPC_Le_i32,
+    OPC_Le_f64,
+    OPC_Le_u8,
+    OPC_Le_str,
+
+    /**
      * and(REG r_target, REG r_left, REG r_right):
      *      r_target <- r_left and r_right
      */
@@ -110,6 +166,12 @@ enum op_code {
      *      r_target <- r_left or r_right
      */
     OPC_Or,
+
+    /**
+     * move(REG r_target, REG r_source):
+     *      r_target <- r_source
+     */
+    OPC_Mov,
 
     /**
      * branch_if_false(REG r_source, INT new_pc):
@@ -156,12 +218,6 @@ enum op_code {
     OCP_Conv_u8,
     OPC_Conv_str,
     OPC_Conv_ref,
-
-    /**
-     * move(REG r_target, REG r_source):
-     *      r_target <- r_source
-     */
-    OPC_Mov,
 
     /**
      * new_object(REG r_target, INT const_addr):

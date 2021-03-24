@@ -114,6 +114,104 @@ void test3(byte_t *code, MemoryLayout *heap) {
 }
 
 // ---------------------------------------------------------------------
+// TEST 4
+// - branching, loops
+// ---------------------------------------------------------------------
+
+void test4(byte_t *code, MemoryLayout *heap) {
+    // globals
+    const addr_t glb_i1 = 0;
+    heap->global_segment_size = 4;
+
+    // code
+    byte_t *code_ptr = code;
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0);
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 100);
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 1);
+    addr_t label_loop = code_ptr - code;
+    code_ptr += emit_binary_op(code_ptr, OPC_Add_i32, 1, 1, 3);
+    code_ptr += emit_binary_op(code_ptr, OPC_Ne_i32, 4, 1, 2);
+    code_ptr += emit_reg_int(code_ptr, OPC_Br_False, 4, label_loop);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
+    *code_ptr = OPC_Ret;
+
+    // act
+    execute(code, 0, 0, heap, &config);
+
+    // assert
+    const byte_t *global_segment = heap->base + heap->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 100, "i1");
+}
+
+// ---------------------------------------------------------------------
+// TEST 5
+// - boolean operators, mov
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 6
+// - type conversion
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 7
+// - array allocation and element access
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 8
+// - struct allocation and field access
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 9
+// - branching in multi-module program (within single module)
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 10
+// - function call `function f()`
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 11
+// - function call `function f() -> int`
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 12
+// - function call `function f(int, double) -> ref`
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 13
+// - function call `function f(int, double) -> ref` across modules
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 14
+// - object allocation
+// - reference counting within single stack frame
+// - object de-allocation
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 15
+// - reference counting across multiple stack frames
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 16
+// - heap compaction
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// TEST 17
+// - recursive function call `function f(int) -> int`
+// ---------------------------------------------------------------------
+
+
+// ---------------------------------------------------------------------
 // TEST entry point
 // ---------------------------------------------------------------------
 
@@ -124,6 +222,7 @@ static const struct test {
         { .proc = test1, .name = "load integer constants, add integers, store globals" },
         { .proc = test2, .name = "load f64 constant" },
         { .proc = test3, .name = "load and store globals, more integer arithmetic" },
+        { .proc = test4, .name = "branching and loops" },
         { .proc = NULL },
 };
 

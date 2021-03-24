@@ -16,6 +16,11 @@ typedef struct cpu {
     addr_t heap_size;
 } Cpu;
 
+void conv_i32(Register *target, Type target_type, const Register *source);
+void conv_f64(Register *target, Type target_type, const Register *source);
+void conv_u8(Register *target, Type target_type, const Register *source);
+void conv_ref(Register *target, Type target_type, const Register *source);
+
 static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *config) {
     cpu->base_registers = calloc(config->register_count * config->max_stack_depth, sizeof(Register));
     cpu->registers = cpu->base_registers;
@@ -300,11 +305,82 @@ void execute(const byte_t *code,
                 size = 1 + 3;
                 break;
 
+            // -------------------- boolean operators
+            //
+            case OPC_And:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 && cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Or:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 || cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+
+            // -------------------- move
+            //
+            case OPC_Mov:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32;
+                size = 1 + 2;
+                break;
+
+            // -------------------- branching
+            //
+            case OPC_Br_False:
+                r_target = get_byte(instr->args, 0);
+                if (cpu.registers[r_target].i32 == false) {
+                    pc = get_addr(instr->args, 1);
+                }
+                size = 1 + 5;
+                break;
+            case OPC_Br:
+                pc = get_addr(instr->args, 0);
+                size = 1 + 4;
+                break;
+
             // -------------------- function call
             //
             case OPC_Ret:
                 free_cpu(&cpu);
                 return;
+
+            // -------------------- convert
+            //
+            case OPC_Conv_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                type = get_int(instr->args, 2);
+                conv_i32(&cpu.registers[r_target], type, &cpu.registers[r_left]);
+                size = 1 + 6;
+                break;
+            case OPC_Conv_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                type = get_int(instr->args, 2);
+                conv_f64(&cpu.registers[r_target], type, &cpu.registers[r_left]);
+                size = 1 + 6;
+                break;
+            case OCP_Conv_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                type = get_int(instr->args, 2);
+                conv_u8(&cpu.registers[r_target], type, &cpu.registers[r_left]);
+                size = 1 + 6;
+                break;
+            case OPC_Conv_ref:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                type = get_int(instr->args, 2);
+                conv_ref(&cpu.registers[r_target], type, &cpu.registers[r_left]);
+                size = 1 + 6;
+                break;
 
             default:
                 assert(false, "unsupported opcode %d", instr->opc);
@@ -313,5 +389,77 @@ void execute(const byte_t *code,
 
         assert(size > 0, "op code %d has not been handled", instr->opc);
         pc += size;
+    }
+}
+
+inline void conv_i32(Register *target, Type target_type, const Register *source) {
+    switch (target_type) {
+        case TYPE_Float64:
+            target->f64 = (double) source->i32;
+            break;
+        case TYPE_Ref:
+            target->ref = (addr_t) source->i32;
+            break;
+        case TYPE_Int32:
+        case TYPE_Unsigned8:
+            target->i32 = source->i32;
+            break;
+        default:
+            assert(false, "conv_i32: unsupported target type %d", target_type);
+            break;
+    }
+}
+
+inline void conv_f64(Register *target, Type target_type, const Register *source) {
+    switch (target_type) {
+        case TYPE_Float64:
+            target->f64 = source->f64;
+            break;
+        case TYPE_Ref:
+            target->ref = (addr_t) source->f64;
+            break;
+        case TYPE_Int32:
+        case TYPE_Unsigned8:
+            target->i32 = (int32_t) source->f64;
+            break;
+        default:
+            assert(false, "conv_f64: unsupported target type %d", target_type);
+            break;
+    }
+}
+
+inline void conv_u8(Register *target, Type target_type, const Register *source) {
+    switch (target_type) {
+        case TYPE_Float64:
+            target->f64 = (double) (source->i32 & 0xff);
+            break;
+        case TYPE_Ref:
+            target->ref = (addr_t) (source->i32 & 0xff);
+            break;
+        case TYPE_Int32:
+        case TYPE_Unsigned8:
+            target->i32 = source->i32 & 0xff;
+            break;
+        default:
+            assert(false, "conv_u8: unsupported target type %d", target_type);
+            break;
+    }
+}
+
+inline void conv_ref(Register *target, Type target_type, const Register *source) {
+    switch (target_type) {
+        case TYPE_Float64:
+            target->f64 = (double) source->ref;
+            break;
+        case TYPE_Ref:
+            target->ref = source->ref;
+            break;
+        case TYPE_Int32:
+        case TYPE_Unsigned8:
+            target->i32 = (int32_t) source->ref;
+            break;
+        default:
+            assert(false, "conv_ref: unsupported target type %d", target_type);
+            break;
     }
 }
