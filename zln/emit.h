@@ -5,7 +5,7 @@
 #ifndef ZLN_EMIT_H
 #define ZLN_EMIT_H
 
-#include <runtime.h>
+#include <vm.h>
 
 size_t emit_reg_int(byte_t *code, OpCode opc, byte_t r_target, int32_t i);
 size_t emit_binary_op(byte_t *code, OpCode opc, byte_t r_target, byte_t r_left, byte_t r_right);

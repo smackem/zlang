@@ -21,7 +21,7 @@ typedef struct instruction {
     /**
      * dummy array to address arguments.
      * arguments are either REG (single byte containing a register index)
-     * or INT (32bit)
+     * or INT (32bit).
      */
     byte_t args[1];
 } Instruction;
@@ -55,8 +55,28 @@ typedef struct type_meta {
     addr_t size;
 
     /// the name of the type as a zero-terminated string
-    char name[1]; // zero-terminated string
+    char name[4]; // zero-terminated string, padded in struct to 4 bytes
 } TypeMeta;
+
+#define TYPE_META_MIN_SIZE 8
+
+/**
+ * Holds a heap entry (dynamically allocated, typed data chunk - e.g. an array, struct or union)
+ */
+typedef struct heap_entry {
+    /// if top-most bit is set, lower 31 bits denote the address of a TypeMeta in the const segment (for composite types)
+    /// if top-most bit is clear, lower 31 bits denote the data length (for arrays e.g.)
+    addr_t header;
+
+    /// number of references to this entry. if 0, the entry can be cleared.
+    uint32_t ref_count;
+
+    /// first data byte. actual number of bytes can be deducted from header.
+    /// padded in struct to 4 bytes
+    byte_t data[4];
+} HeapEntry;
+
+#define HEAP_ENTRY_MIN_SIZE 12
 
 /**
  * Describes a stack frame
@@ -91,24 +111,24 @@ typedef union register_union {
 } Register;
 
 /**
- * Describes the heap layout.
- * The heap keeps all constants, globals and dynamically allocated objects.
+ * Describes the memory layout.
+ * Contains all constants, globals and the heap of dynamically allocated objects.
  * The const segment comes first, then the globals segment and the remaining
- * space can be used to allocate memory at runtime.
+ * space can be used to allocate base at runtime.
  */
-typedef struct heap_layout {
-    /// the heap base address
-    byte_t *memory;
+typedef struct memory_layout {
+    /// the address of the memory chunk to use.
+    byte_t *base;
 
-    /// the total size of the heap
+    /// the total base size
     addr_t total_size;
 
     /// the size of the constant segment. also the index of the first byte in the global segment.
     addr_t const_segment_size;
 
-    /// the size of the global segment.
+    /// the size of the global segment. the heap base is base + const_segment_size + global_segment_size
     addr_t global_segment_size;
-} HeapLayout;
+} MemoryLayout;
 
 /**
  * Holds runtime parameters like number of base_registers and maximum stack depth.
@@ -144,7 +164,7 @@ typedef struct runtime_config {
 void execute(const byte_t *code,
              addr_t base_pc,
              addr_t pc,
-             const HeapLayout *heap_layout,
+             const MemoryLayout *memory,
              const RuntimeConfig *config);
 
 #endif //ZLN_CPU_H

@@ -9,11 +9,11 @@ typedef uint8_t byte_t;
 typedef uint32_t addr_t;
 
 enum type {
-    TYPE_INT32 = 0,
-    TYPE_FLOAT64,
-    TYPE_UINT8,
-    TYPE_STRING,
-    TYPE_REF,
+    TYPE_Int32 = 0,
+    TYPE_Float64,
+    TYPE_Unsigned8,
+    TYPE_String,
+    TYPE_Ref,
 };
 
 typedef byte_t Type;

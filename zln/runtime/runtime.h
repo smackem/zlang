@@ -5,6 +5,4 @@
 #ifndef ZLN_RUNTIME_H
 #define ZLN_RUNTIME_H
 
-#include "cpu.h"
-
 #endif //ZLN_RUNTIME_H

@@ -2,8 +2,8 @@
 // Created by smackem on 22.03.21.
 //
 
-#include <runtime.h>
 #include <stdio.h>
+#include <vm.h>
 
 size_t emit_reg_int(byte_t *code, OpCode opc, byte_t r_target, int32_t i) {
     code[0] = opc;
