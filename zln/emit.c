@@ -26,3 +26,18 @@ size_t emit_reg_addr(byte_t *code, OpCode opc, byte_t r_source, addr_t addr) {
     set_addr(code, 2, addr);
     return 6;
 }
+
+size_t emit_reg_reg(byte_t *code, OpCode opc, byte_t r_target, byte_t r_source) {
+    code[0] = opc;
+    code[1] = r_target;
+    code[2] = r_source;
+    return 3;
+}
+
+size_t emit_conv(byte_t *code, OpCode opc, byte_t r_target, byte_t r_source, Type target_type) {
+    code[0] = opc;
+    code[1] = r_target;
+    code[2] = r_source;
+    set_int(code, 3, target_type);
+    return 7;
+}

@@ -15,11 +15,11 @@ static const RuntimeConfig config = { .register_count = 16, .max_stack_depth = 4
 // - add integers
 // ---------------------------------------------------------------------
 
-void test1(byte_t *code, MemoryLayout *heap) {
+void test01(byte_t *code, MemoryLayout *memory) {
     // globals
     const addr_t glb_i0 = 0;
     const addr_t glb_i1 = 4;
-    heap->global_segment_size = 8;
+    memory->global_segment_size = 8;
 
     // code
     byte_t *code_ptr = code;
@@ -31,10 +31,10 @@ void test1(byte_t *code, MemoryLayout *heap) {
     *code_ptr = OPC_Ret;
 
     // act
-    execute(code, 0, 0, heap, &config);
+    execute(code, 0, 0, memory, &config);
 
     // assert
-    const byte_t *global_segment = heap->base + heap->const_segment_size;
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i0), 300, "i0");
     assert_equal(get_int(global_segment, glb_i1), 200, "i1");
 }
@@ -44,18 +44,18 @@ void test1(byte_t *code, MemoryLayout *heap) {
 // - load constants from const segment
 // ---------------------------------------------------------------------
 
-void test2(byte_t *code, MemoryLayout *heap) {
+void test02(byte_t *code, MemoryLayout *memory) {
     // constants
     const addr_t const_f1 = 0;
     const addr_t const_f2 = 8;
-    set_float(heap->base, const_f1, 1000.125);
-    set_float(heap->base, const_f2, 123.5);
-    heap->const_segment_size = 16;
+    set_float(memory->base, const_f1, 1000.125);
+    set_float(memory->base, const_f2, 123.5);
+    memory->const_segment_size = 16;
 
     // globals
     const addr_t glb_f1 = 0;
     const addr_t glb_f2 = 8;
-    heap->global_segment_size = 16;
+    memory->global_segment_size = 16;
 
     // code
     byte_t *code_ptr = code;
@@ -66,10 +66,10 @@ void test2(byte_t *code, MemoryLayout *heap) {
     *code_ptr = OPC_Ret;
 
     // act
-    execute(code, 0, 0, heap, &config);
+    execute(code, 0, 0, memory, &config);
 
     // assert
-    const byte_t *global_segment = heap->base + heap->const_segment_size;
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
     assert_equal(get_float(global_segment, glb_f2), 123.5, "f2");
 }
@@ -80,12 +80,12 @@ void test2(byte_t *code, MemoryLayout *heap) {
 // - more integer arithmetics
 // ---------------------------------------------------------------------
 
-void test3(byte_t *code, MemoryLayout *heap) {
+void test03(byte_t *code, MemoryLayout *memory) {
     // globals
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
     const addr_t glb_i3 = 8;
-    heap->global_segment_size = 12;
+    memory->global_segment_size = 12;
 
     // code
     byte_t *code_ptr = code;
@@ -104,10 +104,10 @@ void test3(byte_t *code, MemoryLayout *heap) {
     *code_ptr = OPC_Ret;
 
     // act
-    execute(code, 0, 0, heap, &config);
+    execute(code, 0, 0, memory, &config);
 
     // assert
-    const byte_t *global_segment = heap->base + heap->const_segment_size;
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 70, "i1");
     assert_equal(get_int(global_segment, glb_i2), 3000, "i2");
     assert_equal(get_int(global_segment, glb_i3), 3, "i3");
@@ -118,10 +118,10 @@ void test3(byte_t *code, MemoryLayout *heap) {
 // - branching, loops
 // ---------------------------------------------------------------------
 
-void test4(byte_t *code, MemoryLayout *heap) {
+void test04(byte_t *code, MemoryLayout *memory) {
     // globals
     const addr_t glb_i1 = 0;
-    heap->global_segment_size = 4;
+    memory->global_segment_size = 4;
 
     // code
     byte_t *code_ptr = code;
@@ -130,16 +130,17 @@ void test4(byte_t *code, MemoryLayout *heap) {
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 1);
     addr_t label_loop = code_ptr - code;
     code_ptr += emit_binary_op(code_ptr, OPC_Add_i32, 1, 1, 3);
-    code_ptr += emit_binary_op(code_ptr, OPC_Ne_i32, 4, 1, 2);
+    code_ptr += emit_binary_op(code_ptr, OPC_Eq_i32, 4, 1, 2);
     code_ptr += emit_reg_int(code_ptr, OPC_Br_False, 4, label_loop);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     *code_ptr = OPC_Ret;
+    print_code(stdout, code, code_ptr - code + 1);
 
     // act
-    execute(code, 0, 0, heap, &config);
+    execute(code, 0, 0, memory, &config);
 
     // assert
-    const byte_t *global_segment = heap->base + heap->const_segment_size;
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 100, "i1");
 }
 
@@ -148,10 +149,85 @@ void test4(byte_t *code, MemoryLayout *heap) {
 // - boolean operators, mov
 // ---------------------------------------------------------------------
 
+void test05(byte_t *code, MemoryLayout *memory) {
+    // globals
+    const addr_t glb_i1 = 0;
+    const addr_t glb_i2 = 4;
+    const addr_t glb_i3 = 8;
+    memory->global_segment_size = 12;
+
+    // code
+    byte_t *code_ptr = code;
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, true);
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, false);
+    code_ptr += emit_binary_op(code_ptr, OPC_And, 3, 1, 2);
+    code_ptr += emit_binary_op(code_ptr, OPC_Or, 4, 1, 2);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 4, glb_i2);
+    code_ptr += emit_reg_reg(code_ptr, OPC_Mov, 3, 4);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i3);
+    *code_ptr = OPC_Ret;
+    print_code(stdout, code, code_ptr - code + 1);
+
+    // act
+    execute(code, 0, 0, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), false, "i1");
+    assert_equal(get_int(global_segment, glb_i2), true, "i2");
+    assert_equal(get_int(global_segment, glb_i3), true, "i3");
+}
+
 // ---------------------------------------------------------------------
 // TEST 6
 // - type conversion
 // ---------------------------------------------------------------------
+
+void test06(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_f1 = 0;
+    set_float(memory->base, const_f1, 1000.125);
+    memory->const_segment_size = 8;
+
+    // globals
+    const addr_t glb_i1 = 0;
+    const addr_t glb_i2 = 4;
+    const addr_t glb_i3 = 8;
+    const addr_t glb_f1 = 12;
+    memory->global_segment_size = 20;
+
+    // code
+    byte_t *code_ptr = code;
+    // i1 <- (u8)0x123ab
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
+    code_ptr += emit_conv(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Unsigned8);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
+    // f1 <- (f64)0x123ab
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 123);
+    code_ptr += emit_conv(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Float64);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 1, glb_f1);
+    // i2 <- (i32)1000.125
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_f64, 1, const_f1);
+    code_ptr += emit_conv(code_ptr, OPC_Conv_f64, 1, 1, TYPE_Int32);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i2);
+    // i3 <- (ref)0x123ab
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
+    code_ptr += emit_conv(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Ref);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_i3);
+    *code_ptr = OPC_Ret;
+    print_code(stdout, code, code_ptr - code + 1);
+
+    // act
+    execute(code, 0, 0, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 0xab, "i1");
+    assert_equal(get_float(global_segment, glb_f1), 123.0, "f1");
+    assert_equal(get_int(global_segment, glb_i2), 1000, "i2");
+    assert_equal(get_addr(global_segment, glb_i3), 0x123ab, "i3");
+}
 
 // ---------------------------------------------------------------------
 // TEST 7
@@ -219,10 +295,12 @@ static const struct test {
     void (*proc)(byte_t *, MemoryLayout *);
     const char *name;
 } tests[] = {
-        { .proc = test1, .name = "load integer constants, add integers, store globals" },
-        { .proc = test2, .name = "load f64 constant" },
-        { .proc = test3, .name = "load and store globals, more integer arithmetic" },
-        { .proc = test4, .name = "branching and loops" },
+        { .proc = test01, .name = "load integer constants, add integers, store globals" },
+        { .proc = test02, .name = "load f64 constant" },
+        { .proc = test03, .name = "load and store globals, more integer arithmetic" },
+        { .proc = test04, .name = "branching and loops" },
+        { .proc = test05, .name = "boolean operators, mov" },
+        { .proc = test06, .name = "type conversion" },
         { .proc = NULL },
 };
 

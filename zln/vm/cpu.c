@@ -305,6 +305,128 @@ void execute(const byte_t *code,
                 size = 1 + 3;
                 break;
 
+            // -------------------- equals
+            //
+            case OPC_Eq_i32:
+            case OPC_Eq_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 == cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Eq_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].f64 == cpu.registers[r_right].f64;
+                size = 1 + 3;
+                break;
+            case OPC_Eq_ref:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].ref == cpu.registers[r_right].ref;
+                size = 1 + 3;
+                break;
+
+            // -------------------- not equals
+            //
+            case OPC_Ne_i32:
+            case OPC_Ne_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 != cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Ne_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].f64 != cpu.registers[r_right].f64;
+                size = 1 + 3;
+                break;
+            case OPC_Ne_ref:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].ref != cpu.registers[r_right].ref;
+                size = 1 + 3;
+                break;
+
+            // -------------------- greater than
+            //
+            case OPC_Gt_i32:
+            case OPC_Gt_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 > cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Gt_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].f64 > cpu.registers[r_right].f64;
+                size = 1 + 3;
+                break;
+
+            // -------------------- greater than or equal
+            //
+            case OPC_Ge_i32:
+            case OPC_Ge_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 >= cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Ge_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].f64 >= cpu.registers[r_right].f64;
+                size = 1 + 3;
+                break;
+
+            // -------------------- greater than or equal
+            //
+            case OPC_Lt_i32:
+            case OPC_Lt_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 < cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Lt_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].f64 < cpu.registers[r_right].f64;
+                size = 1 + 3;
+                break;
+
+            // -------------------- less than or equal
+            //
+            case OPC_Le_i32:
+            case OPC_Le_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].i32 <= cpu.registers[r_right].i32;
+                size = 1 + 3;
+                break;
+            case OPC_Le_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                cpu.registers[r_target].i32 = cpu.registers[r_left].f64 <= cpu.registers[r_right].f64;
+                size = 1 + 3;
+                break;
+
             // -------------------- boolean operators
             //
             case OPC_And:
@@ -335,14 +457,14 @@ void execute(const byte_t *code,
             //
             case OPC_Br_False:
                 r_target = get_byte(instr->args, 0);
-                if (cpu.registers[r_target].i32 == false) {
-                    pc = get_addr(instr->args, 1);
-                }
                 size = 1 + 5;
+                if (cpu.registers[r_target].i32 == false) {
+                    pc = get_addr(instr->args, 1) - size;
+                }
                 break;
             case OPC_Br:
-                pc = get_addr(instr->args, 0);
                 size = 1 + 4;
+                pc = get_addr(instr->args, 0) - size;
                 break;
 
             // -------------------- function call
@@ -401,8 +523,10 @@ inline void conv_i32(Register *target, Type target_type, const Register *source)
             target->ref = (addr_t) source->i32;
             break;
         case TYPE_Int32:
-        case TYPE_Unsigned8:
             target->i32 = source->i32;
+            break;
+        case TYPE_Unsigned8:
+            target->i32 = source->i32 & 0xff;
             break;
         default:
             assert(false, "conv_i32: unsupported target type %d", target_type);
