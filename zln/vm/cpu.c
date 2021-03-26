@@ -152,6 +152,41 @@ void execute(const byte_t *code,
                 size = 1 + 6;
                 break;
 
+            // -------------------- load array element
+            //
+            case OPC_LdElem_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                cpu.registers[r_target].ref = get_int(cpu.heap.memory,
+                  get_field_addr(&cpu.heap, cpu.registers[r_left].ref, cpu.registers[r_addr].ref));
+                size = 1 + 3;
+                break;
+            case OPC_LdElem_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                cpu.registers[r_target].ref = get_float(cpu.heap.memory,
+                      get_field_addr(&cpu.heap, cpu.registers[r_left].ref, cpu.registers[r_addr].ref));
+                size = 1 + 3;
+                break;
+            case OPC_LdElem_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                cpu.registers[r_target].ref = get_byte(cpu.heap.memory,
+                      get_field_addr(&cpu.heap, cpu.registers[r_left].ref, cpu.registers[r_addr].ref));
+                size = 1 + 3;
+                break;
+            case OPC_LdElem_ref:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                cpu.registers[r_target].ref = get_addr(cpu.heap.memory,
+                      get_field_addr(&cpu.heap, cpu.registers[r_left].ref, cpu.registers[r_addr].ref));
+                size = 1 + 3;
+                break;
+
             // -------------------- store global
             //
             case OPC_StGlb_i32:
@@ -208,6 +243,45 @@ void execute(const byte_t *code,
                 addr = get_addr(instr->args, 2);
                 set_addr(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr), cpu.registers[r_left].ref);
                 size = 1 + 6;
+                break;
+
+            // -------------------- store array element
+            //
+            case OPC_StElem_i32:
+                r_left = get_byte(instr->args, 0);
+                r_right = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                set_int(cpu.heap.memory,
+                        get_field_addr(&cpu.heap, cpu.registers[r_right].ref, cpu.registers[r_addr].ref),
+                        cpu.registers[r_left].ref);
+                size = 1 + 3;
+                break;
+            case OPC_StElem_f64:
+                r_left = get_byte(instr->args, 0);
+                r_right = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                set_float(cpu.heap.memory,
+                        get_field_addr(&cpu.heap, cpu.registers[r_right].ref, cpu.registers[r_addr].ref),
+                        cpu.registers[r_left].ref);
+                size = 1 + 3;
+                break;
+            case OPC_StElem_u8:
+                r_left = get_byte(instr->args, 0);
+                r_right = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                set_byte(cpu.heap.memory,
+                        get_field_addr(&cpu.heap, cpu.registers[r_right].ref, cpu.registers[r_addr].ref),
+                        cpu.registers[r_left].ref);
+                size = 1 + 3;
+                break;
+            case OPC_StElem_ref:
+                r_left = get_byte(instr->args, 0);
+                r_right = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                set_addr(cpu.heap.memory,
+                         get_field_addr(&cpu.heap, cpu.registers[r_right].ref, cpu.registers[r_addr].ref),
+                         cpu.registers[r_left].ref);
+                size = 1 + 3;
                 break;
 
             // -------------------- add

@@ -34,6 +34,16 @@ enum op_code {
     OPC_LdFld_ref,
 
     /**
+     * load_array_element(REG r_target, REG r_heap_addr, REG r_elem_offset):
+     *      r_target <- *(r_heap_addr + r_elem_offset)
+     * r_heap_addr is relative to heap base. r_elem_offset is a byte offset.
+     */
+    OPC_LdElem_i32,
+    OPC_LdElem_f64,
+    OPC_LdElem_u8,
+    OPC_LdElem_ref,
+
+    /**
      * store_global(REG r_source, INT glb_addr):
      *      r_source -> *glb_addr
      * glb_addr is relative to global base
@@ -52,6 +62,16 @@ enum op_code {
     OPC_StFld_f64,
     OPC_StFld_u8,
     OPC_StFld_ref,
+
+    /**
+     * store_array_element(REG r_source, REG r_heap_addr, REG r_elem_offset):
+     *      r_source -> *(r_heap_addr + r_elem_offset)
+     * r_heap_addr is relative to heap base. r_elem_offset is a byte offset.
+     */
+    OPC_StElem_i32,
+    OPC_StElem_f64,
+    OPC_StElem_u8,
+    OPC_StElem_ref,
 
     /**
      * load_immediate_constant(REG r_target, INT value):

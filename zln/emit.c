@@ -12,7 +12,7 @@ size_t emit_reg_int(byte_t *code, OpCode opc, byte_t r, int32_t i) {
     return 6;
 }
 
-size_t emit_binary_op(byte_t *code, OpCode opc, byte_t r_target, byte_t r_left, byte_t r_right) {
+size_t emit_reg_reg_reg(byte_t *code, OpCode opc, byte_t r_target, byte_t r_left, byte_t r_right) {
     code[0] = opc;
     code[1] = r_target;
     code[2] = r_left;

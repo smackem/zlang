@@ -15,6 +15,10 @@ static const char *const opcode_names[] = {
     "LdFld_f64",
     "LdFld_u8",
     "LdFld_ref",
+    "LdElem_i32",
+    "LdElem_f64",
+    "LdElem_u8",
+    "LdElem_ref",
     "StGlb_i32",
     "StGlb_f64",
     "StGlb_u8",
@@ -23,6 +27,10 @@ static const char *const opcode_names[] = {
     "StFld_f64",
     "StFld_u8",
     "StFld_ref",
+    "StElem_i32",
+    "StElem_f64",
+    "StElem_u8",
+    "StElem_ref",
     "Ldc_i32",
     "Ldc_ref",
     "Ldc_f64",
@@ -141,6 +149,14 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
                     get_byte(instr->args, 1),
                     get_int(instr->args, 2));
             return 1 + 6;
+        case OPC_LdElem_i32:
+        case OPC_LdElem_f64:
+        case OPC_LdElem_u8:
+        case OPC_LdElem_ref:
+        case OPC_StElem_i32:
+        case OPC_StElem_f64:
+        case OPC_StElem_u8:
+        case OPC_StElem_ref:
         case OPC_Add_i32:
         case OPC_Add_f64:
         case OPC_Add_u8:

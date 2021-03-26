@@ -39,7 +39,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     byte_t *code_ptr = code;
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 100);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 200);
-    code_ptr += emit_binary_op(code_ptr, OPC_Add_i32, 1, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Add_i32, 1, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i0);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 2, glb_i1);
     *code_ptr = OPC_Ret;
@@ -109,11 +109,11 @@ void test03(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i2);
     code_ptr += emit_reg_addr(code_ptr, OPC_LdGlb_i32, 1, glb_i1);
     code_ptr += emit_reg_addr(code_ptr, OPC_LdGlb_i32, 2, glb_i2);
-    code_ptr += emit_binary_op(code_ptr, OPC_Sub_i32, 3, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Sub_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
-    code_ptr += emit_binary_op(code_ptr, OPC_Mul_i32, 3, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Mul_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
-    code_ptr += emit_binary_op(code_ptr, OPC_Div_i32, 3, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Div_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i3);
     *code_ptr = OPC_Ret;
 
@@ -143,8 +143,8 @@ void test04(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 100);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 1);
     addr_t label_loop = code_ptr - code;
-    code_ptr += emit_binary_op(code_ptr, OPC_Add_i32, 1, 1, 3);
-    code_ptr += emit_binary_op(code_ptr, OPC_Eq_i32, 4, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Add_i32, 1, 1, 3);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Eq_i32, 4, 1, 2);
     code_ptr += emit_reg_int(code_ptr, OPC_Br_False, 4, label_loop);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     *code_ptr = OPC_Ret;
@@ -174,8 +174,8 @@ void test05(byte_t *code, MemoryLayout *memory) {
     byte_t *code_ptr = code;
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, true);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, false);
-    code_ptr += emit_binary_op(code_ptr, OPC_And, 3, 1, 2);
-    code_ptr += emit_binary_op(code_ptr, OPC_Or, 4, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_And, 3, 1, 2);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Or, 4, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 4, glb_i2);
     code_ptr += emit_reg_reg(code_ptr, OPC_Mov, 3, 4);
@@ -254,8 +254,7 @@ void test07(byte_t *code, MemoryLayout *memory) {
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
     const addr_t glb_i3 = 8;
-    const addr_t glb_f1 = 12;
-    memory->global_segment_size = 20;
+    memory->global_segment_size = 12;
 
     // code
     byte_t *code_ptr = code;
@@ -268,7 +267,12 @@ void test07(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_reg(code_ptr, OPC_NewArr_u8, 3, 1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
     // i1[5] <- 123
-    // i3 <- i1[2]
+    code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_ref, 1, 5);
+    code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_i32, 4, 123);
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_StElem_i32, 4, 2, 1);
+    // i3 <- i1[5]
+    code_ptr += emit_reg_reg_reg(code_ptr, OPC_LdElem_i32, 4, 2, 1);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 4, glb_i3);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
 
@@ -284,6 +288,7 @@ void test07(byte_t *code, MemoryLayout *memory) {
     assert_equal(get_int(global_segment, glb_i2), 40 + HEAP_ENTRY_HEADER_SIZE, "i2 (addr of second array)");
     assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->header, 20, "heap_entry_2.size");
     assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->ref_count, 1, "heap_entry_2.refcount");
+    assert_equal(get_int(global_segment, glb_i3), 123, "i3");
 }
 
 // ---------------------------------------------------------------------
