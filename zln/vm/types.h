@@ -1,9 +1,11 @@
 //
-// Created by Philip Boger on 20.03.21.
+// Created by smackem on 20.03.21.
 //
 
 #ifndef ZLN_TYPES_H
 #define ZLN_TYPES_H
+
+#include <util.h>
 
 typedef uint8_t byte_t;
 typedef uint32_t addr_t;
@@ -17,6 +19,11 @@ enum type {
 };
 
 typedef byte_t Type;
+
+/**
+ * Returns the size of the specified type in bytes.
+ */
+size_t sizeof_type(Type type);
 
 #define get_byte(ptr, offset) *((ptr) + offset)
 #define set_byte(ptr, offset, b) (*((ptr) + offset) = b)

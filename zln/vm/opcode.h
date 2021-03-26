@@ -215,7 +215,7 @@ enum op_code {
      */
     OPC_Conv_i32,
     OPC_Conv_f64,
-    OCP_Conv_u8,
+    OPC_Conv_u8,
     OPC_Conv_str,
     OPC_Conv_ref,
 
@@ -236,8 +236,8 @@ enum op_code {
     OPC_NewStr,
 
     /**
-     * new_array(REG r_target, INT size):
-     *      allocate memory on heap for size items
+     * new_array(REG r_target, REG r_size):
+     *      allocate memory on heap for *r_size items
      *      r_target <- heap_addr of new memory block on heap (TYPE_REF)
      */
     OPC_NewArr_i32,
@@ -252,9 +252,8 @@ enum op_code {
     OPC_AddRef,
 
     /**
-     * add_reference(REG r_heap_addr):
+     * remove_reference(REG r_heap_addr):
      *      decrement reference count for object at r_heap_addr
-     *      compact heap if free space is below threshold
      */
     OPC_RemoveRef,
 };

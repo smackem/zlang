@@ -7,7 +7,21 @@
 #include <memory.h>
 #include "emit.h"
 
-static const RuntimeConfig config = { .register_count = 16, .max_stack_depth = 4};
+static RuntimeConfig config = { .register_count = 8, .max_stack_depth = 4 };
+
+static void dump_cpu(addr_t pc,
+                     addr_t base_pc,
+                     const Instruction *instr,
+                     size_t stack_depth,
+                     const StackFrame *stack_frame,
+                     const Register *registers,
+                     size_t register_count) {
+    fprintf(stdout, "-------- [%lu]\n", stack_depth);
+    fprintf(stdout, "%08x ", base_pc + pc);
+    print_instruction(stdout, instr);
+    fputc('\n', stdout);
+    print_registers(stdout, registers, register_count);
+}
 
 // ---------------------------------------------------------------------
 // TEST 1
@@ -33,7 +47,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert
+    // assert_that
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i0), 300, "i0");
     assert_equal(get_int(global_segment, glb_i1), 200, "i1");
@@ -68,7 +82,7 @@ void test02(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert
+    // assert_that
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
     assert_equal(get_float(global_segment, glb_f2), 123.5, "f2");
@@ -106,7 +120,7 @@ void test03(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert
+    // assert_that
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 70, "i1");
     assert_equal(get_int(global_segment, glb_i2), 3000, "i2");
@@ -139,7 +153,7 @@ void test04(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert
+    // assert_that
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 100, "i1");
 }
@@ -170,9 +184,10 @@ void test05(byte_t *code, MemoryLayout *memory) {
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
+    config.debug_callback = dump_cpu;
     execute(code, 0, 0, memory, &config);
 
-    // assert
+    // assert_that
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), false, "i1");
     assert_equal(get_int(global_segment, glb_i2), true, "i2");
@@ -201,19 +216,19 @@ void test06(byte_t *code, MemoryLayout *memory) {
     byte_t *code_ptr = code;
     // i1 <- (u8)0x123ab
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
-    code_ptr += emit_conv(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Unsigned8);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Unsigned8);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     // f1 <- (f64)0x123ab
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 123);
-    code_ptr += emit_conv(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Float64);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Float64);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 1, glb_f1);
     // i2 <- (i32)1000.125
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_f64, 1, const_f1);
-    code_ptr += emit_conv(code_ptr, OPC_Conv_f64, 1, 1, TYPE_Int32);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_f64, 1, 1, TYPE_Int32);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i2);
     // i3 <- (ref)0x123ab
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
-    code_ptr += emit_conv(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Ref);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Ref);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_i3);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
@@ -221,7 +236,7 @@ void test06(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert
+    // assert_that
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 0xab, "i1");
     assert_equal(get_float(global_segment, glb_f1), 123.0, "f1");
@@ -233,6 +248,43 @@ void test06(byte_t *code, MemoryLayout *memory) {
 // TEST 7
 // - array allocation and element access
 // ---------------------------------------------------------------------
+
+void test07(byte_t *code, MemoryLayout *memory) {
+    // globals
+    const addr_t glb_i1 = 0;
+    const addr_t glb_i2 = 4;
+    const addr_t glb_i3 = 8;
+    const addr_t glb_f1 = 12;
+    memory->global_segment_size = 20;
+
+    // code
+    byte_t *code_ptr = code;
+    // i1 <- new int[10]
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 10);
+    code_ptr += emit_reg_reg(code_ptr, OPC_NewArr_i32, 2, 1);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 2, glb_i1);
+    // i2 <- new byte[20]
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 20);
+    code_ptr += emit_reg_reg(code_ptr, OPC_NewArr_u8, 3, 1);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
+    // i1[5] <- 123
+    // i3 <- i1[2]
+    *code_ptr = OPC_Ret;
+    print_code(stdout, code, code_ptr - code + 1);
+
+    // act
+    execute(code, 0, 0, memory, &config);
+
+    // assert_that
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *heap_segment = global_segment + memory->global_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 0, "i1 (addr of first array)");
+    assert_equal(((HeapEntry *)heap_segment)->header, 40, "heap_entry_1.size");
+    assert_equal(((HeapEntry *)heap_segment)->ref_count, 1, "heap_entry_1.refcount");
+    assert_equal(get_int(global_segment, glb_i2), 40 + HEAP_ENTRY_HEADER_SIZE, "i2 (addr of second array)");
+    assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->header, 20, "heap_entry_2.size");
+    assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->ref_count, 1, "heap_entry_2.refcount");
+}
 
 // ---------------------------------------------------------------------
 // TEST 8
@@ -286,6 +338,11 @@ void test06(byte_t *code, MemoryLayout *memory) {
 // - recursive function call `function f(int) -> int`
 // ---------------------------------------------------------------------
 
+// ---------------------------------------------------------------------
+// TEST 18
+// - strings
+// ---------------------------------------------------------------------
+
 
 // ---------------------------------------------------------------------
 // TEST entry point
@@ -301,6 +358,7 @@ static const struct test {
         { .proc = test04, .name = "branching and loops" },
         { .proc = test05, .name = "boolean operators, mov" },
         { .proc = test06, .name = "type conversion" },
+        { .proc = test07, .name = "array allocation and element access" },
         { .proc = NULL },
 };
 
@@ -321,6 +379,7 @@ int main() {
         heap.base = heap_memory;
         heap.total_size = sizeof(heap_memory);
         test_ptr->proc(code_memory, &heap);
+        config.debug_callback = NULL;
     }
 
     fprintf(stdout, "<<< tests completed successfully\n");

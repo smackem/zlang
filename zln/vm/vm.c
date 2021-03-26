@@ -107,7 +107,7 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
     size_t size = 0;
     switch (instr->opc) {
         case OPC_Nop:
-            fprintf(f, "%s", opcode_name(instr->opc));
+            fprintf(f, "%12s", opcode_name(instr->opc));
             return 1 + 0;
         case OPC_Ldc_i32:
         case OPC_Ldc_ref:
@@ -203,7 +203,8 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
             return 1 + 0;
         case OPC_Conv_i32:
         case OPC_Conv_f64:
-        case OCP_Conv_u8:
+        case OPC_Conv_u8:
+        case OPC_Conv_str:
         case OPC_Conv_ref:
             fprintf(f, "%12s r%d r%d %s",
                     opcode_name(instr->opc),
@@ -211,8 +212,23 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
                     get_byte(instr->args, 1),
                     type_name(get_int(instr->args, 2)));
             return 1 + 6;
+        case OPC_NewObj:
+            fprintf(f, "%12s r%d %08x",
+                    opcode_name(instr->opc),
+                    get_byte(instr->args, 0),
+                    get_int(instr->args, 1));
+            return 1 + 5;
+        case OPC_NewArr_i32:
+        case OPC_NewArr_f64:
+        case OPC_NewArr_u8:
+        case OPC_NewArr_ref:
+            fprintf(f, "%12s r%d r%d",
+                    opcode_name(instr->opc),
+                    get_byte(instr->args, 0),
+                    get_byte(instr->args, 1));
+            return 1 + 2;
         default:
-            assert(false, "unsupported opcode %d", instr->opc);
+            assert_that(false, "unsupported opcode %d", instr->opc);
             break;
     }
     return size;

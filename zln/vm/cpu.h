@@ -5,9 +5,9 @@
 #ifndef ZLN_CPU_H
 #define ZLN_CPU_H
 
-#include <util.h>
-#include "opcode.h"
 #include "types.h"
+#include "opcode.h"
+#include "heap.h"
 
 /**
  * Holds an instruction with opcode and arguments.
@@ -46,37 +46,6 @@ typedef struct function_meta {
 } FunctionMeta;
 
 #define FUNCTION_META_SIZE 16
-
-/**
- * Holds information about a type, stored in the const segment
- */
-typedef struct type_meta {
-    /// the size of the type in bytes
-    addr_t size;
-
-    /// the name of the type as a zero-terminated string
-    char name[4]; // zero-terminated string, padded in struct to 4 bytes
-} TypeMeta;
-
-#define TYPE_META_MIN_SIZE 8
-
-/**
- * Holds a heap entry (dynamically allocated, typed data chunk - e.g. an array, struct or union)
- */
-typedef struct heap_entry {
-    /// if top-most bit is set, lower 31 bits denote the address of a TypeMeta in the const segment (for composite types)
-    /// if top-most bit is clear, lower 31 bits denote the data length (for arrays e.g.)
-    addr_t header;
-
-    /// number of references to this entry. if 0, the entry can be cleared.
-    uint32_t ref_count;
-
-    /// first data byte. actual number of bytes can be deducted from header.
-    /// padded in struct to 4 bytes
-    byte_t data[4];
-} HeapEntry;
-
-#define HEAP_ENTRY_MIN_SIZE 12
 
 /**
  * Describes a stack frame
@@ -131,6 +100,17 @@ typedef struct memory_layout {
 } MemoryLayout;
 
 /**
+ * Can be called by the cpu for each instruction.
+ */
+typedef void (*debug_callback_t)(addr_t pc,
+        addr_t base_pc,
+        const Instruction *instr,
+        size_t stack_depth,
+        const StackFrame *stack_frame,
+        const Register *registers,
+        size_t register_count);
+
+/**
  * Holds runtime parameters like number of base_registers and maximum stack depth.
  */
 typedef struct runtime_config {
@@ -139,6 +119,9 @@ typedef struct runtime_config {
 
     /// the maximum stack depth (number of stack frames)
     int max_stack_depth;
+
+    /// if not NULL, this callback is invoked for each instruction AFTER execution
+    debug_callback_t debug_callback;
 } RuntimeConfig;
 
 /**

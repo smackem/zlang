@@ -12,8 +12,7 @@ typedef struct cpu {
     StackFrame *stack_frame;
     const byte_t *const_segment;
     byte_t *global_segment;
-    byte_t *heap_segment;
-    addr_t heap_size;
+    Heap heap;
 } Cpu;
 
 void conv_i32(Register *target, Type target_type, const Register *source);
@@ -28,8 +27,10 @@ static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *
     cpu->stack_frame = cpu->stack_frames;
     cpu->const_segment = memory->base;
     cpu->global_segment = memory->base + memory->const_segment_size;
-    cpu->heap_segment = cpu->global_segment + memory->global_segment_size;
-    cpu->heap_size = 0;
+    init_heap(&cpu->heap,
+              cpu->global_segment + memory->global_segment_size,
+              memory->total_size - memory->const_segment_size - memory->global_segment_size,
+              cpu->const_segment);
 }
 
 static void free_cpu(Cpu *cpu) {
@@ -126,28 +127,28 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                cpu.registers[r_target].i32 = get_int(memory->base, cpu.registers[r_addr].ref + addr);
+                cpu.registers[r_target].i32 = get_int(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_f64:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                cpu.registers[r_target].f64 = get_float(memory->base, cpu.registers[r_addr].ref + addr);
+                cpu.registers[r_target].f64 = get_float(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_u8:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                cpu.registers[r_target].i32 = get_byte(memory->base, cpu.registers[r_addr].ref + addr);
+                cpu.registers[r_target].i32 = get_byte(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_ref:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                cpu.registers[r_target].ref = get_addr(memory->base, cpu.registers[r_addr].ref + addr);
+                cpu.registers[r_target].ref = get_addr(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr));
                 size = 1 + 6;
                 break;
 
@@ -184,28 +185,28 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_int(memory->base, cpu.registers[r_addr].ref + addr, cpu.registers[r_left].i32);
+                set_int(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr), cpu.registers[r_left].i32);
                 size = 1 + 6;
                 break;
             case OPC_StFld_f64:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_float(memory->base, cpu.registers[r_addr].ref + addr, cpu.registers[r_left].f64);
+                set_float(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr), cpu.registers[r_left].f64);
                 size = 1 + 6;
                 break;
             case OPC_StFld_u8:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_byte(memory->base, cpu.registers[r_addr].ref + addr, (byte_t) (cpu.registers[r_left].i32 & 0xff));
+                set_byte(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr), (byte_t) (cpu.registers[r_left].i32 & 0xff));
                 size = 1 + 6;
                 break;
             case OPC_StFld_ref:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_addr(memory->base, cpu.registers[r_addr].ref + addr, cpu.registers[r_left].ref);
+                set_addr(cpu.heap.memory, get_field_addr(&cpu.heap, cpu.registers[r_addr].ref, addr), cpu.registers[r_left].ref);
                 size = 1 + 6;
                 break;
 
@@ -489,7 +490,7 @@ void execute(const byte_t *code,
                 conv_f64(&cpu.registers[r_target], type, &cpu.registers[r_left]);
                 size = 1 + 6;
                 break;
-            case OCP_Conv_u8:
+            case OPC_Conv_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 type = get_int(instr->args, 2);
@@ -504,12 +505,66 @@ void execute(const byte_t *code,
                 size = 1 + 6;
                 break;
 
+            // -------------------- alloc object
+            //
+            case OPC_NewObj:
+                r_target = get_byte(instr->args, 0);
+                addr = get_addr(instr->args, 1);
+                cpu.registers[r_target].ref = alloc_obj(&cpu.heap, addr);
+                size = 1 + 5;
+                break;
+
+            // -------------------- alloc array
+            //
+            case OPC_NewArr_i32:
+                r_target = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                cpu.registers[r_target].ref = alloc_array(&cpu.heap, TYPE_Int32, cpu.registers[r_addr].i32);
+                size = 1 + 2;
+                break;
+            case OPC_NewArr_f64:
+                r_target = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                cpu.registers[r_target].ref = alloc_array(&cpu.heap, TYPE_Float64, cpu.registers[r_addr].i32);
+                size = 1 + 2;
+                break;
+            case OPC_NewArr_u8:
+                r_target = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                cpu.registers[r_target].ref = alloc_array(&cpu.heap, TYPE_Unsigned8, cpu.registers[r_addr].i32);
+                size = 1 + 2;
+                break;
+            case OPC_NewArr_ref:
+                r_target = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                cpu.registers[r_target].ref = alloc_array(&cpu.heap, TYPE_Ref, cpu.registers[r_addr].i32);
+                size = 1 + 2;
+                break;
+
+            // -------------------- increment/decrement refcount
+            //
+            case OPC_AddRef:
+                addr = get_addr(instr->args, 0);
+                add_ref(&cpu.heap, addr);
+                size = 1 + 4;
+                break;
+            case OPC_RemoveRef:
+                addr = get_addr(instr->args, 0);
+                remove_ref(&cpu.heap, addr);
+                size = 1 + 4;
+                break;
+
             default:
-                assert(false, "unsupported opcode %d", instr->opc);
+                assert_that(false, "pc=%08x: unsupported opcode %d", pc, instr->opc);
                 break;
         }
 
-        assert(size > 0, "op code %d has not been handled", instr->opc);
+        if (config->debug_callback != NULL) {
+            size_t stack_depth = cpu.stack_frame - cpu.stack_frames;
+            assert_equal(cpu.registers - cpu.base_registers, stack_depth * config->register_count, "register offset");
+            config->debug_callback(pc, base_pc, instr, stack_depth, cpu.stack_frame, cpu.registers, config->register_count);
+        }
+        assert_that(size > 0, "pc=%08x: op code %d has not been handled", pc, instr->opc);
         pc += size;
     }
 }
@@ -529,7 +584,7 @@ inline void conv_i32(Register *target, Type target_type, const Register *source)
             target->i32 = source->i32 & 0xff;
             break;
         default:
-            assert(false, "conv_i32: unsupported target type %d", target_type);
+            assert_that(false, "conv_i32: unsupported target type %d", target_type);
             break;
     }
 }
@@ -547,7 +602,7 @@ inline void conv_f64(Register *target, Type target_type, const Register *source)
             target->i32 = (int32_t) source->f64;
             break;
         default:
-            assert(false, "conv_f64: unsupported target type %d", target_type);
+            assert_that(false, "conv_f64: unsupported target type %d", target_type);
             break;
     }
 }
@@ -565,7 +620,7 @@ inline void conv_u8(Register *target, Type target_type, const Register *source) 
             target->i32 = source->i32 & 0xff;
             break;
         default:
-            assert(false, "conv_u8: unsupported target type %d", target_type);
+            assert_that(false, "conv_u8: unsupported target type %d", target_type);
             break;
     }
 }
@@ -583,7 +638,7 @@ inline void conv_ref(Register *target, Type target_type, const Register *source)
             target->i32 = (int32_t) source->ref;
             break;
         default:
-            assert(false, "conv_ref: unsupported target type %d", target_type);
+            assert_that(false, "conv_ref: unsupported target type %d", target_type);
             break;
     }
 }
