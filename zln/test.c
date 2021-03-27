@@ -39,7 +39,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     byte_t *code_ptr = code;
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 100);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 200);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Add_i32, 1, 1, 2);
+    code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 1, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i0);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 2, glb_i1);
     *code_ptr = OPC_Ret;
@@ -109,11 +109,11 @@ void test03(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i2);
     code_ptr += emit_reg_addr(code_ptr, OPC_LdGlb_i32, 1, glb_i1);
     code_ptr += emit_reg_addr(code_ptr, OPC_LdGlb_i32, 2, glb_i2);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Sub_i32, 3, 1, 2);
+    code_ptr += emit_reg3(code_ptr, OPC_Sub_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Mul_i32, 3, 1, 2);
+    code_ptr += emit_reg3(code_ptr, OPC_Mul_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Div_i32, 3, 1, 2);
+    code_ptr += emit_reg3(code_ptr, OPC_Div_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i3);
     *code_ptr = OPC_Ret;
 
@@ -139,13 +139,16 @@ void test04(byte_t *code, MemoryLayout *memory) {
 
     // code
     byte_t *code_ptr = code;
+    // r1 <- 0
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0);
+    // do r1 <- r1 + 1 while r1 != 100
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 100);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 1);
     addr_t label_loop = code_ptr - code;
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Add_i32, 1, 1, 3);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Eq_i32, 4, 1, 2);
-    code_ptr += emit_reg_int(code_ptr, OPC_Br_False, 4, label_loop);
+    code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 1, 1, 3);
+    code_ptr += emit_reg3(code_ptr, OPC_Eq_i32, 4, 1, 2);
+    code_ptr += emit_reg_int(code_ptr, OPC_Br_zero, 4, label_loop);
+    // i1 <- r1
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
@@ -172,13 +175,19 @@ void test05(byte_t *code, MemoryLayout *memory) {
 
     // code
     byte_t *code_ptr = code;
+    // r3 <- true and false
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, true);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, false);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_And, 3, 1, 2);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_Or, 4, 1, 2);
+    code_ptr += emit_reg3(code_ptr, OPC_And, 3, 1, 2);
+    // r4 <- true or false
+    code_ptr += emit_reg3(code_ptr, OPC_Or, 4, 1, 2);
+    // i1 <- r3
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
+    // i2 <- r4
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 4, glb_i2);
-    code_ptr += emit_reg_reg(code_ptr, OPC_Mov, 3, 4);
+    // r3 <- r4
+    code_ptr += emit_reg2(code_ptr, OPC_Mov, 3, 4);
+    // i3 <- r3
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i3);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
@@ -216,19 +225,19 @@ void test06(byte_t *code, MemoryLayout *memory) {
     byte_t *code_ptr = code;
     // i1 <- (u8)0x123ab
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Unsigned8);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Unsigned8);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     // f1 <- (f64)0x123ab
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 123);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Float64);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Float64);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 1, glb_f1);
     // i2 <- (i32)1000.125
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_f64, 1, const_f1);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_f64, 1, 1, TYPE_Int32);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_f64, 1, 1, TYPE_Int32);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i2);
     // i3 <- (ref)0x123ab
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Ref);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Ref);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_i3);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
@@ -260,18 +269,18 @@ void test07(byte_t *code, MemoryLayout *memory) {
     byte_t *code_ptr = code;
     // i1 <- new int[10]
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 10);
-    code_ptr += emit_reg_reg(code_ptr, OPC_NewArr_i32, 2, 1);
+    code_ptr += emit_reg2(code_ptr, OPC_NewArr_i32, 2, 1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 2, glb_i1);
     // i2 <- new byte[20]
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 20);
-    code_ptr += emit_reg_reg(code_ptr, OPC_NewArr_u8, 3, 1);
+    code_ptr += emit_reg2(code_ptr, OPC_NewArr_u8, 3, 1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
     // i1[5] <- 123
     code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_ref, 1, 5);
     code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_i32, 4, 123);
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_StElem_i32, 4, 2, 1);
+    code_ptr += emit_reg3(code_ptr, OPC_StElem_i32, 4, 2, 1);
     // i3 <- i1[5]
-    code_ptr += emit_reg_reg_reg(code_ptr, OPC_LdElem_i32, 4, 2, 1);
+    code_ptr += emit_reg3(code_ptr, OPC_LdElem_i32, 4, 2, 1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 4, glb_i3);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
@@ -327,27 +336,27 @@ void test08(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_int(code_ptr, OPC_NewObj, 1, const_ts);
     // r1.i <- 123
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 123);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_i32, 2, 1, 0);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_i32, 2, 1, 0);
     // r1.ref <- 234
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_ref, 2, 234);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_ref, 2, 1, 4);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_ref, 2, 1, 4);
     // r1.f <- 1000.125
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_f64, 2, const_f1);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_f64, 2, 1, 8);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_f64, 2, 1, 8);
     // r1.b <- 255
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 255);
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_u8, 2, 1, 16);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_u8, 2, 1, 16);
     // i1 <- r1.i
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_i32, 3, 1, 0);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_LdFld_i32, 3, 1, 0);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
     // ref1 <- r1.ref
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_ref, 3, 1, 4);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_LdFld_ref, 3, 1, 4);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 3, glb_ref1);
     // f1 <- r1.f
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_f64, 3, 1, 8);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_LdFld_f64, 3, 1, 8);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 3, glb_f1);
     // b1 <- r1.b
-    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_u8, 3, 1, 16);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_LdFld_u8, 3, 1, 16);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_u8, 3, glb_b1);
     *code_ptr = OPC_Ret;
     print_code(stdout, code, code_ptr - code + 1);
@@ -377,6 +386,44 @@ void test08(byte_t *code, MemoryLayout *memory) {
 // TEST 9
 // - branching in multi-module program (within single module)
 // ---------------------------------------------------------------------
+
+void test09(byte_t *code, MemoryLayout *memory) {
+    // globals
+    const addr_t glb_i1 = 0;
+    memory->global_segment_size = 4;
+
+    // code
+    byte_t *code_ptr = code;
+    // module 0: only nop
+    *code_ptr++ = OPC_Nop;
+    *code_ptr++ = OPC_Nop;
+    *code_ptr++ = OPC_Nop;
+    // module 1:
+    // r1 <- 0
+    const byte_t *module1_ptr = code_ptr;
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0);
+    // while r1 < 100 do r1 <- r1 + 1
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 100);
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 1);
+    addr_t label_loop = code_ptr - module1_ptr;
+    code_ptr += emit_reg3(code_ptr, OPC_Lt_i32, 4, 1, 2);
+    Instruction *branch_instr = (Instruction *) code_ptr; // branch instr needs fixup later
+    code_ptr += emit_reg_int(code_ptr, OPC_Br_zero, 4, 0);
+    code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 1, 1, 3);
+    code_ptr += emit_addr(code_ptr, OPC_Br, label_loop);
+    set_addr(branch_instr->args, 1, code_ptr - module1_ptr); // fixup branch instr
+    // i1 <- r1
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
+    *code_ptr = OPC_Ret;
+    print_code(stdout, module1_ptr, code_ptr - module1_ptr + 1);
+
+    // act
+    execute(code, 3, 0, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 100, "i1");
+}
 
 // ---------------------------------------------------------------------
 // TEST 10
@@ -442,6 +489,7 @@ static const struct test {
         { .proc = test06, .name = "type conversion" },
         { .proc = test07, .name = "array allocation and element access" },
         { .proc = test08, .name = "struct allocation and field access" },
+        { .proc = test09, .name = "branching in multi-module program" },
         { .proc = NULL },
 };
 

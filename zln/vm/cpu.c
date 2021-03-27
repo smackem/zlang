@@ -530,7 +530,7 @@ void execute(const byte_t *code,
 
             // -------------------- branching
             //
-            case OPC_Br_False:
+            case OPC_Br_zero:
                 r_target = get_byte(instr->args, 0);
                 size = 1 + 5;
                 if (cpu.registers[r_target].i32 == false) {

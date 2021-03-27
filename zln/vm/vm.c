@@ -203,7 +203,7 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
                     get_byte(instr->args, 0),
                     get_byte(instr->args, 1));
             return 1 + 2;
-        case OPC_Br_False:
+        case OPC_Br_zero:
             fprintf(f, "%12s r%d %08x",
                     opcode_name(instr->opc),
                     get_byte(instr->args, 0),

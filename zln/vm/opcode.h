@@ -199,7 +199,7 @@ enum op_code {
      *          pc <- new_pc
      * new_pc is relative to base_pc
      */
-    OPC_Br_False,
+    OPC_Br_zero,
 
     /**
      * branch(INT new_pc):
