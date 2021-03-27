@@ -8,6 +8,7 @@
 #include "types.h"
 #include "opcode.h"
 #include "heap.h"
+#include "callstack.h"
 
 /**
  * Holds an instruction with opcode and arguments.
@@ -27,57 +28,6 @@ typedef struct instruction {
 } Instruction;
 
 #define INSTRUCTION_MIN_SIZE 2
-
-/**
- * Holds information about a function, stored in the const segment
- */
-typedef struct function_meta {
-    /// the base instruction address of the module that defines the function
-    addr_t base_pc;
-
-    /// the offset of the function's first instruction within the module
-    addr_t pc;
-
-    /// the number of local variables of the function
-    int local_count;
-
-    /// the number of arguments accepted by the function
-    int arg_count;
-} FunctionMeta;
-
-#define FUNCTION_META_SIZE 16
-
-/**
- * Describes a stack frame
- */
-typedef struct stack_frame {
-    /// pointer to meta information in const segment
-    const FunctionMeta *meta;
-
-    /// the index of the register to store the function's return value
-    addr_t ret_register_index;
-
-    /// the base pc of the caller module
-    addr_t ret_base_pc;
-
-    /// the pc to return to
-    addr_t ret_pc;
-
-    /// the number of function arguments
-    int arg_count;
-
-    /// the number of locals
-    int local_count;
-} StackFrame;
-
-/**
- * Defines a register containing either an integer, a reference or a float.
- */
-typedef union register_union {
-    int32_t i32;
-    addr_t ref;
-    double f64;
-} Register;
 
 /**
  * Describes the memory layout.
@@ -130,13 +80,9 @@ typedef struct runtime_config {
  * @param code
  *      The code segment that holds the instructions emitted for all modules.
  *
- * @param base_pc
- *      The address of the first instruction of the startup module (the module that contains
- *      the entry point).
- *
- * @param pc
- *      The instruction offset based on @a base_pc where execution starts (the offset of
- *      the first instruction of the entry point)
+ * @param entry_point
+ *      The address of the meta information on the program's entry point function
+ *      (usually 'main').
  *
  * @param heap
  *      The heap layout.
@@ -145,8 +91,7 @@ typedef struct runtime_config {
  *      Runtime parameters.
  */
 void execute(const byte_t *code,
-             addr_t base_pc,
-             addr_t pc,
+             const FunctionMeta *entry_point,
              const MemoryLayout *memory,
              const RuntimeConfig *config);
 

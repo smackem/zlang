@@ -9,6 +9,13 @@
 
 static RuntimeConfig config = { .register_count = 8, .max_stack_depth = 4 };
 
+static FunctionMeta default_entry_point = {
+        .base_pc = 0,
+        .pc = 0,
+        .arg_count = 0,
+        .local_count = 0,
+};
+
 static void dump_cpu(addr_t pc,
                      addr_t base_pc,
                      const Instruction *instr,
@@ -45,7 +52,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     *code_ptr = OPC_Ret;
 
     // act
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -80,7 +87,7 @@ void test02(byte_t *code, MemoryLayout *memory) {
     *code_ptr = OPC_Ret;
 
     // act
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -118,7 +125,7 @@ void test03(byte_t *code, MemoryLayout *memory) {
     *code_ptr = OPC_Ret;
 
     // act
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -154,7 +161,7 @@ void test04(byte_t *code, MemoryLayout *memory) {
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -194,7 +201,7 @@ void test05(byte_t *code, MemoryLayout *memory) {
 
     // act
     config.debug_callback = dump_cpu;
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -243,7 +250,7 @@ void test06(byte_t *code, MemoryLayout *memory) {
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -286,7 +293,7 @@ void test07(byte_t *code, MemoryLayout *memory) {
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -363,7 +370,7 @@ void test08(byte_t *code, MemoryLayout *memory) {
 
     // act
     config.debug_callback = dump_cpu;
-    execute(code, 0, 0, memory, &config);
+    execute(code, &default_entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
@@ -418,7 +425,10 @@ void test09(byte_t *code, MemoryLayout *memory) {
     print_code(stdout, module1_ptr, code_ptr - module1_ptr + 1);
 
     // act
-    execute(code, 3, 0, memory, &config);
+    FunctionMeta entry_point;
+    bzero(&entry_point, sizeof(entry_point));
+    entry_point.base_pc = 3;
+    execute(code, &entry_point, memory, &config);
 
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
