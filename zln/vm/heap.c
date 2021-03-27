@@ -13,10 +13,7 @@ static inline size_t unallocated_byte_count(Heap *heap) {
 static inline addr_t alloc_chunk(Heap *heap, size_t data_size, addr_t header) {
     size_t entry_size = data_size + HEAP_ENTRY_HEADER_SIZE;
     size_t free_size = unallocated_byte_count(heap);
-    if (entry_size > free_size) {
-        return 0;
-    }
-
+    assert_that(entry_size <= free_size, "out of memory");
     addr_t entry_addr = heap->tail;
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
@@ -44,6 +41,7 @@ void init_heap(Heap *heap, byte_t *memory, size_t size, const byte_t *const_segm
     heap->memory = memory;
     heap->size = size;
     heap->tail = 0;
+    heap->const_segment = const_segment;
 }
 
 addr_t alloc_array(Heap *heap, Type element_type, size_t size) {

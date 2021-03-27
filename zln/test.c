@@ -47,7 +47,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i0), 300, "i0");
     assert_equal(get_int(global_segment, glb_i1), 200, "i1");
@@ -82,7 +82,7 @@ void test02(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
     assert_equal(get_float(global_segment, glb_f2), 123.5, "f2");
@@ -120,7 +120,7 @@ void test03(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 70, "i1");
     assert_equal(get_int(global_segment, glb_i2), 3000, "i2");
@@ -153,7 +153,7 @@ void test04(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 100, "i1");
 }
@@ -187,7 +187,7 @@ void test05(byte_t *code, MemoryLayout *memory) {
     config.debug_callback = dump_cpu;
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), false, "i1");
     assert_equal(get_int(global_segment, glb_i2), true, "i2");
@@ -236,7 +236,7 @@ void test06(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 0xab, "i1");
     assert_equal(get_float(global_segment, glb_f1), 123.0, "f1");
@@ -279,7 +279,7 @@ void test07(byte_t *code, MemoryLayout *memory) {
     // act
     execute(code, 0, 0, memory, &config);
 
-    // assert_that
+    // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     const byte_t *heap_segment = global_segment + memory->global_segment_size;
     assert_equal(get_int(global_segment, glb_i1), 0, "i1 (addr of first array)");
@@ -295,6 +295,83 @@ void test07(byte_t *code, MemoryLayout *memory) {
 // TEST 8
 // - struct allocation and field access
 // ---------------------------------------------------------------------
+
+struct test08_struct {
+    // field       offset
+    int32_t i;  // 0
+    addr_t ref; // 4
+    double f;   // 8
+    byte_t b;   // 16
+};
+
+void test08(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_f1 = 0;
+    set_float(memory->base, const_f1, 1000.125);
+    const addr_t const_ts = 8;
+    TypeMeta *test08_meta = (TypeMeta *) &memory->base[8];
+    test08_meta->size = 4 + 4 + 8 + 1; // size of test08_struct fields
+    strcpy(test08_meta->name, "test08_struct");
+    memory->const_segment_size = 8 + 4 + strlen("test08_struct") + 1; // const_f1 + type_meta.size + string + 0
+
+    // globals
+    const addr_t glb_i1 = 0;
+    const addr_t glb_ref1 = 4;
+    const addr_t glb_f1 = 8;
+    const addr_t glb_b1 = 16;
+    memory->global_segment_size = 17;
+
+    // code
+    byte_t *code_ptr = code;
+    // r1 <- new test08_struct{}
+    code_ptr += emit_reg_int(code_ptr, OPC_NewObj, 1, const_ts);
+    // r1.i <- 123
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 123);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_i32, 2, 1, 0);
+    // r1.ref <- 234
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_ref, 2, 234);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_ref, 2, 1, 4);
+    // r1.f <- 1000.125
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_f64, 2, const_f1);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_f64, 2, 1, 8);
+    // r1.b <- 255
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 255);
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_StFld_u8, 2, 1, 16);
+    // i1 <- r1.i
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_i32, 3, 1, 0);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i1);
+    // ref1 <- r1.ref
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_ref, 3, 1, 4);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 3, glb_ref1);
+    // f1 <- r1.f
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_f64, 3, 1, 8);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 3, glb_f1);
+    // b1 <- r1.b
+    code_ptr += emit_reg_reg_addr(code_ptr, OPC_LdFld_u8, 3, 1, 16);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_u8, 3, glb_b1);
+    *code_ptr = OPC_Ret;
+    print_code(stdout, code, code_ptr - code + 1);
+
+    // act
+    config.debug_callback = dump_cpu;
+    execute(code, 0, 0, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *heap_segment = global_segment + memory->global_segment_size;
+    const struct test08_struct expected_struct = {
+            .i = 123,
+            .ref = 234,
+            .f = 1000.125,
+            .b = 255
+    };
+    int struct_comparison = memcmp(&expected_struct, &heap_segment[HEAP_ENTRY_HEADER_SIZE], test08_meta->size);
+    assert_equal(struct_comparison, 0, "test08_struct comparison");
+    assert_equal(get_int(global_segment, glb_i1), 123, "i1");
+    assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
+    assert_equal(get_addr(global_segment, glb_ref1), 234, "ref1");
+    assert_equal(get_byte(global_segment, glb_b1), 255, "b1");
+}
 
 // ---------------------------------------------------------------------
 // TEST 9
@@ -364,6 +441,7 @@ static const struct test {
         { .proc = test05, .name = "boolean operators, mov" },
         { .proc = test06, .name = "type conversion" },
         { .proc = test07, .name = "array allocation and element access" },
+        { .proc = test08, .name = "struct allocation and field access" },
         { .proc = NULL },
 };
 
