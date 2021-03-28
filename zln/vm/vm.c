@@ -76,10 +76,11 @@ static const char *const opcode_names[] = {
     "And",
     "Or",
     "Mov",
-    "Br_False",
+    "Br_zero",
     "Br",
     "Call",
     "Ret",
+    "Halt",
     "Conv_i32",
     "Conv_f64",
     "Conv_u8",
@@ -214,7 +215,15 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
                     opcode_name(instr->opc),
                     get_int(instr->args, 0));
             return 1 + 4;
+        case OPC_Call:
+            fprintf(f, "%12s r%d r%d %08x",
+                    opcode_name(instr->opc),
+                    get_byte(instr->args, 0),
+                    get_byte(instr->args, 1),
+                    get_addr(instr->args, 2));
+            return 1 + 6;
         case OPC_Ret:
+        case OPC_Halt:
             fprintf(f, "%12s", opcode_name(instr->opc));
             return 1 + 0;
         case OPC_Conv_i32:

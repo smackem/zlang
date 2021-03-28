@@ -45,7 +45,7 @@ typedef struct stack_frame {
     const FunctionMeta *meta;
 
     /// the index of the register to store the function's return value
-    addr_t ret_register_index;
+    addr_t r_ret_val;
 
     /// the base pc of the caller module
     addr_t ret_base_pc;
@@ -72,12 +72,45 @@ void init_call_stack(CallStack *call_stack,
                      size_t register_count,
                      const FunctionMeta *entry_point);
 
+/**
+ * Pushes a new stack frame
+ *
+ * @param call_stack
+ *      This call stack
+ *
+ * @param function
+ *      The called function
+ *
+ * @param r_ret_val
+ *      The register on the current stack frame that receives the function's return value
+ *
+ * @param ret_base_pc
+ *      The base pc to return to when this function returns
+ *
+ * @param ret_pc
+ *      The pc to return to when this function returns
+ *
+ * @return the new top stack frame
+ */
 StackFrame *push_stack_frame(CallStack *call_stack,
                              const FunctionMeta *function,
-                             addr_t ret_register_index,
+                             byte_t r_ret_val,
                              addr_t ret_base_pc,
                              addr_t ret_pc);
 
+/**
+ * Pops the current top stack frame from the call stack
+
+ * @param call_stack
+ *      This call stack
+ *
+ * @return The popped stack frame
+ */
+StackFrame *pop_stack_frame(CallStack *call_stack);
+
+/**
+ * @return the current stack depth
+ */
 size_t current_stack_depth(const CallStack *call_stack);
 
 #endif //ZLN_CALLSTACK_H

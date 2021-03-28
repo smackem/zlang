@@ -19,7 +19,7 @@ void assert_that(bool condition, const char *format, ...) {
 }
 
 inline void assert_equal_i(int32_t actual, int32_t expected, const char *category) {
-    assert_that(actual == expected, "%s: failed equality check. actual: %d, expected: %d", category, actual, expected);
+    assert_that(actual == expected, "%s: failed equality check. actual: %d|0x%x, expected: %d|0x%x", category, actual, actual, expected, expected);
 }
 
 inline void assert_equal_f(double actual, double expected, const char *category) {

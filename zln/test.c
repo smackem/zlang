@@ -23,11 +23,15 @@ static void dump_cpu(addr_t pc,
                      const StackFrame *stack_frame,
                      const Register *registers,
                      size_t register_count) {
-    fprintf(stdout, "-------- [%lu]\n", stack_depth);
+    fprintf(stdout, "-----------------------");
+    for ( ; stack_depth > 1; stack_depth--, stack_frame--) {
+        fprintf(stdout, " %08x", stack_frame->meta->base_pc + stack_frame->meta->pc);
+    }
+    fputc('\n', stdout);
+    print_registers(stdout, registers, register_count);
     fprintf(stdout, "%08x ", base_pc + pc);
     print_instruction(stdout, instr);
     fputc('\n', stdout);
-    print_registers(stdout, registers, register_count);
 }
 
 // ---------------------------------------------------------------------
@@ -49,7 +53,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 1, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i0);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 2, glb_i1);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
 
     // act
     execute(code, &default_entry_point, memory, &config);
@@ -84,7 +88,7 @@ void test02(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 1, glb_f1);
     code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_f64, 1, const_f2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 1, glb_f2);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
 
     // act
     execute(code, &default_entry_point, memory, &config);
@@ -122,7 +126,7 @@ void test03(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
     code_ptr += emit_reg3(code_ptr, OPC_Div_i32, 3, 1, 2);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i3);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
 
     // act
     execute(code, &default_entry_point, memory, &config);
@@ -157,7 +161,7 @@ void test04(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_int(code_ptr, OPC_Br_zero, 4, label_loop);
     // i1 <- r1
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
@@ -196,7 +200,7 @@ void test05(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg2(code_ptr, OPC_Mov, 3, 4);
     // i3 <- r3
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i3);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
@@ -246,7 +250,7 @@ void test06(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123ab);
     code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_i32, 1, 1, TYPE_Ref);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_i3);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
@@ -289,7 +293,7 @@ void test07(byte_t *code, MemoryLayout *memory) {
     // i3 <- i1[5]
     code_ptr += emit_reg3(code_ptr, OPC_LdElem_i32, 4, 2, 1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 4, glb_i3);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
@@ -365,7 +369,7 @@ void test08(byte_t *code, MemoryLayout *memory) {
     // b1 <- r1.b
     code_ptr += emit_reg2_addr(code_ptr, OPC_LdFld_u8, 3, 1, 16);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_u8, 3, glb_b1);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
     print_code(stdout, code, code_ptr - code + 1);
 
     // act
@@ -421,7 +425,7 @@ void test09(byte_t *code, MemoryLayout *memory) {
     set_addr(branch_instr->args, 1, code_ptr - module1_ptr); // fixup branch instr
     // i1 <- r1
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
-    *code_ptr = OPC_Ret;
+    *code_ptr = OPC_Halt;
     print_code(stdout, module1_ptr, code_ptr - module1_ptr + 1);
 
     // act
@@ -439,6 +443,46 @@ void test09(byte_t *code, MemoryLayout *memory) {
 // TEST 10
 // - function call `function f()`
 // ---------------------------------------------------------------------
+
+void test10(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_func1 = 0;
+    FunctionMeta *func_meta = (FunctionMeta *) memory->base;
+    bzero(func_meta, sizeof(FunctionMeta));
+    memory->const_segment_size = sizeof(FunctionMeta);
+
+    // globals
+    const addr_t glb_i1 = 0;
+    const addr_t glb_i2 = 4;
+    memory->global_segment_size = 8;
+
+    // code
+    byte_t *code_ptr = code;
+    // call func1()
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 7, 0x666);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 0, 0, const_func1);
+    // i1 <- 0x123
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
+    *code_ptr++ = OPC_Halt;
+    // def func1:
+    func_meta->pc = code_ptr - code;
+    // i2 <- 0x234
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x234);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i2);
+    *code_ptr++ = OPC_Ret;
+    print_code(stdout, code, code_ptr - code);
+
+    // act
+    config.debug_callback = dump_cpu;
+    execute(code, &default_entry_point, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 0x123, "i1");
+    assert_equal(get_int(global_segment, glb_i2), 0x234, "i2");
+}
+
 
 // ---------------------------------------------------------------------
 // TEST 11
@@ -500,6 +544,7 @@ static const struct test {
         { .proc = test07, .name = "array allocation and element access" },
         { .proc = test08, .name = "struct allocation and field access" },
         { .proc = test09, .name = "branching in multi-module program" },
+        { .proc = test10, .name = "call f()" },
         { .proc = NULL },
 };
 

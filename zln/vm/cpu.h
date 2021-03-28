@@ -70,7 +70,7 @@ typedef struct runtime_config {
     /// the maximum stack depth (number of stack frames)
     int max_stack_depth;
 
-    /// if not NULL, this callback is invoked for each instruction AFTER execution
+    /// if not NULL, this callback is invoked for each instruction BEFORE execution
     debug_callback_t debug_callback;
 } RuntimeConfig;
 

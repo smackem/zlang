@@ -17,6 +17,10 @@ void conv_f64(Register *target, Type target_type, const Register *source);
 void conv_u8(Register *target, Type target_type, const Register *source);
 void conv_ref(Register *target, Type target_type, const Register *source);
 
+void exec_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, const FunctionMeta *func, addr_t *pc_ptr, addr_t *base_pc_ptr);
+
+void exec_return(Cpu *pCpu, addr_t *pInt, addr_t *pInt1);
+
 static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *config, const FunctionMeta *entry_point) {
     init_call_stack(&cpu->call_stack,
                     calloc(config->register_count * config->max_stack_depth, sizeof(Register)),
@@ -73,6 +77,12 @@ void execute(const byte_t *code,
     for (;;) {
         const Instruction *instr = (const Instruction *) &code[base_pc + pc];
         int size = 0;
+
+        if (config->debug_callback != NULL) {
+            size_t stack_depth = current_stack_depth(&cpu.call_stack);
+            config->debug_callback(pc, base_pc, instr, stack_depth, cpu.call_stack.top, reg(&cpu), config->register_count);
+        }
+
         switch (instr->opc) {
             // -------------------- nop
             //
@@ -539,19 +549,28 @@ void execute(const byte_t *code,
             //
             case OPC_Br_zero:
                 r_target = get_byte(instr->args, 0);
-                size = 1 + 5;
                 if (reg(&cpu)[r_target].i32 == false) {
-                    pc = get_addr(instr->args, 1) - size;
+                    pc = get_addr(instr->args, 1);
+                } else {
+                    size = 1 + 5;
                 }
                 break;
             case OPC_Br:
-                size = 1 + 4;
-                pc = get_addr(instr->args, 0) - size;
+                pc = get_addr(instr->args, 0);
                 break;
 
             // -------------------- function call
             //
+            case OPC_Call:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                addr = get_addr(instr->args, 2);
+                exec_call(&cpu, r_target, r_left, (FunctionMeta *) &cpu.const_segment[addr], &pc, &base_pc);
+                break;
             case OPC_Ret:
+                exec_return(&cpu, &pc, &base_pc);
+                break;
+            case OPC_Halt:
                 free_cpu(&cpu);
                 return;
 
@@ -640,13 +659,33 @@ void execute(const byte_t *code,
                 break;
         }
 
-        if (config->debug_callback != NULL) {
-            size_t stack_depth = current_stack_depth(&cpu.call_stack);
-            config->debug_callback(pc, base_pc, instr, stack_depth, cpu.call_stack.top, reg(&cpu), config->register_count);
-        }
-        assert_that(size > 0, "pc=%08x: op code %d has not been handled", pc, instr->opc);
         pc += size;
     }
+}
+
+inline void exec_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, const FunctionMeta *func, addr_t *pc_ptr, addr_t *base_pc_ptr) {
+    const StackFrame *old_top = cpu->call_stack.top;
+    assert(old_top != NULL);
+    StackFrame *top = push_stack_frame(&cpu->call_stack,
+                                       func,
+                                       r_ret_val,
+                                       *base_pc_ptr,
+                                       *pc_ptr + 1 + 6); // add size of call instr
+    memcpy(&top->registers[1], &old_top->registers[r_first_arg], func->arg_count * sizeof(Register));
+    *base_pc_ptr = func->base_pc;
+    *pc_ptr = func->pc;
+}
+
+inline void exec_return(Cpu *cpu, addr_t *pc_ptr, addr_t *base_pc_ptr) {
+    const StackFrame *old_top = pop_stack_frame(&cpu->call_stack);
+    assert(old_top != NULL);
+    StackFrame *top = cpu->call_stack.top;
+    // store return value
+    if (top->r_ret_val != 0) {
+        top->registers[top->r_ret_val] = old_top->registers[0];
+    }
+    *base_pc_ptr = old_top->ret_base_pc;
+    *pc_ptr = old_top->ret_pc;
 }
 
 inline void conv_i32(Register *target, Type target_type, const Register *source) {

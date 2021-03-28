@@ -209,12 +209,13 @@ enum op_code {
     OPC_Br,
 
     /**
-     * call(REG r_target, INT const_addr):
+     * call(REG r_target, REG r_first_arg, INT const_addr):
      *      (look at FunctionMeta at const_addr)
-     *      push stack_frame(#r_target, base_pc, pc, (*const_addr).arg_count, (*const_addr).local_count)
-     *      push base_registers
-     *      base_pc <- (*const_addr).base_pc
-     *      pc <- (*const_addr).pc
+     *      push stack_frame(#r_target, base_pc, pc, FunctionMeta)
+     *      copy arguments: registers r_first_arg..r_first_arg + FunctionMeta.arg_count
+     *              to new stack frame
+     *      base_pc <- FunctionMeta.base_pc
+     *      pc <- FunctionMeta.pc
      */
     OPC_Call,
 
@@ -228,6 +229,12 @@ enum op_code {
      *      sf.r_target <- ret_val
      */
     OPC_Ret,
+
+    /**
+     * halt():
+     *      stop program execution
+     */
+    OPC_Halt,
 
     /**
      * convert(REG r_target, REG r_source, TYPE target_type):
