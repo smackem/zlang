@@ -11,7 +11,8 @@ typedef uint8_t byte_t;
 typedef uint32_t addr_t;
 
 enum type {
-    TYPE_Int32 = 0,
+    TYPE_Void = 0,
+    TYPE_Int32,
     TYPE_Float64,
     TYPE_Unsigned8,
     TYPE_String,

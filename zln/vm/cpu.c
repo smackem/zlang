@@ -681,8 +681,8 @@ inline void exec_return(Cpu *cpu, addr_t *pc_ptr, addr_t *base_pc_ptr) {
     assert(old_top != NULL);
     StackFrame *top = cpu->call_stack.top;
     // store return value
-    if (top->r_ret_val != 0) {
-        top->registers[top->r_ret_val] = old_top->registers[0];
+    if (old_top->meta->ret_type != TYPE_Void) {
+        top->registers[old_top->r_ret_val] = old_top->registers[0];
     }
     *base_pc_ptr = old_top->ret_base_pc;
     *pc_ptr = old_top->ret_pc;

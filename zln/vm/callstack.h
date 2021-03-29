@@ -24,9 +24,12 @@ typedef struct function_meta {
 
     /// the number of arguments accepted by the function
     int arg_count;
+
+    /// the return type of the function
+    Type ret_type;
 } FunctionMeta;
 
-#define FUNCTION_META_SIZE 16
+#define FUNCTION_META_SIZE 20
 
 /**
  * Defines a register containing either an integer, a reference or a float.
@@ -44,7 +47,8 @@ typedef struct stack_frame {
     /// pointer to meta information in const segment
     const FunctionMeta *meta;
 
-    /// the index of the register to store the function's return value
+    /// the index of the register in the caller stack frame
+    /// to store the function's return value
     addr_t r_ret_val;
 
     /// the base pc of the caller module
@@ -57,14 +61,47 @@ typedef struct stack_frame {
     Register *registers;
 } StackFrame;
 
+/**
+ * Describes the program's call stack
+ */
 typedef struct call_stack {
+    /// the address of the first register bank
     Register *register_buf;
+
+    /// the address of the first stack frame
     StackFrame *stack_frame_buf;
+
+    /// the maximum stack depth
     size_t max_stack_depth;
+
+    /// the number of registers per stack frame
     size_t register_count;
+
+    /// the current stack frame
     StackFrame *top;
 } CallStack;
 
+/**
+ * Initializes a call_stack instance
+ *
+ * @param call_stack
+ *      This call stack
+ *
+ * @param register_buf
+ *      the address of the first register bank
+ *
+ * @param stack_frame_buf
+ *      the address of the first stack frame
+ *
+ * @param max_stack_depth
+ *      the maximum stack depth
+ *
+ * @param register_count
+ *      the number of registers per stack frame
+ *
+ * @param entry_point
+ *      meta info on the entry point function
+ */
 void init_call_stack(CallStack *call_stack,
                      Register *register_buf,
                      StackFrame *stack_frame_buf,
@@ -82,7 +119,7 @@ void init_call_stack(CallStack *call_stack,
  *      The called function
  *
  * @param r_ret_val
- *      The register on the current stack frame that receives the function's return value
+ *      The register on the current stack frame that receives the called function's return value
  *
  * @param ret_base_pc
  *      The base pc to return to when this function returns

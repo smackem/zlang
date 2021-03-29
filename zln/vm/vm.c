@@ -97,6 +97,7 @@ static const char *const opcode_names[] = {
 };
 
 static const char *const type_names[] = {
+    "NIL",
     "I32",
     "F64",
     "UI8",

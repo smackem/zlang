@@ -458,7 +458,7 @@ void test10(byte_t *code, MemoryLayout *memory) {
 
     // code
     byte_t *code_ptr = code;
-    // call func1()
+    // func1()
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 7, 0x666);
     code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 0, 0, const_func1);
     // i1 <- 0x123
@@ -489,14 +489,95 @@ void test10(byte_t *code, MemoryLayout *memory) {
 // - function call `function f() -> int`
 // ---------------------------------------------------------------------
 
+void test11(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_func1 = 0;
+    FunctionMeta *func_meta = (FunctionMeta *) memory->base;
+    bzero(func_meta, sizeof(FunctionMeta));
+    func_meta->ret_type = TYPE_Int32;
+    memory->const_segment_size = sizeof(FunctionMeta);
+
+    // globals
+    const addr_t glb_i1 = 0;
+    memory->global_segment_size = 4;
+
+    // code
+    byte_t *code_ptr = code;
+    // r1 <- func1()
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 1, 0, const_func1);
+    // i1 <- r1
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
+    *code_ptr++ = OPC_Halt;
+    // def func1:
+    func_meta->pc = code_ptr - code;
+    // ret 0x234
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 0, 0x123);
+    *code_ptr++ = OPC_Ret;
+    print_code(stdout, code, code_ptr - code);
+
+    // act
+    execute(code, &default_entry_point, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 0x123, "i1");
+}
+
 // ---------------------------------------------------------------------
 // TEST 12
 // - function call `function f(int, double) -> ref`
 // ---------------------------------------------------------------------
 
+void test12(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_f1 = 0;
+    set_float(memory->base, 0, 1000.125);
+    const addr_t const_func1 = 8;
+    FunctionMeta *func_meta = (FunctionMeta *) &memory->base[const_func1];
+    bzero(func_meta, sizeof(FunctionMeta));
+    func_meta->ret_type = TYPE_Ref;
+    func_meta->arg_count = 2;
+    memory->const_segment_size = 8 + sizeof(FunctionMeta);
+
+    // globals
+    const addr_t glb_i1 = 0;
+    const addr_t glb_f1 = 4;
+    memory->global_segment_size = 12;
+
+    // code
+    byte_t *code_ptr = code;
+    // r1 <- func1(123, 1000.125)
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123);
+    code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_f64, 2, const_f1);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 1, 1, const_func1);
+    // i1 <- r1
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_i1);
+    *code_ptr++ = OPC_Halt;
+    // def func1:
+    func_meta->pc = code_ptr - code;
+    // ret r1 * 2
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 2);
+    code_ptr += emit_reg3(code_ptr, OPC_Mul_i32, 0, 1, 3);
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_f64, 2, glb_f1);
+    *code_ptr++ = OPC_Ret;
+    print_code(stdout, code, code_ptr - code);
+
+    // act
+    config.debug_callback = dump_cpu;
+    execute(code, &default_entry_point, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 0x123 * 2, "i1");
+    assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
+}
+
 // ---------------------------------------------------------------------
 // TEST 13
-// - function call `function f(int, double) -> ref` across modules
+// - nested function calls
+//      `function f(int, double) -> ref`
+//      `function g(byte, ref) -> int
+//   across modules
 // ---------------------------------------------------------------------
 
 // ---------------------------------------------------------------------
@@ -545,6 +626,8 @@ static const struct test {
         { .proc = test08, .name = "struct allocation and field access" },
         { .proc = test09, .name = "branching in multi-module program" },
         { .proc = test10, .name = "call f()" },
+        { .proc = test11, .name = "call f() -> int" },
+        { .proc = test12, .name = "call f(int, double) -> ref" },
         { .proc = NULL },
 };
 
