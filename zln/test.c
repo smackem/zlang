@@ -563,7 +563,6 @@ void test12(byte_t *code, MemoryLayout *memory) {
     print_code(stdout, code, code_ptr - code);
 
     // act
-    config.debug_callback = dump_cpu;
     execute(code, &default_entry_point, memory, &config);
 
     // assert
@@ -575,21 +574,96 @@ void test12(byte_t *code, MemoryLayout *memory) {
 // ---------------------------------------------------------------------
 // TEST 13
 // - nested function calls
-//      `function f(int, double) -> ref`
-//      `function g(byte, ref) -> int
+//      `function f(int, double) -> int`
+//      `function g(byte) -> int
 //   across modules
 // ---------------------------------------------------------------------
 
+void test13(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_f1 = 0;
+    set_float(memory->base, 0, 1000.125);
+    // f(int, double) -> ref
+    const addr_t const_func1 = 8;
+    FunctionMeta *func1_meta = (FunctionMeta *) &memory->base[const_func1];
+    bzero(func1_meta, sizeof(FunctionMeta));
+    func1_meta->ret_type = TYPE_Int32;
+    func1_meta->arg_count = 2;
+    // g(byte) -> int
+    const addr_t const_func2 = 8 + sizeof(FunctionMeta);
+    FunctionMeta *func2_meta = (FunctionMeta *) &memory->base[const_func2];
+    bzero(func2_meta, sizeof(FunctionMeta));
+    func2_meta->ret_type = TYPE_Int32;
+    func2_meta->arg_count = 1;
+    memory->const_segment_size = 8 + sizeof(FunctionMeta) * 2;
+
+    /*
+     * main() {
+     *      glb_i1 = f(0x123, 1000.125)
+     * }
+     *
+     * func1(i, d) {
+     *      return func2((byte) i) + (int) d
+     * }
+     *
+     * func2(b) {
+     *      return b * 2
+     * }
+     */
+
+    // globals
+    const addr_t glb_i1 = 0;
+    memory->global_segment_size = 4;
+
+    // code
+    byte_t *code_ptr = code;
+    // r1 <- func1(123, 1000.125)
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0x123);
+    code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_f64, 2, const_f1);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 1, 1, const_func1);
+    // i1 <- r1
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
+    *code_ptr++ = OPC_Halt;
+    // def func1:
+    func1_meta->pc = code_ptr - code;
+    // r3 <- (byte) r1
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_i32, 3, 1, TYPE_Unsigned8);
+    // r3 <- g(r3)
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 3, 3, const_func2);
+    // r4 <- (int) r2
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Conv_f64, 4, 2, TYPE_Int32);
+    // ret r3 + r4
+    code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 0, 3, 4);
+    *code_ptr++ = OPC_Ret;
+    // def func2:
+    func2_meta->base_pc = code_ptr - code;
+    func2_meta->pc = 1;
+    *code_ptr++ = OPC_Nop;
+    // ret r1 * 2
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 0x2);
+    code_ptr += emit_reg3(code_ptr, OPC_Mul_i32, 0, 1, 2);
+    *code_ptr++ = OPC_Ret;
+    print_code(stdout, code, code_ptr - code);
+
+    // act
+    config.debug_callback = dump_cpu;
+    execute(code, &default_entry_point, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 0x46 + 1000, "i1");
+}
+
 // ---------------------------------------------------------------------
 // TEST 14
-// - object allocation
-// - reference counting within single stack frame
-// - object de-allocation
+// - recursive function call `function f(int) -> int`
 // ---------------------------------------------------------------------
 
 // ---------------------------------------------------------------------
 // TEST 15
-// - reference counting across multiple stack frames
+// - object allocation
+// - reference counting
+// - object de-allocation
 // ---------------------------------------------------------------------
 
 // ---------------------------------------------------------------------
@@ -599,11 +673,6 @@ void test12(byte_t *code, MemoryLayout *memory) {
 
 // ---------------------------------------------------------------------
 // TEST 17
-// - recursive function call `function f(int) -> int`
-// ---------------------------------------------------------------------
-
-// ---------------------------------------------------------------------
-// TEST 18
 // - strings
 // ---------------------------------------------------------------------
 
@@ -628,6 +697,7 @@ static const struct test {
         { .proc = test10, .name = "call f()" },
         { .proc = test11, .name = "call f() -> int" },
         { .proc = test12, .name = "call f(int, double) -> ref" },
+        { .proc = test13, .name = "nested function calls" },
         { .proc = NULL },
 };
 

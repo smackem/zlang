@@ -51,10 +51,7 @@ typedef struct stack_frame {
     /// to store the function's return value
     addr_t r_ret_val;
 
-    /// the base pc of the caller module
-    addr_t ret_base_pc;
-
-    /// the pc to return to
+    /// the pc to return to, relative to base_pc of previous stack frame
     addr_t ret_pc;
 
     /// the function registers
@@ -121,9 +118,6 @@ void init_call_stack(CallStack *call_stack,
  * @param r_ret_val
  *      The register on the current stack frame that receives the called function's return value
  *
- * @param ret_base_pc
- *      The base pc to return to when this function returns
- *
  * @param ret_pc
  *      The pc to return to when this function returns
  *
@@ -132,7 +126,6 @@ void init_call_stack(CallStack *call_stack,
 StackFrame *push_stack_frame(CallStack *call_stack,
                              const FunctionMeta *function,
                              byte_t r_ret_val,
-                             addr_t ret_base_pc,
                              addr_t ret_pc);
 
 /**

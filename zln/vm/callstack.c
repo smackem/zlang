@@ -29,7 +29,6 @@ void init_call_stack(CallStack *call_stack,
 StackFrame *push_stack_frame(CallStack *call_stack,
                              const FunctionMeta *function,
                              byte_t r_ret_val,
-                             addr_t ret_base_pc,
                              addr_t ret_pc) {
     assert(call_stack != NULL);
     assert(function != NULL);
@@ -40,7 +39,6 @@ StackFrame *push_stack_frame(CallStack *call_stack,
     top->meta = function;
     top->registers = old_top->registers + call_stack->register_count;
     top->r_ret_val = r_ret_val;
-    top->ret_base_pc = ret_base_pc;
     top->ret_pc = ret_pc;
     return top;
 }

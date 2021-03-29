@@ -18,8 +18,7 @@ void conv_u8(Register *target, Type target_type, const Register *source);
 void conv_ref(Register *target, Type target_type, const Register *source);
 
 void exec_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, const FunctionMeta *func, addr_t *pc_ptr, addr_t *base_pc_ptr);
-
-void exec_return(Cpu *pCpu, addr_t *pInt, addr_t *pInt1);
+void exec_return(Cpu *cpu, addr_t *pc_ptr, addr_t *base_pc_ptr);
 
 static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *config, const FunctionMeta *entry_point) {
     init_call_stack(&cpu->call_stack,
@@ -669,7 +668,6 @@ inline void exec_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, const Func
     StackFrame *top = push_stack_frame(&cpu->call_stack,
                                        func,
                                        r_ret_val,
-                                       *base_pc_ptr,
                                        *pc_ptr + 1 + 6); // add size of call instr
     memcpy(&top->registers[1], &old_top->registers[r_first_arg], func->arg_count * sizeof(Register));
     *base_pc_ptr = func->base_pc;
@@ -684,7 +682,7 @@ inline void exec_return(Cpu *cpu, addr_t *pc_ptr, addr_t *base_pc_ptr) {
     if (old_top->meta->ret_type != TYPE_Void) {
         top->registers[old_top->r_ret_val] = old_top->registers[0];
     }
-    *base_pc_ptr = old_top->ret_base_pc;
+    *base_pc_ptr = top->meta->base_pc;
     *pc_ptr = old_top->ret_pc;
 }
 

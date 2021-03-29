@@ -1,5 +1,25 @@
 #include "libutil"
 
+struct Int32 {
+    value: int
+} is Equatable, Comparable
+
+fn Int32::equals(other: any) -> bool {
+    let x: Int32 = (Int32) other
+    return x.value == self.value if x != nil else false
+}
+
+fn Int32::compareTo(other: any) -> int {
+    let x: Int32 = (Int32) other
+    return self.value - x.value if x != nil else panic("could not cast")
+}
+
+fn make_int(value: int) -> Int32 {
+    return new Int32 {
+        value: value
+    }
+}
+
 struct Color {
     r: float
     g: float

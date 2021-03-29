@@ -16,7 +16,7 @@ enum op_code {
     /**
      * load_global(REG r_target, INT glb_addr):
      *      r_target <- *glb_addr
-     * glb_addr is relative to global base
+     * glb_addr is relative to global segment base
      */
     OPC_LdGlb_i32,
     OPC_LdGlb_f64,
