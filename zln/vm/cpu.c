@@ -47,7 +47,7 @@ static void free_cpu(Cpu *cpu) {
 
 static void base_assertions() {
     assert_equal(sizeof(Instruction), INSTRUCTION_MIN_SIZE, "instruction size mismatch");
-    assert_equal(sizeof(FunctionMeta), FUNCTION_META_SIZE, "function_meta size mismatch");
+    assert_equal(sizeof(FunctionMeta), FUNCTION_META_MIN_SIZE, "function_meta size mismatch");
     assert_equal(sizeof(TypeMeta), TYPE_META_MIN_SIZE, "type_meta size mismatch");
     assert_equal(sizeof(HeapEntry), HEAP_ENTRY_MIN_SIZE, "heap_entry size mismatch");
 }

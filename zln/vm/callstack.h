@@ -27,9 +27,13 @@ typedef struct function_meta {
 
     /// the return type of the function
     Type ret_type;
+
+    /// zero-terminated string containing the function name. when contained in the constant segment,
+    /// the length of the string may be variable.
+    char name[32];
 } FunctionMeta;
 
-#define FUNCTION_META_SIZE 20
+#define FUNCTION_META_MIN_SIZE 52
 
 /**
  * Defines a register containing either an integer, a reference or a float.

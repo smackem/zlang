@@ -7,6 +7,8 @@
 
 #include "types.h"
 
+#define MAX_IMPLEMENTED_INTERFACES 8
+
 /**
  * Holds information about a type, stored in the const segment
  */
@@ -15,10 +17,19 @@ typedef struct type_meta {
     addr_t size;
 
     /// the name of the type as a zero-terminated string
-    char name[4]; // zero-terminated string, padded in struct to 4 bytes
+    char name[64]; // always 64 bytes (padded with zeroes)
+
+    /// number of implemented interfaces
+    size_t implemented_interfaces_count;
+
+    /// addresses of implemented interfaces in const segment
+    addr_t implemented_interfaces[MAX_IMPLEMENTED_INTERFACES];
+
+    /// zero-terminated list of field types -
+    Type field_types[4]; // zero-terminated (last item is TYPE_Void), 4 bytes for padding
 } TypeMeta;
 
-#define TYPE_META_MIN_SIZE 8
+#define TYPE_META_MIN_SIZE 120
 
 /**
  * Holds a heap entry (dynamically allocated, typed data chunk - e.g. an array, struct or union)

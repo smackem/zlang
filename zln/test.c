@@ -14,6 +14,7 @@ static FunctionMeta default_entry_point = {
         .pc = 0,
         .arg_count = 0,
         .local_count = 0,
+        .name = "main",
 };
 
 static void dump_cpu(addr_t pc,
@@ -24,8 +25,8 @@ static void dump_cpu(addr_t pc,
                      const Register *registers,
                      size_t register_count) {
     fprintf(stdout, "-----------------------");
-    for ( ; stack_depth > 1; stack_depth--, stack_frame--) {
-        fprintf(stdout, " %08x", stack_frame->meta->base_pc + stack_frame->meta->pc);
+    for (stack_frame -= stack_depth - 1; stack_depth > 0; stack_depth--, stack_frame++) {
+        fprintf(stdout, " %s", stack_frame->meta->name);
     }
     fputc('\n', stdout);
     print_registers(stdout, registers, register_count);
@@ -332,7 +333,15 @@ void test08(byte_t *code, MemoryLayout *memory) {
     TypeMeta *test08_meta = (TypeMeta *) &memory->base[8];
     test08_meta->size = 4 + 4 + 8 + 1; // size of test08_struct fields
     strcpy(test08_meta->name, "test08_struct");
-    memory->const_segment_size = 8 + 4 + strlen("test08_struct") + 1; // const_f1 + type_meta.size + string + 0
+    test08_meta->field_types[0] = TYPE_Int32;
+    test08_meta->field_types[1] = TYPE_Ref;
+    test08_meta->field_types[2] = TYPE_Float64;
+    test08_meta->field_types[3] = TYPE_Unsigned8;
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Warray-bounds"
+    test08_meta->field_types[4] = 0;
+#pragma clang diagnostic pop
+    memory->const_segment_size = sizeof(TypeMeta) + 1 + 8; // const_f1 + type_meta with one excess field
 
     // globals
     const addr_t glb_i1 = 0;
@@ -449,6 +458,7 @@ void test10(byte_t *code, MemoryLayout *memory) {
     const addr_t const_func1 = 0;
     FunctionMeta *func_meta = (FunctionMeta *) memory->base;
     bzero(func_meta, sizeof(FunctionMeta));
+    strcpy(func_meta->name, "func1");
     memory->const_segment_size = sizeof(FunctionMeta);
 
     // globals
@@ -495,6 +505,7 @@ void test11(byte_t *code, MemoryLayout *memory) {
     FunctionMeta *func_meta = (FunctionMeta *) memory->base;
     bzero(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Int32;
+    strcpy(func_meta->name, "func1");
     memory->const_segment_size = sizeof(FunctionMeta);
 
     // globals
@@ -537,6 +548,7 @@ void test12(byte_t *code, MemoryLayout *memory) {
     bzero(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Ref;
     func_meta->arg_count = 2;
+    strcpy(func_meta->name, "func1");
     memory->const_segment_size = 8 + sizeof(FunctionMeta);
 
     // globals
@@ -589,12 +601,14 @@ void test13(byte_t *code, MemoryLayout *memory) {
     bzero(func1_meta, sizeof(FunctionMeta));
     func1_meta->ret_type = TYPE_Int32;
     func1_meta->arg_count = 2;
+    strcpy(func1_meta->name, "func1");
     // g(byte) -> int
     const addr_t const_func2 = 8 + sizeof(FunctionMeta);
     FunctionMeta *func2_meta = (FunctionMeta *) &memory->base[const_func2];
     bzero(func2_meta, sizeof(FunctionMeta));
     func2_meta->ret_type = TYPE_Int32;
     func2_meta->arg_count = 1;
+    strcpy(func2_meta->name, "func2");
     memory->const_segment_size = 8 + sizeof(FunctionMeta) * 2;
 
     /*
@@ -666,6 +680,7 @@ void test14(byte_t *code, MemoryLayout *memory) {
     bzero(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Int32;
     func_meta->arg_count = 1;
+    strcpy(func_meta->name, "func1");
     memory->const_segment_size = 8 + sizeof(FunctionMeta);
 
     /*
