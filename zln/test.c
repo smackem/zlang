@@ -7,7 +7,7 @@
 #include <memory.h>
 #include "emit.h"
 
-static RuntimeConfig config = { .register_count = 8, .max_stack_depth = 4 };
+static RuntimeConfig config = { .register_count = 8, .max_stack_depth = 256 };
 
 static FunctionMeta default_entry_point = {
         .base_pc = 0,
@@ -659,6 +659,63 @@ void test13(byte_t *code, MemoryLayout *memory) {
 // - recursive function call `function f(int) -> int`
 // ---------------------------------------------------------------------
 
+void test14(byte_t *code, MemoryLayout *memory) {
+    // constants
+    const addr_t const_func1 = 0;
+    FunctionMeta *func_meta = (FunctionMeta *) &memory->base[const_func1];
+    bzero(func_meta, sizeof(FunctionMeta));
+    func_meta->ret_type = TYPE_Int32;
+    func_meta->arg_count = 1;
+    memory->const_segment_size = 8 + sizeof(FunctionMeta);
+
+    /*
+     * main() {
+     *      glb_i1 = func1(0)
+     * }
+     *
+     * func1(i) -> int {
+     *      if i < 10 {
+     *          return func1(i + 1)
+     *      }
+     *      return i
+     * }
+     */
+
+    // globals
+    const addr_t glb_i1 = 0;
+    memory->global_segment_size = 4;
+
+    // code
+    byte_t *code_ptr = code;
+    // r1 <- func1(0)
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 1, 1, const_func1);
+    // i1 <- r1
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_i1);
+    *code_ptr++ = OPC_Halt;
+    // def func1:
+    func_meta->pc = code_ptr - code;
+    // ret r1 * 2
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 1);
+    code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 0, 1, 2);
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 10);
+    code_ptr += emit_reg3(code_ptr, OPC_Lt_i32, 2, 0, 2);
+    Instruction *branch_instr = (Instruction *) code_ptr; // branch instr needs fixup later
+    code_ptr += emit_reg_addr(code_ptr, OPC_Br_zero, 2, 0);
+    code_ptr += emit_reg2_addr(code_ptr, OPC_Call, 0, 0, const_func1);
+    set_addr(branch_instr->args, 1, code_ptr - code); // fixup branch instr
+    *code_ptr++ = OPC_Ret;
+    print_code(stdout, code, code_ptr - code);
+
+    // act
+    config.debug_callback = dump_cpu;
+    execute(code, &default_entry_point, memory, &config);
+
+    // assert
+    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    assert_equal(get_int(global_segment, glb_i1), 10, "i1");
+}
+
 // ---------------------------------------------------------------------
 // TEST 15
 // - object allocation
@@ -698,6 +755,7 @@ static const struct test {
         { .proc = test11, .name = "call f() -> int" },
         { .proc = test12, .name = "call f(int, double) -> ref" },
         { .proc = test13, .name = "nested function calls" },
+        { .proc = test14, .name = "recursive function call" },
         { .proc = NULL },
 };
 
