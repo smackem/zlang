@@ -22,7 +22,7 @@ enum type {
 typedef byte_t Type;
 
 /**
- * Returns the size of the specified type in bytes.
+ * Returns the data_size of the specified type in bytes.
  */
 size_t sizeof_type(Type type);
 

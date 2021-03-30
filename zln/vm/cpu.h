@@ -39,13 +39,13 @@ typedef struct memory_layout {
     /// the address of the memory chunk to use.
     byte_t *base;
 
-    /// the total base size
+    /// the total base data_size
     addr_t total_size;
 
-    /// the size of the constant segment. also the index of the first byte in the global segment.
+    /// the data_size of the constant segment. also the index of the first byte in the global segment.
     addr_t const_segment_size;
 
-    /// the size of the global segment. the heap base is base + const_segment_size + global_segment_size
+    /// the data_size of the global segment. the heap base is base + const_segment_size + global_segment_size
     addr_t global_segment_size;
 } MemoryLayout;
 

@@ -256,8 +256,8 @@ enum op_code {
     OPC_NewObj,
 
     /**
-     * new_string(REG r_target, INT size):
-     *      allocate memory on heap for size characters
+     * new_string(REG r_target, INT data_size):
+     *      allocate memory on heap for data_size characters
      *      r_target <- addr of new memory block on heap (TYPE_REF)
      */
     OPC_NewStr,

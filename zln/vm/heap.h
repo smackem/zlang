@@ -13,9 +13,6 @@
  * Holds information about a type, stored in the const segment
  */
 typedef struct type_meta {
-    /// the size of the type in bytes
-    addr_t size;
-
     /// the name of the type as a zero-terminated string
     char name[64]; // always 64 bytes (padded with zeroes)
 
@@ -29,27 +26,35 @@ typedef struct type_meta {
     Type field_types[4]; // zero-terminated (last item is TYPE_Void), 4 bytes for padding
 } TypeMeta;
 
-#define TYPE_META_MIN_SIZE 120
+#define TYPE_META_MIN_SIZE 112
+
+/**
+ * @return the data_size of an instance of the specified TypeMeta
+ */
+size_t instance_size(const TypeMeta *type);
 
 /**
  * Holds a heap entry (dynamically allocated, typed data chunk - e.g. an array, struct or union)
  */
 typedef struct heap_entry {
     /// if HEAP_ENTRY_TYPE_META_FLAG is set, lower 31 bits denote the address of a TypeMeta in the const segment (for composite types)
-    /// if HEAP_ENTRY_TYPE_META_FLAG is clear, lower 31 bits denote the data length (for arrays e.g.)
+    /// if HEAP_ENTRY_TYPE_META_FLAG is clear, the entry contains an array and the lower 31 bits denote the element type (see ::Type)
     addr_t header;
 
     /// number of references to this entry. if 0, the entry can be cleared.
     uint32_t ref_count;
 
+    /// the data data_size in bytes of the entry
+    size_t data_size;
+
     /// first data byte. actual number of bytes can be deducted from header.
-    /// padded in struct to 4 bytes
-    byte_t data[4];
+    /// padded in struct to 8 bytes
+    byte_t data[8];
 } HeapEntry;
 
 #define HEAP_ENTRY_TYPE_META_FLAG 0x80000000
-#define HEAP_ENTRY_MIN_SIZE 12
-#define HEAP_ENTRY_HEADER_SIZE 8
+#define HEAP_ENTRY_MIN_SIZE 24
+#define HEAP_ENTRY_HEADER_SIZE 12
 
 /**
  * The heap - memory segment to hold dynamically allocated objects
@@ -58,7 +63,7 @@ typedef struct heap {
     /// the heap base address
     byte_t *memory;
 
-    /// the size of the heap
+    /// the data_size of the heap
     size_t size;
 
     /// the current tail (position after last heap entry)
@@ -78,7 +83,7 @@ typedef struct heap {
  *      The heap's base memory address.
  *
  * @param size
- *      The size of the heap.
+ *      The data_size of the heap.
  *
  * @param const_segment
  *      The address of the constant segment used to look up TypeMeta information.

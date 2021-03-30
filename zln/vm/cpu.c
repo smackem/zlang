@@ -46,10 +46,10 @@ static void free_cpu(Cpu *cpu) {
 }
 
 static void base_assertions() {
-    assert_equal(sizeof(Instruction), INSTRUCTION_MIN_SIZE, "instruction size mismatch");
-    assert_equal(sizeof(FunctionMeta), FUNCTION_META_MIN_SIZE, "function_meta size mismatch");
-    assert_equal(sizeof(TypeMeta), TYPE_META_MIN_SIZE, "type_meta size mismatch");
-    assert_equal(sizeof(HeapEntry), HEAP_ENTRY_MIN_SIZE, "heap_entry size mismatch");
+    assert_equal(sizeof(Instruction), INSTRUCTION_MIN_SIZE, "instruction data_size mismatch");
+    assert_equal(sizeof(FunctionMeta), FUNCTION_META_MIN_SIZE, "function_meta data_size mismatch");
+    assert_equal(sizeof(TypeMeta), TYPE_META_MIN_SIZE, "type_meta data_size mismatch");
+    assert_equal(sizeof(HeapEntry), HEAP_ENTRY_MIN_SIZE, "heap_entry data_size mismatch");
 }
 
 static inline Register *reg(Cpu *cpu) {
@@ -668,7 +668,7 @@ inline void exec_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, const Func
     StackFrame *top = push_stack_frame(&cpu->call_stack,
                                        func,
                                        r_ret_val,
-                                       *pc_ptr + 1 + 6); // add size of call instr
+                                       *pc_ptr + 1 + 6); // add data_size of call instr
     memcpy(&top->registers[1], &old_top->registers[r_first_arg], func->arg_count * sizeof(Register));
     *base_pc_ptr = func->base_pc;
     *pc_ptr = func->pc;

@@ -9,6 +9,12 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#ifdef NDEBUG
+#define NDEBUG_INLINE inline
+#else
+#define INLINE
+#endif
+
 void assert_that(bool condition, const char *format, ...);
 
 #define assert_equal(actual, expected, category) \
