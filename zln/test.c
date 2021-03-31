@@ -303,14 +303,14 @@ void test07(byte_t *code, MemoryLayout *memory) {
     // assert
     const byte_t *global_segment = memory->base + memory->const_segment_size;
     const byte_t *heap_segment = global_segment + memory->global_segment_size;
-    assert_equal(get_int(global_segment, glb_i1), 0, "i1 (addr of first array)");
-    assert_equal(((HeapEntry *)heap_segment)->header, TYPE_Int32, "heap_entry_1.header");
-    assert_equal(((HeapEntry *)heap_segment)->data_size, 40, "heap_entry_1.data_size");
-    assert_equal(((HeapEntry *)heap_segment)->ref_count, 1, "heap_entry_1.refcount");
-    assert_equal(get_int(global_segment, glb_i2), 40 + HEAP_ENTRY_HEADER_SIZE, "i2 (addr of second array)");
-    assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->header, TYPE_Unsigned8, "heap_entry_2.header");
-    assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->data_size, 20, "heap_entry_2.data_size");
-    assert_equal(((HeapEntry *)&heap_segment[40 + HEAP_ENTRY_HEADER_SIZE])->ref_count, 1, "heap_entry_2.refcount");
+    const HeapEntry *entry1 = (HeapEntry *) (heap_segment + get_int(global_segment, glb_i1));
+    assert_equal(entry1->header, TYPE_Int32, "heap_entry_1.header");
+    assert_equal(entry1->data_size, 40, "heap_entry_1.data_size");
+    assert_equal(entry1->ref_count, 1, "heap_entry_1.refcount");
+    const HeapEntry *entry2 = (HeapEntry *) (heap_segment + get_int(global_segment, glb_i2));
+    assert_equal(entry2->header, TYPE_Unsigned8, "heap_entry_2.header");
+    assert_equal(entry2->data_size, 20, "heap_entry_2.data_size");
+    assert_equal(entry2->ref_count, 1, "heap_entry_2.refcount");
     assert_equal(get_int(global_segment, glb_i3), 123, "i3");
 }
 
@@ -349,12 +349,15 @@ void test08(byte_t *code, MemoryLayout *memory) {
     const addr_t glb_ref1 = 4;
     const addr_t glb_f1 = 8;
     const addr_t glb_b1 = 16;
-    memory->global_segment_size = 17;
+    const addr_t glb_ts1 = 17;
+    memory->global_segment_size = 21;
 
     // code
     byte_t *code_ptr = code;
     // r1 <- new test08_struct{}
     code_ptr += emit_reg_int(code_ptr, OPC_NewObj, 1, const_ts);
+    // glb_ts1 <- r1
+    code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_ref, 1, glb_ts1);
     // r1.i <- 123
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 123);
     code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_i32, 2, 1, 0);
@@ -394,7 +397,9 @@ void test08(byte_t *code, MemoryLayout *memory) {
             .f = 1000.125,
             .b = 255
     };
-    int struct_comparison = memcmp(&expected_struct, &heap_segment[HEAP_ENTRY_HEADER_SIZE], instance_size(test08_meta));
+    int struct_comparison = memcmp(&expected_struct,
+                                   &heap_segment[get_addr(global_segment, glb_ts1) + HEAP_ENTRY_HEADER_SIZE],
+                                   sizeof_instance(test08_meta));
     assert_equal(struct_comparison, 0, "test08_struct comparison");
     assert_equal(get_int(global_segment, glb_i1), 123, "i1");
     assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");

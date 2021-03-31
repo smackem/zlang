@@ -29,11 +29,6 @@ typedef struct type_meta {
 #define TYPE_META_MIN_SIZE 112
 
 /**
- * @return the data_size of an instance of the specified TypeMeta
- */
-size_t instance_size(const TypeMeta *type);
-
-/**
  * Holds a heap entry (dynamically allocated, typed data chunk - e.g. an array, struct or union)
  */
 typedef struct heap_entry {
@@ -44,7 +39,7 @@ typedef struct heap_entry {
     /// number of references to this entry. if 0, the entry can be cleared.
     uint32_t ref_count;
 
-    /// the data data_size in bytes of the entry
+    /// the data data_size in bytes
     size_t data_size;
 
     /// first data byte. actual number of bytes can be deducted from header.
@@ -161,5 +156,16 @@ uint32_t add_ref(Heap *heap, addr_t heap_addr);
  * @return the new reference count of the modified heap entry.
  */
 uint32_t remove_ref(Heap *heap, addr_t heap_addr);
+
+/**
+ * @return the data_size of an instance of the specified TypeMeta
+ */
+size_t sizeof_instance(const TypeMeta *type);
+
+/**
+ * @return a pointer to the TypeMeta describing the heap entry's type or NULL if the
+ *      entry is not an instance of a user type.
+ */
+const TypeMeta *instance_type(const Heap * heap, const HeapEntry *entry);
 
 #endif //ZLN_HEAP_H

@@ -30,13 +30,21 @@ static inline size_t heap_entry_data_size(const Heap *heap, const HeapEntry *hea
     if ((heap_entry->header & HEAP_ENTRY_TYPE_META_FLAG) != 0) {
         addr_t const_addr = heap_entry->header & ~HEAP_ENTRY_TYPE_META_FLAG;
         const TypeMeta *type_meta = (TypeMeta *) &heap->const_segment[const_addr];
-        assert_equal(instance_size(type_meta), heap_entry->data_size, "TypeMeta data_size");
+        assert_equal(sizeof_instance(type_meta), heap_entry->data_size, "TypeMeta data_size");
     }
 #endif
     return heap_entry->data_size;
 }
 
-size_t instance_size(const TypeMeta *type) {
+const TypeMeta *instance_type(const Heap *heap, const HeapEntry *entry) {
+    if ((entry->header & HEAP_ENTRY_TYPE_META_FLAG) == 0) {
+        return NULL;
+    }
+    addr_t const_addr = entry->header & ~HEAP_ENTRY_TYPE_META_FLAG;
+    return (TypeMeta *) &heap->const_segment[const_addr];
+}
+
+size_t sizeof_instance(const TypeMeta *type) {
     size_t size = 0;
     const Type *field_type_ptr = type->field_types;
     for ( ; *field_type_ptr != TYPE_Void; field_type_ptr++) {
@@ -45,14 +53,16 @@ size_t instance_size(const TypeMeta *type) {
     return size;
 }
 
+#define HEAP_RESERVED_BYTES 0x10
+
 void init_heap(Heap *heap, byte_t *memory, size_t size, const byte_t *const_segment) {
     assert(heap != NULL);
     assert(memory != NULL);
-    assert(size > 0);
+    assert(size > HEAP_RESERVED_BYTES);
     assert(const_segment != NULL);
     heap->memory = memory;
     heap->size = size;
-    heap->tail = 0;
+    heap->tail = HEAP_RESERVED_BYTES; // reserve first X bytes => 0 (nil) is not a valid heap address
     heap->const_segment = const_segment;
 }
 
@@ -66,7 +76,7 @@ addr_t alloc_array(Heap *heap, Type element_type, size_t size) {
 addr_t alloc_obj(Heap *heap, addr_t type_meta_const_addr) {
     assert(heap != NULL);
     const TypeMeta *type_meta = (TypeMeta *) &heap->const_segment[type_meta_const_addr];
-    return alloc_chunk(heap, instance_size(type_meta), type_meta_const_addr | HEAP_ENTRY_TYPE_META_FLAG);
+    return alloc_chunk(heap, sizeof_instance(type_meta), type_meta_const_addr | HEAP_ENTRY_TYPE_META_FLAG);
 }
 
 inline addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
@@ -82,5 +92,37 @@ uint32_t add_ref(Heap *heap, addr_t heap_addr) {
 
 uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
-    return --(entry->ref_count);
+    entry->ref_count--;
+    if (entry->ref_count > 0) {
+        return entry->ref_count;
+    }
+    // reference count is zero => dispose instance
+    // call remove_ref for all instances referenced by this instance
+    // a) array of ref
+    if (entry->header == TYPE_Ref) {
+        size_t elem_count = entry->data_size / sizeof_type(TYPE_Ref);
+        addr_t *addr_ptr = (addr_t *) entry->data;
+        for ( ; elem_count > 0; elem_count--, addr_ptr++) {
+            if (*addr_ptr != 0) {
+                remove_ref(heap, *addr_ptr);
+            }
+        }
+        return 0;
+    }
+    // b) user type
+    const TypeMeta *type = instance_type(heap, entry);
+    if (type != NULL) {
+        const Type *field_type_ptr = type->field_types;
+        byte_t *field_data_ptr = entry->data;
+        for ( ; *field_type_ptr != TYPE_Void; field_type_ptr++) {
+            if (*field_type_ptr == TYPE_Ref) {
+                addr_t addr = get_addr(field_data_ptr, 0);
+                if (addr != 0) {
+                    remove_ref(heap, addr);
+                }
+            }
+            field_data_ptr += sizeof_type(*field_type_ptr);
+        }
+    }
+    return 0;
 }
