@@ -16,6 +16,8 @@ size_t sizeof_type(Type type) {
             return sizeof(byte_t);
         case TYPE_Float64:
             return sizeof(double);
+        case TYPE_NativePtr:
+            return sizeof(intptr_t);
         default:
             assert_that(false, "unsupported type %d", type);
             return 0;

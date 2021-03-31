@@ -17,6 +17,7 @@ enum type {
     TYPE_Unsigned8,
     TYPE_String,
     TYPE_Ref,
+    TYPE_NativePtr,
 };
 
 typedef byte_t Type;

@@ -14,10 +14,24 @@ fn Int32::compareTo(other: any) -> int {
     return self.value - x.value if x != nil else panic("could not cast")
 }
 
-fn make_int(value: int) -> Int32 {
+fn box_int(value: int) -> Int32 {
     return new Int32 {
         value: value
     }
+}
+
+struct File {
+    handle: runtime_ptr
+}
+
+fn file_open(path: string, mode: string) -> File {
+    return new File {
+        handle: runtime::fopen(path, mode)
+    }
+}
+
+fn File::dispose() {
+    runtime::fclose(self.handle)
 }
 
 struct Color {

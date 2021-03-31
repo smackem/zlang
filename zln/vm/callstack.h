@@ -42,6 +42,7 @@ typedef union register_union {
     int32_t i32;
     addr_t ref;
     double f64;
+    intptr_t ptr;
 } Register;
 
 /**
