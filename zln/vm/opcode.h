@@ -22,6 +22,7 @@ enum op_code {
     OPC_LdGlb_f64,
     OPC_LdGlb_u8,
     OPC_LdGlb_ref,
+    OPC_LdGlb_ptr,
 
     /**
      * load_field(REG r_target, REG r_heap_addr, INT field_offset):
@@ -32,6 +33,7 @@ enum op_code {
     OPC_LdFld_f64,
     OPC_LdFld_u8,
     OPC_LdFld_ref,
+    OPC_LdFld_ptr,
 
     /**
      * load_array_element(REG r_target, REG r_heap_addr, REG r_elem_offset):
@@ -42,6 +44,7 @@ enum op_code {
     OPC_LdElem_f64,
     OPC_LdElem_u8,
     OPC_LdElem_ref,
+    OPC_LdElem_ptr,
 
     /**
      * store_global(REG r_source, INT glb_addr):
@@ -52,6 +55,7 @@ enum op_code {
     OPC_StGlb_f64,
     OPC_StGlb_u8,
     OPC_StGlb_ref,
+    OPC_StGlb_ptr,
 
     /**
      * store_field(REG r_source, REG r_heap_addr, INT field_offset):
@@ -62,6 +66,7 @@ enum op_code {
     OPC_StFld_f64,
     OPC_StFld_u8,
     OPC_StFld_ref,
+    OPC_StFld_ptr,
 
     /**
      * store_array_element(REG r_source, REG r_heap_addr, REG r_elem_offset):
@@ -72,6 +77,7 @@ enum op_code {
     OPC_StElem_f64,
     OPC_StElem_u8,
     OPC_StElem_ref,
+    OPC_StElem_ptr,
 
     /**
      * load_immediate_constant(REG r_target, INT value):
@@ -85,6 +91,12 @@ enum op_code {
      * const_addr is relative to const base
      */
     OPC_Ldc_f64,
+    /**
+     * load_constant_zero(REG r_target):
+     *      r_target <- 0 (zero entire register)
+     *      works for all data types
+     */
+    OPC_Ldc_zero,
 
     /**
      * add(REG r_target, REG r_left, REG r_right):
@@ -128,6 +140,7 @@ enum op_code {
     OPC_Eq_u8,
     OPC_Eq_str,
     OPC_Eq_ref,
+    OPC_Eq_ptr,
 
     /**
      * not_equals(REG r_target, REG r_left, REG r_right):
@@ -138,6 +151,7 @@ enum op_code {
     OPC_Ne_u8,
     OPC_Ne_str,
     OPC_Ne_ref,
+    OPC_Ne_ptr,
 
     /**
      * greater_than(REG r_target, REG r_left, REG r_right):
@@ -195,7 +209,7 @@ enum op_code {
 
     /**
      * branch_if_false(REG r_source, INT new_pc):
-     *      if r_source != 0:
+     *      if r_source.i32 != 0:
      *          pc <- new_pc
      * new_pc is relative to base_pc
      */
@@ -245,6 +259,7 @@ enum op_code {
     OPC_Conv_u8,
     OPC_Conv_str,
     OPC_Conv_ref,
+    OPC_Conv_ptr,
 
     /**
      * new_object(REG r_target, INT const_addr):
@@ -271,6 +286,7 @@ enum op_code {
     OPC_NewArr_f64,
     OPC_NewArr_u8,
     OPC_NewArr_ref,
+    OPC_NewArr_ptr,
 
     /**
      * add_reference(REG r_heap_addr):

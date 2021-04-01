@@ -41,4 +41,7 @@ size_t sizeof_type(Type type);
 
 #define get_type(ptr, offset)  (*(Type *) ((ptr) + offset))
 
+#define get_ptr(ptr, offset) (*(intptr_t *) ((ptr) + offset))
+#define set_ptr(ptr, offset, p) (*(intptr_t *) ((ptr) + offset) = p)
+
 #endif //ZLN_TYPES_H

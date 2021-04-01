@@ -47,3 +47,9 @@ size_t emit_addr(byte_t *code, OpCode opc, addr_t addr) {
     set_addr(code, 1, addr);
     return 5;
 }
+
+size_t emit_reg(byte_t *code, OpCode opc, byte_t r) {
+    code[0] = opc;
+    code[1] = r;
+    return 2;
+}

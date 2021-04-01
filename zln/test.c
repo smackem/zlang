@@ -419,7 +419,8 @@ void test09(byte_t *code, MemoryLayout *memory) {
 
     // code
     byte_t *code_ptr = code;
-    // module 0: only nop
+    // module 0: dummy code
+    code_ptr += emit_reg(code_ptr, OPC_Ldc_zero, 0);
     *code_ptr++ = OPC_Nop;
     *code_ptr++ = OPC_Nop;
     *code_ptr++ = OPC_Nop;
@@ -440,6 +441,8 @@ void test09(byte_t *code, MemoryLayout *memory) {
     // i1 <- r1
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     *code_ptr = OPC_Halt;
+
+    print_code(stdout, code, module1_ptr - code);
     print_code(stdout, module1_ptr, code_ptr - module1_ptr + 1);
 
     // act

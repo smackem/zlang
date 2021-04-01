@@ -16,6 +16,7 @@ void conv_i32(Register *target, Type target_type, const Register *source);
 void conv_f64(Register *target, Type target_type, const Register *source);
 void conv_u8(Register *target, Type target_type, const Register *source);
 void conv_ref(Register *target, Type target_type, const Register *source);
+void conv_ptr(Register *target, Type target_type, const Register *source);
 
 void exec_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, const FunctionMeta *func, addr_t *pc_ptr, addr_t *base_pc_ptr);
 void exec_return(Cpu *cpu, addr_t *pc_ptr, addr_t *base_pc_ptr);
@@ -91,6 +92,11 @@ void execute(const byte_t *code,
 
             // -------------------- load const
             //
+            case OPC_Ldc_zero:
+                r_target = get_byte(instr->args, 0);
+                reg(&cpu)[r_target].ptr = 0;
+                size = 1 + 1;
+                break;
             case OPC_Ldc_i32:
                 r_target = get_byte(instr->args, 0);
                 value = get_int(instr->args, 1);
@@ -136,6 +142,12 @@ void execute(const byte_t *code,
                 reg(&cpu)[r_target].ref = get_addr(cpu.global_segment, addr);
                 size = 1 + 5;
                 break;
+            case OPC_LdGlb_ptr:
+                r_target = get_byte(instr->args, 0);
+                addr = get_addr(instr->args, 1);
+                reg(&cpu)[r_target].ptr = get_ptr(cpu.global_segment, addr);
+                size = 1 + 5;
+                break;
 
             // -------------------- load field
             //
@@ -165,6 +177,13 @@ void execute(const byte_t *code,
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
                 reg(&cpu)[r_target].ref = get_addr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
+                size = 1 + 6;
+                break;
+            case OPC_LdFld_ptr:
+                r_target = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                addr = get_addr(instr->args, 2);
+                reg(&cpu)[r_target].ptr = get_ptr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
                 size = 1 + 6;
                 break;
 
@@ -202,6 +221,14 @@ void execute(const byte_t *code,
                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
                 size = 1 + 3;
                 break;
+            case OPC_LdElem_ptr:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                reg(&cpu)[r_target].ptr = get_ptr(cpu.heap.memory,
+                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
+                size = 1 + 3;
+                break;
 
             // -------------------- store global
             //
@@ -227,6 +254,12 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
                 set_addr(cpu.global_segment, addr, reg(&cpu)[r_left].ref);
+                size = 1 + 5;
+                break;
+            case OPC_StGlb_ptr:
+                r_left = get_byte(instr->args, 0);
+                addr = get_addr(instr->args, 1);
+                set_ptr(cpu.global_segment, addr, reg(&cpu)[r_left].ptr);
                 size = 1 + 5;
                 break;
 
@@ -258,6 +291,13 @@ void execute(const byte_t *code,
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
                 set_addr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), reg(&cpu)[r_left].ref);
+                size = 1 + 6;
+                break;
+            case OPC_StFld_ptr:
+                r_left = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                addr = get_addr(instr->args, 2);
+                set_ptr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), reg(&cpu)[r_left].ptr);
                 size = 1 + 6;
                 break;
 
@@ -297,6 +337,15 @@ void execute(const byte_t *code,
                 set_addr(cpu.heap.memory,
                          get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
                          reg(&cpu)[r_left].ref);
+                size = 1 + 3;
+                break;
+            case OPC_StElem_ptr:
+                r_left = get_byte(instr->args, 0);
+                r_right = get_byte(instr->args, 1);
+                r_addr = get_byte(instr->args, 2);
+                set_ptr(cpu.heap.memory,
+                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
+                        reg(&cpu)[r_left].ptr);
                 size = 1 + 3;
                 break;
 
@@ -420,6 +469,13 @@ void execute(const byte_t *code,
                 reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ref == reg(&cpu)[r_right].ref;
                 size = 1 + 3;
                 break;
+            case OPC_Eq_ptr:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ptr == reg(&cpu)[r_right].ptr;
+                size = 1 + 3;
+                break;
 
             // -------------------- not equals
             //
@@ -443,6 +499,13 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
                 reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ref != reg(&cpu)[r_right].ref;
+                size = 1 + 3;
+                break;
+            case OPC_Ne_ptr:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ptr != reg(&cpu)[r_right].ptr;
                 size = 1 + 3;
                 break;
 
@@ -540,7 +603,7 @@ void execute(const byte_t *code,
             case OPC_Mov:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32;
+                reg(&cpu)[r_target] = reg(&cpu)[r_left];
                 size = 1 + 2;
                 break;
 
@@ -603,6 +666,13 @@ void execute(const byte_t *code,
                 conv_ref(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
                 size = 1 + 6;
                 break;
+            case OPC_Conv_ptr:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                type = get_int(instr->args, 2);
+                conv_ptr(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
+                size = 1 + 6;
+                break;
 
             // -------------------- alloc object
             //
@@ -637,6 +707,12 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_Ref, reg(&cpu)[r_addr].i32);
+                size = 1 + 2;
+                break;
+            case OPC_NewArr_ptr:
+                r_target = get_byte(instr->args, 0);
+                r_addr = get_byte(instr->args, 1);
+                reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_NativePtr, reg(&cpu)[r_addr].i32);
                 size = 1 + 2;
                 break;
 
@@ -758,4 +834,8 @@ inline void conv_ref(Register *target, Type target_type, const Register *source)
             assert_that(false, "conv_ref: unsupported target type %d", target_type);
             break;
     }
+}
+
+inline void conv_ptr(Register *target, Type target_type, const Register *source) {
+    assert_that(target_type == TYPE_Ref, "conv_ref: unsupported target type %d", target_type);
 }
