@@ -1,24 +1,6 @@
+module sample uses std
+
 #include "libutil"
-
-struct Int32 {
-    value: int
-} is Equatable, Comparable
-
-fn Int32::equals(other: any) -> bool {
-    let x: Int32 = (Int32) other
-    return x.value == self.value if x != nil else false
-}
-
-fn Int32::compareTo(other: any) -> int {
-    let x: Int32 = (Int32) other
-    return self.value - x.value if x != nil else panic("could not cast")
-}
-
-fn box_int(value: int) -> Int32 {
-    return new Int32 {
-        value: value
-    }
-}
 
 struct File {
     handle: runtime_ptr
@@ -34,12 +16,16 @@ fn File::dispose() {
     runtime::fclose(self.handle)
 }
 
+fn compare(a: std::Comparable, b: std::Comparable) -> int {
+    return a.compare(b)
+}
+
 struct Color {
     r: float
     g: float
     b: float
     a: float
-} is Equatable, Comparable
+} is std::Equatable, std::Comparable
 
 fn Color::luminosity() -> float {
     return self.r * 0.3 + self.g * 0.6 + self.b * 0.1

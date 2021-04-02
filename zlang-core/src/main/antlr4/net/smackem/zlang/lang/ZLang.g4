@@ -36,6 +36,7 @@ simpleType
     | Bool
     | Byte
     | String
+    | RuntimePtr
     | Any
     | Ident
     ;
@@ -194,7 +195,7 @@ additiveOp
 
 multiplicativeExpr
     : unaryExpr
-    | multiplicativeOp multiplicativeOp unaryExpr
+    | multiplicativeExpr multiplicativeOp unaryExpr
     ;
 
 multiplicativeOp
@@ -249,7 +250,16 @@ primary
     ;
 
 functionInvocation
+    : userFunctionInvocation
+    | runtimeFunctionInvocation
+    ;
+
+userFunctionInvocation
     : Ident LParen arguments? RParen
+    ;
+
+runtimeFunctionInvocation
+    : Runtime ColonColon Ident LParen arguments? RParen
     ;
 
 instanceCreation
@@ -275,6 +285,7 @@ literal
     | True
     | False
     | Nil
+    | NullPtr
     ;
 
 list
@@ -329,6 +340,7 @@ Assert      : 'assert';
 Let         : 'let';
 Var         : 'var';
 Log         : 'log';
+NullPtr     : 'null_ptr';
 
 Int         : 'int';
 Float       : 'float';
@@ -336,12 +348,14 @@ Bool        : 'bool';
 String      : 'string';
 Byte        : 'byte';
 Any         : 'any';
+RuntimePtr  : 'runtime_ptr';
 Struct      : 'struct';
 With        : 'with';
 Self        : 'self';
 New         : 'new';
 Union       : 'union';
 Mutable     : 'mutable';
+Runtime     : 'runtime';
 
 number
     : (Plus | Minus)? Number
