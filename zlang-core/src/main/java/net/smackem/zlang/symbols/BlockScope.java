@@ -2,17 +2,16 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.SemanticErrorException;
 
-public class ModuleSymbol extends Symbol implements MemberScope {
+public final class BlockScope implements Scope {
     private final SymbolTable symbolTable;
 
-    ModuleSymbol(String name, Scope enclosingScope) {
-        super(name, null);
+    BlockScope(Scope enclosingScope) {
         this.symbolTable = new SymbolTable(enclosingScope);
     }
 
     @Override
     public String scopeName() {
-        return name();
+        return this.symbolTable.scopeName();
     }
 
     @Override
@@ -28,10 +27,5 @@ public class ModuleSymbol extends Symbol implements MemberScope {
     @Override
     public Symbol resolve(String name) {
         return this.symbolTable.resolve(name);
-    }
-
-    @Override
-    public Symbol resolveMember(String name) {
-        return this.symbolTable.resolveMember(name);
     }
 }

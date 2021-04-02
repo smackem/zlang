@@ -4,7 +4,7 @@ public abstract class Symbol {
     private final String name;
     private final Type type;
 
-    protected Symbol(String name, Type type) {
+    Symbol(String name, Type type) {
         this.name = name;
         this.type = type;
     }
