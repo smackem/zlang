@@ -3,11 +3,11 @@ package net.smackem.zlang.symbols;
 import net.smackem.zlang.lang.SemanticErrorException;
 
 public class GlobalScope implements Scope {
-
     private final SymbolTable symbolTable;
 
     GlobalScope() {
         this.symbolTable = new SymbolTable(null);
+        initTypeSystem();
     }
 
     @Override
@@ -41,5 +41,15 @@ public class GlobalScope implements Scope {
             }
         }
         return null;
+    }
+
+    private void initTypeSystem() {
+        try {
+            for (final Symbol typeSymbol : BuiltInTypeSymbol.builtInTypes()) {
+                define(typeSymbol.name(), typeSymbol);
+            }
+        } catch (SemanticErrorException ignored) {
+            // cannot happen for built-in types
+        }
     }
 }

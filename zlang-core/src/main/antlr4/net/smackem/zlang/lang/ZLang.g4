@@ -1,7 +1,15 @@
 grammar ZLang;
 
-program
-    : globalDecl* EOF
+module
+    : moduleDecl? globalDecl* EOF
+    ;
+
+moduleDecl
+    : Module Ident usesClause? LineBreak
+    ;
+
+usesClause
+    : Uses Ident (Comma Ident)*
     ;
 
 globalDecl
@@ -11,7 +19,11 @@ globalDecl
     ;
 
 functionDecl
-    : DocComment? Fn (Ident ColonColon)? Ident LParen parameters? RParen returnType? block LineBreak
+    : DocComment? Fn declaringTypePrefix? Ident LParen parameters? RParen returnType? block LineBreak
+    ;
+
+declaringTypePrefix
+    : Ident ColonColon
     ;
 
 parameters
@@ -322,6 +334,8 @@ RBracket    : ']';
 LParen      : '(' LineBreak?;
 RParen      : ')';
 
+Module      : 'module';
+Uses        : 'uses';
 Fn          : 'fn';
 If          : 'if';
 Else        : 'else';

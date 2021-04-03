@@ -1,5 +1,8 @@
 package net.smackem.zlang.symbols;
 
+import java.util.Collection;
+import java.util.List;
+
 public class BuiltInTypeSymbol extends Symbol implements Type {
 
     public static final BuiltInTypeSymbol INT = new BuiltInTypeSymbol("int");
@@ -8,6 +11,10 @@ public class BuiltInTypeSymbol extends Symbol implements Type {
     public static final BuiltInTypeSymbol ANY = new BuiltInTypeSymbol("any");
     public static final BuiltInTypeSymbol RUNTIME_PTR = new BuiltInTypeSymbol("runtime_ptr");
     public static final BuiltInTypeSymbol STRING = new BuiltInTypeSymbol("string");
+
+    public static Collection<BuiltInTypeSymbol> builtInTypes() {
+        return List.of(INT, FLOAT, BYTE, ANY, RUNTIME_PTR, STRING);
+    }
 
     private final String typeName;
 
