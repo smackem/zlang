@@ -39,4 +39,12 @@ public class StructSymbol extends Symbol implements Type, MemberScope {
     public Symbol resolve(String name) {
         return this.symbolTable.resolve(name);
     }
+
+    @Override
+    public String toString() {
+        return "StructSymbol{" +
+               "name=" + name() +
+               ", symbolTable=" + symbolTable +
+               '}';
+    }
 }

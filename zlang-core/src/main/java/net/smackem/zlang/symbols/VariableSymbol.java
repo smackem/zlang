@@ -5,6 +5,11 @@ public class VariableSymbol extends Symbol {
         super(name, type);
     }
 
+    @Override
+    public String toString() {
+        return "VariableSymbol{name=%s, type=%s}".formatted(name(), type());
+    }
+
     public boolean isAssignable() {
         return true;
     }

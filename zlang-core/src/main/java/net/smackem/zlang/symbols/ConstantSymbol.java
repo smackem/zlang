@@ -9,4 +9,9 @@ public class ConstantSymbol extends VariableSymbol {
     public boolean isAssignable() {
         return false;
     }
+
+    @Override
+    public String toString() {
+        return "ConstantSymbol{name=%s, type=%s}".formatted(name(), type());
+    }
 }

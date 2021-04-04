@@ -11,4 +11,13 @@ public class FieldSymbol extends VariableSymbol {
     public Type declaringType() {
         return this.declaringType;
     }
+
+    @Override
+    public String toString() {
+        return "FieldSymbol{" +
+               "name=" + name() +
+               ", type=" + type() +
+               ", declaringType=" + declaringType +
+               '}';
+    }
 }

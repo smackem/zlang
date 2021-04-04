@@ -52,4 +52,11 @@ public class GlobalScope implements Scope {
             // cannot happen for built-in types
         }
     }
+
+    @Override
+    public String toString() {
+        return "GlobalScope{" +
+               "symbolTable=" + symbolTable +
+               '}';
+    }
 }

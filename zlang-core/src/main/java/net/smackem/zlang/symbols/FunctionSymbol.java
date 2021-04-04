@@ -2,6 +2,10 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.SemanticErrorException;
 
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 public class FunctionSymbol extends Symbol implements Scope {
     private final SymbolTable symbolTable;
 
@@ -28,5 +32,20 @@ public class FunctionSymbol extends Symbol implements Scope {
     @Override
     public Symbol resolve(String name) {
         return this.symbolTable.resolve(name);
+    }
+
+    public Collection<Symbol> parameters() {
+        return this.symbolTable.symbols();
+    }
+
+    @Override
+    public String toString() {
+        return "FunctionSymbol{" +
+               "name=" + name() +
+               "returnType=" + type() +
+               "parameters=" + this.symbolTable.symbols().stream()
+                       .map(s -> s.name() + ':' + s.type().typeName())
+                       .collect(Collectors.joining(", ")) +
+               '}';
     }
 }

@@ -34,4 +34,12 @@ public class ModuleSymbol extends Symbol implements MemberScope {
     public Symbol resolveMember(String name) {
         return this.symbolTable.resolveMember(name);
     }
+
+    @Override
+    public String toString() {
+        return "ModuleSymbol{" +
+               "name=" + name() +
+               ", symbolTable=" + symbolTable +
+               '}';
+    }
 }

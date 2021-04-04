@@ -59,4 +59,9 @@ class SymbolTable implements MemberScope {
     public Symbol resolveMember(String name) {
         return this.symbols.get(name);
     }
+
+    @Override
+    public String toString() {
+        return "SymbolTable" + symbols;
+    }
 }

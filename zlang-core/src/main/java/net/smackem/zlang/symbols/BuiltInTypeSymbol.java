@@ -2,6 +2,7 @@ package net.smackem.zlang.symbols;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 
 public class BuiltInTypeSymbol extends Symbol implements Type {
 
@@ -26,5 +27,25 @@ public class BuiltInTypeSymbol extends Symbol implements Type {
     @Override
     public String typeName() {
         return this.typeName;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final BuiltInTypeSymbol that = (BuiltInTypeSymbol) o;
+        return typeName.equals(that.typeName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(typeName);
+    }
+
+    @Override
+    public String toString() {
+        return "BuiltInTypeSymbol{" +
+               "typeName='" + typeName + '\'' +
+               '}';
     }
 }
