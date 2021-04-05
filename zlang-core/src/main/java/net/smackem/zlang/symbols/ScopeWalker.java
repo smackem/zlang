@@ -1,6 +1,6 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.SemanticErrorException;
+import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.lang.ZLangBaseVisitor;
 import org.antlr.v4.runtime.ParserRuleContext;
 
@@ -44,7 +44,7 @@ abstract class ScopeWalker extends ZLangBaseVisitor<Void> {
     void defineSymbol(ParserRuleContext ctx, Scope scope, Symbol symbol) {
         try {
             scope.define(symbol.name(), symbol);
-        } catch (SemanticErrorException e) {
+        } catch (CompilationErrorException e) {
             logSemanticError(ctx, e.getMessage());
         }
     }

@@ -1,6 +1,6 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.SemanticErrorException;
+import net.smackem.zlang.lang.CompilationErrorException;
 
 public final class BlockScope implements Scope {
     private final SymbolTable symbolTable;
@@ -15,7 +15,7 @@ public final class BlockScope implements Scope {
     }
 
     @Override
-    public void define(String name, Symbol symbol) throws SemanticErrorException {
+    public void define(String name, Symbol symbol) throws CompilationErrorException {
         this.symbolTable.define(name, symbol);
     }
 

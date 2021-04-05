@@ -1,6 +1,6 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.SemanticErrorException;
+import net.smackem.zlang.lang.CompilationErrorException;
 
 public class ModuleSymbol extends Symbol implements MemberScope {
     private final SymbolTable symbolTable;
@@ -16,7 +16,7 @@ public class ModuleSymbol extends Symbol implements MemberScope {
     }
 
     @Override
-    public void define(String name, Symbol symbol) throws SemanticErrorException {
+    public void define(String name, Symbol symbol) throws CompilationErrorException {
         this.symbolTable.define(name, symbol);
     }
 

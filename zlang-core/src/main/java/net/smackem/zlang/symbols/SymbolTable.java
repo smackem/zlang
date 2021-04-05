@@ -1,6 +1,6 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.SemanticErrorException;
+import net.smackem.zlang.lang.CompilationErrorException;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -32,9 +32,9 @@ class SymbolTable implements MemberScope {
     }
 
     @Override
-    public void define(String name, Symbol symbol) throws SemanticErrorException {
+    public void define(String name, Symbol symbol) throws CompilationErrorException {
         if (this.symbols.put(name, symbol) != null) {
-            throw new SemanticErrorException("duplicate definition of symbol " + name);
+            throw new CompilationErrorException("duplicate definition of symbol " + name);
         }
     }
 

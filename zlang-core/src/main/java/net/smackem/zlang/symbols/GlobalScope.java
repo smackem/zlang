@@ -1,6 +1,6 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.SemanticErrorException;
+import net.smackem.zlang.lang.CompilationErrorException;
 
 public class GlobalScope implements Scope {
     private final SymbolTable symbolTable;
@@ -16,7 +16,7 @@ public class GlobalScope implements Scope {
     }
 
     @Override
-    public void define(String name, Symbol symbol) throws SemanticErrorException {
+    public void define(String name, Symbol symbol) throws CompilationErrorException {
         this.symbolTable.define(name, symbol);
     }
 
@@ -48,7 +48,7 @@ public class GlobalScope implements Scope {
             for (final Symbol typeSymbol : BuiltInTypeSymbol.builtInTypes()) {
                 define(typeSymbol.name(), typeSymbol);
             }
-        } catch (SemanticErrorException ignored) {
+        } catch (CompilationErrorException ignored) {
             // cannot happen for built-in types
         }
     }

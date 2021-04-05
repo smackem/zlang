@@ -1,9 +1,8 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.SemanticErrorException;
+import net.smackem.zlang.lang.CompilationErrorException;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 public class FunctionSymbol extends Symbol implements Scope {
@@ -20,7 +19,7 @@ public class FunctionSymbol extends Symbol implements Scope {
     }
 
     @Override
-    public void define(String name, Symbol symbol) throws SemanticErrorException {
+    public void define(String name, Symbol symbol) throws CompilationErrorException {
         this.symbolTable.define(name, symbol);
     }
 
