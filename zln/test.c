@@ -788,6 +788,7 @@ static byte_t code_memory[1024];
 int main() {
     MemoryLayout heap;
     fprintf(stdout, "zln_test v%d.%d\n", zln_VERSION_MAJOR, zln_VERSION_MINOR);
+    fprintf(stdout, "RemoveRef=%d\n", OPC_RemoveRef);
     fprintf(stdout, ">>> running tests...\n");
     int n = 1;
 
