@@ -2,12 +2,14 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
+import java.util.Collection;
+
 public class UnionSymbol extends Symbol implements Type, MemberScope {
     private final SymbolTable symbolTable;
 
     UnionSymbol(String name, Scope enclosingScope) {
         super(name, null);
-        this.symbolTable = new SymbolTable(enclosingScope);
+        this.symbolTable = new SymbolTable(enclosingScope, name);
     }
 
     @Override
@@ -22,7 +24,7 @@ public class UnionSymbol extends Symbol implements Type, MemberScope {
 
     @Override
     public String scopeName() {
-        return this.symbolTable.scopeName();
+        return name();
     }
 
     @Override
@@ -46,6 +48,11 @@ public class UnionSymbol extends Symbol implements Type, MemberScope {
                "name=" + name() +
                ", symbolTable=" + symbolTable +
                '}';
+    }
+
+    @Override
+    public Collection<Symbol> symbols() {
+        return this.symbolTable.symbols();
     }
 }
 

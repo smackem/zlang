@@ -43,9 +43,9 @@ class SymbolWalker extends ScopeWalker {
                 logSemanticError(ctx, "declaring type symbol is not a compound type " + declTypeName);
                 return null;
             }
-            functionSymbol = new MethodSymbol(name, returnType, (MemberScope) declType);
+            functionSymbol = new MethodSymbol(name, returnType, (MemberScope) currentScope());
             defineSymbol(ctx, functionSymbol, new ConstantSymbol("self", (Type) declType));
-            defineSymbol(ctx, (Scope) declType, functionSymbol);
+            defineSymbol(ctx, (MemberScope) declType, functionSymbol);
         } else {
             functionSymbol = new FunctionSymbol(name, returnType, currentScope());
             defineSymbol(ctx, currentScope(), functionSymbol);

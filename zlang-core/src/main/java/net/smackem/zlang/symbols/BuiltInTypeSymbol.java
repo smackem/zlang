@@ -9,12 +9,13 @@ public class BuiltInTypeSymbol extends Symbol implements Type {
     public static final BuiltInTypeSymbol INT = new BuiltInTypeSymbol("int");
     public static final BuiltInTypeSymbol FLOAT = new BuiltInTypeSymbol("float");
     public static final BuiltInTypeSymbol BYTE = new BuiltInTypeSymbol("byte");
-    public static final BuiltInTypeSymbol ANY = new BuiltInTypeSymbol("any");
+    public static final BuiltInTypeSymbol OBJECT = new BuiltInTypeSymbol("object");
     public static final BuiltInTypeSymbol RUNTIME_PTR = new BuiltInTypeSymbol("runtime_ptr");
     public static final BuiltInTypeSymbol STRING = new BuiltInTypeSymbol("string");
+    public static final BuiltInTypeSymbol BOOL = new BuiltInTypeSymbol("bool");
 
     public static Collection<BuiltInTypeSymbol> builtInTypes() {
-        return List.of(INT, FLOAT, BYTE, ANY, RUNTIME_PTR, STRING);
+        return List.of(INT, FLOAT, BYTE, OBJECT, RUNTIME_PTR, STRING, BOOL);
     }
 
     private final String typeName;

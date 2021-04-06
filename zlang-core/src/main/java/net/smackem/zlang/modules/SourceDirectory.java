@@ -39,4 +39,25 @@ public class SourceDirectory implements SourceFileLocation {
         final Path filePath = Path.of(this.path.toString(), moduleName);
         return Files.newInputStream(filePath, StandardOpenOption.READ);
     }
+
+    @Override
+    public String toString() {
+        return "SourceDirectory{" +
+               "path=" + path +
+               ", defaultFileExtension='" + defaultFileExtension + '\'' +
+               '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final SourceDirectory that = (SourceDirectory) o;
+        return Objects.equals(path, that.path) && Objects.equals(defaultFileExtension, that.defaultFileExtension);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(path, defaultFileExtension);
+    }
 }

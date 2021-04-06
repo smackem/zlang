@@ -2,6 +2,8 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
+import java.util.Collection;
+
 public class GlobalScope implements Scope {
     private final SymbolTable symbolTable;
 
@@ -43,6 +45,11 @@ public class GlobalScope implements Scope {
         return null;
     }
 
+    @Override
+    public Collection<Symbol> symbols() {
+        return this.symbolTable.symbols();
+    }
+
     private void initTypeSystem() {
         try {
             for (final Symbol typeSymbol : BuiltInTypeSymbol.builtInTypes()) {
@@ -56,7 +63,8 @@ public class GlobalScope implements Scope {
     @Override
     public String toString() {
         return "GlobalScope{" +
-               "symbolTable=" + symbolTable +
+               "scopeName=" + scopeName() +
+               ", symbolTable=" + symbolTable +
                '}';
     }
 }

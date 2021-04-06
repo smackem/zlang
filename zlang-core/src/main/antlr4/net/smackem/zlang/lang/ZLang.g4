@@ -49,7 +49,7 @@ simpleType
     | Byte
     | String
     | RuntimePtr
-    | Any
+    | Object
     | Ident
     ;
 
@@ -361,7 +361,7 @@ Float       : 'float';
 Bool        : 'bool';
 String      : 'string';
 Byte        : 'byte';
-Any         : 'any';
+Object      : 'object';
 RuntimePtr  : 'runtime_ptr';
 Struct      : 'struct';
 With        : 'with';

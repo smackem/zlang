@@ -16,7 +16,9 @@ class DependencyWalker extends ZLangBaseVisitor<Void> {
     }
 
     List<String> dependencies() {
-        return this.dependencies;
+        return this.dependencies != null
+                ? this.dependencies
+                : List.of();
     }
 
     @Override

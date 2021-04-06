@@ -2,15 +2,13 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 class SymbolTable implements MemberScope {
     private final String name;
     private final Scope enclosingScope;
-    private final Map<String, Symbol> symbols = new HashMap<>();
+    private final Map<String, Symbol> symbols = new LinkedHashMap<>();
 
     SymbolTable(Scope enclosingScope, String scopeName) {
         this.enclosingScope = enclosingScope;
@@ -22,6 +20,7 @@ class SymbolTable implements MemberScope {
         this.name = null;
     }
 
+    @Override
     public Collection<Symbol> symbols() {
         return Collections.unmodifiableCollection(this.symbols.values());
     }
@@ -62,6 +61,10 @@ class SymbolTable implements MemberScope {
 
     @Override
     public String toString() {
-        return "SymbolTable" + symbols;
+        return "SymbolTable{name='%s', symbols=%s}".formatted(
+                this.name,
+                symbols.values().stream()
+                        .map(s -> s.name() + ": " + (s.type() != null ? s.type().typeName() : null))
+                        .collect(Collectors.joining(", ")));
     }
 }

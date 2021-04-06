@@ -1,12 +1,11 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.ZLangBaseVisitor;
 import net.smackem.zlang.lang.ZLangParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.Map;
 
-public class TypeWalker extends ScopeWalker {
+class TypeWalker extends ScopeWalker {
     private final String fileName;
 
     TypeWalker(String fileName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {

@@ -2,6 +2,8 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
+import java.util.Collection;
+
 public class ModuleSymbol extends Symbol implements MemberScope {
     private final SymbolTable symbolTable;
 
@@ -41,5 +43,10 @@ public class ModuleSymbol extends Symbol implements MemberScope {
                "name=" + name() +
                ", symbolTable=" + symbolTable +
                '}';
+    }
+
+    @Override
+    public Collection<Symbol> symbols() {
+        return this.symbolTable.symbols();
     }
 }

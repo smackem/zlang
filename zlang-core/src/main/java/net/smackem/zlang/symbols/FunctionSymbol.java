@@ -38,6 +38,11 @@ public class FunctionSymbol extends Symbol implements Scope {
     }
 
     @Override
+    public Collection<Symbol> symbols() {
+        return this.symbolTable.symbols();
+    }
+
+    @Override
     public String toString() {
         return "FunctionSymbol{" +
                "name=" + name() +

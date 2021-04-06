@@ -78,4 +78,12 @@ public class SyntaxTree {
         public void reportContextSensitivity(Parser parser, DFA dfa, int i, int i1, int i2, ATNConfigSet atnConfigSet) {
         }
     }
+
+    @Override
+    public String toString() {
+        return "SyntaxTree{" +
+               "fileName='" + fileName + '\'' +
+               ", parseTree=" + parseTree +
+               '}';
+    }
 }

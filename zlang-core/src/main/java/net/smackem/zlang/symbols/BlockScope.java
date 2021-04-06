@@ -2,6 +2,8 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
+import java.util.Collection;
+
 public final class BlockScope implements Scope {
     private final SymbolTable symbolTable;
 
@@ -27,5 +29,17 @@ public final class BlockScope implements Scope {
     @Override
     public Symbol resolve(String name) {
         return this.symbolTable.resolve(name);
+    }
+
+    @Override
+    public Collection<Symbol> symbols() {
+        return this.symbolTable.symbols();
+    }
+
+    @Override
+    public String toString() {
+        return "BlockScope{" +
+               "symbolTable=" + symbolTable +
+               '}';
     }
 }
