@@ -42,4 +42,14 @@ class TypeWalker extends ScopeWalker {
         popScope();
         return null;
     }
+
+    @Override
+    public Void visitInterfaceDecl(ZLangParser.InterfaceDeclContext ctx) {
+        final InterfaceSymbol ifc = new InterfaceSymbol(ctx.Ident().getText(), currentScope());
+        defineSymbol(ctx, currentScope(), ifc);
+        pushScope(ctx, ifc);
+        super.visitInterfaceDecl(ctx);
+        popScope();
+        return null;
+    }
 }

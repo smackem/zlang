@@ -54,16 +54,29 @@ simpleType
     ;
 
 typeDecl
-    : structDecl
+    : DocComment? (structDecl
     | unionDecl
+    | interfaceDecl)
     ;
 
 structDecl
-    : Struct Ident LBrace (parameter LineBreak)* RBrace LineBreak
+    : Struct Ident LBrace (parameter LineBreak)* RBrace implementsClause? LineBreak
     ;
 
 unionDecl
-    : Union Ident LBrace (parameter LineBreak)* RBrace LineBreak
+    : Union Ident LBrace (parameter LineBreak)* RBrace implementsClause? LineBreak
+    ;
+
+implementsClause
+    : Is Ident (Comma Ident)*
+    ;
+
+interfaceDecl
+    : Interface Ident LBrace (interfaceMethodDecl LineBreak)* RBrace LineBreak
+    ;
+
+interfaceMethodDecl
+    : DocComment? Fn declaringTypePrefix? Ident LParen parameters? RParen returnType?
     ;
 
 statement
@@ -193,6 +206,7 @@ relationalOp
     | Ge
     | Ne
     | In
+    | Is
     ;
 
 additiveExpr
@@ -320,6 +334,7 @@ Swap        : '<=>';
 Pipe        : '|';
 Colon       : ':';
 ColonColon  : '::';
+Is          : 'is';
 
 Arrow       : '->' LineBreak?;
 Or          : 'or' LineBreak?;
@@ -370,6 +385,7 @@ New         : 'new';
 Union       : 'union';
 Mutable     : 'mutable';
 Runtime     : 'runtime';
+Interface   : 'interface';
 
 number
     : (Plus | Minus)? Number

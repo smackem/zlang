@@ -16,7 +16,7 @@ fn File::dispose() {
     runtime::fclose(self.handle)
 }
 
-fn compare(a: std.Comparable, b: std.Comparable) -> int {
+fn compare(a: Comparable, b: Comparable) -> int {
     return a.compare(b)
 }
 
@@ -25,7 +25,7 @@ struct Color {
     g: float
     b: float
     a: float
-} is std.Equatable, std.Comparable
+} is Equatable, Comparable
 
 fn Color::luminosity() -> float {
     return self.r * 0.3 + self.g * 0.6 + self.b * 0.1
@@ -42,7 +42,7 @@ fn Color::inverted() -> Color {
 }
 
 interface Equatable {
-    fn equals(obj: any) -> bool
+    fn equals(obj: object) -> bool
 }
 
 struct Image {

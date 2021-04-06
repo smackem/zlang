@@ -94,6 +94,58 @@ public class SymbolExtractorTest {
     }
 
     @Test
+    public void testModuleWithInterface() throws IOException, CompilationErrorException {
+        final List<ParsedModule> modules = parseModule("""
+                interface Readable {
+                    fn read(buf: byte[]) -> int
+                }
+                struct Socket {
+                    address: string
+                } is Readable
+                fn Socket::read(buf: byte[]) -> int {
+                }
+                """);
+        final GlobalScope globalScope = new GlobalScope();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final String symText = symbolText(modules, null, scopes);
+        System.out.println(symText);
+        assertThat(symText).isEqualTo("""
+                > main: ModuleSymbol
+                    - Readable: InterfaceSymbol{null}
+                    - Socket: StructSymbol{null}
+                    > Readable: InterfaceSymbol
+                        - read: InterfaceMethodSymbol{int}
+                        > read: InterfaceMethodSymbol
+                            - buf: ConstantSymbol{Array<byte>}
+                    > Socket: StructSymbol
+                        - address: FieldSymbol{string}
+                        - read: MethodSymbol{int}
+                    > read: MethodSymbol
+                        - self: ConstantSymbol{Socket}
+                        - buf: ConstantSymbol{Array<byte>}
+                        > null: BlockScope
+                """);
+    }
+
+    @Test
+    public void testModuleWithInterfaceTwistedOrder() throws IOException, CompilationErrorException {
+        final List<ParsedModule> modules = parseModule("""
+                struct Socket {
+                    address: string
+                } is Readable
+                fn Socket::read(buf: byte[]) -> int {
+                }
+                interface Readable {
+                    fn read(buf: byte[]) -> int
+                }
+                """);
+        final GlobalScope globalScope = new GlobalScope();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final String symText = symbolText(modules, null, scopes);
+        System.out.println(symText);
+    }
+
+    @Test
     public void testMultiModule() throws IOException, CompilationErrorException {
         final String mainSource = """
                 module main uses dep
@@ -131,8 +183,14 @@ public class SymbolExtractorTest {
                     - runtime_ptr: BuiltInTypeSymbol{null}
                     - string: BuiltInTypeSymbol{null}
                     - bool: BuiltInTypeSymbol{null}
-                    - main: ModuleSymbol{null}
                     - dep: ModuleSymbol{null}
+                    - main: ModuleSymbol{null}
+                    > dep: ModuleSymbol
+                        - Number: UnionSymbol{null}
+                        > Number: UnionSymbol
+                            - integer: FieldSymbol{int}
+                            - real: FieldSymbol{float}
+                            - unsigned: FieldSymbol{byte}
                     > main: ModuleSymbol
                         - File: StructSymbol{null}
                         - main: FunctionSymbol{null}
@@ -143,12 +201,6 @@ public class SymbolExtractorTest {
                             > null: BlockScope
                                 - f: ConstantSymbol{File}
                                 - x: VariableSymbol{int}
-                    > dep: ModuleSymbol
-                        - Number: UnionSymbol{null}
-                        > Number: UnionSymbol
-                            - integer: FieldSymbol{int}
-                            - real: FieldSymbol{float}
-                            - unsigned: FieldSymbol{byte}
                 """);
     }
 

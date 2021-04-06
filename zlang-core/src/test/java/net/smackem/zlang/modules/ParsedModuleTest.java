@@ -32,7 +32,7 @@ public class ParsedModuleTest {
         assertThat(dep.moduleName()).isEqualTo("dep");
         assertThat(dep.dependencies()).isEmpty();
         assertThat(pm.flatten()).extracting(ParsedModule::moduleName)
-                .containsExactly("main", "dep");
+                .containsExactly("dep", "main");
     }
 
     @Test
@@ -48,7 +48,7 @@ public class ParsedModuleTest {
         assertThat(pm.dependencies()).extracting(ParsedModule::dependencies)
                 .allMatch(List::isEmpty);
         assertThat(pm.flatten()).extracting(ParsedModule::moduleName)
-                .containsExactly("main", "dep1", "dep2");
+                .containsExactly("dep2", "dep1", "main");
     }
 
     @Test

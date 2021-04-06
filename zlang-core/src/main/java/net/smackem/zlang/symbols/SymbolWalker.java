@@ -43,6 +43,10 @@ class SymbolWalker extends ScopeWalker {
                 logSemanticError(ctx, "declaring type symbol is not a compound type " + declTypeName);
                 return null;
             }
+            if (declType instanceof InterfaceSymbol) {
+                logSemanticError(ctx, "interface methods must not be implemented " + declTypeName);
+                return null;
+            }
             functionSymbol = new MethodSymbol(name, returnType, (MemberScope) currentScope());
             defineSymbol(ctx, functionSymbol, new ConstantSymbol("self", (Type) declType));
             defineSymbol(ctx, (MemberScope) declType, functionSymbol);
@@ -90,6 +94,53 @@ class SymbolWalker extends ScopeWalker {
         super.visitUnionDecl(ctx);
         popScope();
         return null;
+    }
+
+    @Override
+    public Void visitInterfaceDecl(ZLangParser.InterfaceDeclContext ctx) {
+        enterScope(ctx);
+        super.visitInterfaceDecl(ctx);
+        popScope();
+        return null;
+    }
+
+    @Override
+    public Void visitInterfaceMethodDecl(ZLangParser.InterfaceMethodDeclContext ctx) {
+        final String name = ctx.Ident().getText();
+        final Type returnType = ctx.returnType() != null
+                ? resolveType(ctx.returnType().type())
+                : null;
+        super.visitInterfaceMethodDecl(ctx);
+        final InterfaceMethodSymbol imd = new InterfaceMethodSymbol(name, returnType, (MemberScope) currentScope());
+        defineSymbol(ctx, currentScope(), imd);
+
+        pushScope(ctx, imd);
+        if (ctx.parameters() != null) {
+            for (final var p : ctx.parameters().parameter()) {
+                defineTypedIdent(p, ConstantSymbol::new);
+            }
+        }
+        super.visitInterfaceMethodDecl(ctx);
+        popScope();
+        return null;
+    }
+
+    @Override
+    public Void visitImplementsClause(ZLangParser.ImplementsClauseContext ctx) {
+        final AggregateTypeSymbol aggregate = (AggregateTypeSymbol) currentScope();
+        for (final var ident : ctx.Ident()) {
+            final String id = ident.getText();
+            final Symbol resolvedSymbol = currentScope().resolve(id);
+            if (resolvedSymbol == null) {
+                logSemanticError(ctx, "undeclared symbol '" + id + "'");
+            }
+            if (resolvedSymbol instanceof InterfaceSymbol) {
+                aggregate.addImplementedInterface((InterfaceSymbol) resolvedSymbol);
+            } else {
+                logSemanticError(ctx, "symbol '" + id + "' is not an interface, but " + resolvedSymbol);
+            }
+        }
+        return super.visitImplementsClause(ctx);
     }
 
     @Override

@@ -33,7 +33,7 @@ public class ParsedModule {
     /**
      * @return a collection of all items below this {@link ParsedModule}, including
      *      {@code this} and all transient dependencies - in breadth-first order, beginning
-     *      with {@code this} {@link ParsedModule}.
+     *      with the furthest transient dependency.
      */
     public Collection<ParsedModule> flatten() {
         final List<ParsedModule> list = new ArrayList<>();
@@ -44,6 +44,7 @@ public class ParsedModule {
             list.add(item);
             queue.addAll(item.dependencies);
         }
+        Collections.reverse(list);
         return list;
     }
 
