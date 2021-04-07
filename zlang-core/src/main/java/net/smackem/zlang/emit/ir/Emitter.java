@@ -8,18 +8,38 @@ import java.util.*;
 
 public class Emitter extends ScopeWalker {
     private final List<Type> types = new ArrayList<>();
-    private final List<FunctionSymbol> functions = new ArrayList<>();
+    private final List<EmittedFunction> functions = new ArrayList<>();
+    private EmittedFunction currentFunction;
+    private final EmittedFunction initFunction;
 
-    Emitter(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
+    Emitter(String moduleName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
         super(globalScope, scopes);
+        this.initFunction = new EmittedFunction(new FunctionSymbol("@init:" + moduleName, null, globalScope));
+        this.functions.add(this.initFunction);
     }
 
     Collection<Type> types() {
         return Collections.unmodifiableCollection(this.types);
     }
 
-    Collection<FunctionSymbol> functions() {
+    Collection<EmittedFunction> functions() {
         return Collections.unmodifiableCollection(this.functions);
+    }
+
+    @Override
+    public Void visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
+        if (this.currentFunction == null) {
+            this.currentFunction = this.initFunction;
+        }
+        return super.visitVarDeclStmt(ctx);
+    }
+
+    @Override
+    public Void visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
+        if (this.currentFunction == null) {
+            this.currentFunction = this.initFunction;
+        }
+        return super.visitBindingStmt(ctx);
     }
 
     @Override
@@ -60,9 +80,11 @@ public class Emitter extends ScopeWalker {
     @Override
     public Void visitFunctionDecl(ZLangParser.FunctionDeclContext ctx) {
         enterScope(ctx);
-        this.functions.add((FunctionSymbol) currentScope());
+        this.currentFunction = new EmittedFunction((FunctionSymbol) currentScope());
+        this.functions.add(this.currentFunction);
         super.visitFunctionDecl(ctx);
         popScope();
+        this.currentFunction = null;
         return null;
     }
 

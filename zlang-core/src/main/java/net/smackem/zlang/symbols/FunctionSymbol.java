@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 public class FunctionSymbol extends Symbol implements Scope {
     private final SymbolTable symbolTable;
 
-    FunctionSymbol(String name, Type type, Scope enclosingScope) {
+    public FunctionSymbol(String name, Type type, Scope enclosingScope) {
         super(name, type);
         this.symbolTable = new SymbolTable(enclosingScope, name);
     }
@@ -34,10 +34,6 @@ public class FunctionSymbol extends Symbol implements Scope {
     @Override
     public Symbol resolve(String name) {
         return this.symbolTable.resolve(name);
-    }
-
-    public Collection<Symbol> parameters() {
-        return this.symbolTable.symbols();
     }
 
     @Override

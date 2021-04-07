@@ -14,7 +14,7 @@ public class MethodSymbol extends FunctionSymbol {
                "name=" + name() +
                "returnType=" + type() +
                "declaringType=" + enclosingScope() +
-               "parameters=" + parameters().stream()
+               "parameters=" + symbols().stream()
                        .map(s -> s.name() + ':' + s.type().typeName())
                        .collect(Collectors.joining(", ")) +
                '}';
