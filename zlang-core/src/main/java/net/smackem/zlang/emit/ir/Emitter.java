@@ -6,15 +6,17 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
 
-public class Emitter extends ScopeWalker {
+public class Emitter extends ScopeWalker<Type> {
     private final List<Type> types = new ArrayList<>();
-    private final List<EmittedFunction> functions = new ArrayList<>();
-    private EmittedFunction currentFunction;
-    private final EmittedFunction initFunction;
+    private final List<FunctionSymbol> functions = new ArrayList<>();
+    private final List<Instruction> instructions = new ArrayList<>();
+    private final FunctionSymbol initFunction;
+    private FunctionSymbol currentFunction;
+    private Register topRegister;
 
     Emitter(String moduleName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
         super(globalScope, scopes);
-        this.initFunction = new EmittedFunction(new FunctionSymbol("@init:" + moduleName, null, globalScope));
+        this.initFunction = new FunctionSymbol("@init:" + moduleName, null, globalScope);
         this.functions.add(this.initFunction);
     }
 
@@ -22,28 +24,31 @@ public class Emitter extends ScopeWalker {
         return Collections.unmodifiableCollection(this.types);
     }
 
-    Collection<EmittedFunction> functions() {
+    Collection<FunctionSymbol> functions() {
         return Collections.unmodifiableCollection(this.functions);
     }
 
     @Override
-    public Void visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
+    public Type visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
         if (this.currentFunction == null) {
-            this.currentFunction = this.initFunction;
+            // global var
+            enterFunction(this.initFunction);
+        } else {
+            final Symbol variable = this.currentScope().resolve(ctx.parameter().Ident().getText());
         }
         return super.visitVarDeclStmt(ctx);
     }
 
     @Override
-    public Void visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
+    public Type visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
         if (this.currentFunction == null) {
-            this.currentFunction = this.initFunction;
+            enterFunction(this.initFunction);
         }
         return super.visitBindingStmt(ctx);
     }
 
     @Override
-    public Void visitModule(ZLangParser.ModuleContext ctx) {
+    public Type visitModule(ZLangParser.ModuleContext ctx) {
         enterScope(ctx);
         super.visitModule(ctx);
         popScope();
@@ -51,7 +56,7 @@ public class Emitter extends ScopeWalker {
     }
 
     @Override
-    public Void visitInterfaceDecl(ZLangParser.InterfaceDeclContext ctx) {
+    public Type visitInterfaceDecl(ZLangParser.InterfaceDeclContext ctx) {
         enterScope(ctx);
         this.types.add((Type) currentScope());
         super.visitInterfaceDecl(ctx);
@@ -60,7 +65,7 @@ public class Emitter extends ScopeWalker {
     }
 
     @Override
-    public Void visitStructDecl(ZLangParser.StructDeclContext ctx) {
+    public Type visitStructDecl(ZLangParser.StructDeclContext ctx) {
         enterScope(ctx);
         this.types.add((Type) currentScope());
         super.visitStructDecl(ctx);
@@ -69,7 +74,7 @@ public class Emitter extends ScopeWalker {
     }
 
     @Override
-    public Void visitUnionDecl(ZLangParser.UnionDeclContext ctx) {
+    public Type visitUnionDecl(ZLangParser.UnionDeclContext ctx) {
         enterScope(ctx);
         this.types.add((Type) currentScope());
         super.visitUnionDecl(ctx);
@@ -78,9 +83,9 @@ public class Emitter extends ScopeWalker {
     }
 
     @Override
-    public Void visitFunctionDecl(ZLangParser.FunctionDeclContext ctx) {
+    public Type visitFunctionDecl(ZLangParser.FunctionDeclContext ctx) {
         enterScope(ctx);
-        this.currentFunction = new EmittedFunction((FunctionSymbol) currentScope());
+        enterFunction((FunctionSymbol) currentScope());
         this.functions.add(this.currentFunction);
         super.visitFunctionDecl(ctx);
         popScope();
@@ -89,7 +94,7 @@ public class Emitter extends ScopeWalker {
     }
 
     @Override
-    public Void visitForStmt(ZLangParser.ForStmtContext ctx) {
+    public Type visitForStmt(ZLangParser.ForStmtContext ctx) {
         enterScope(ctx);
         super.visitForStmt(ctx);
         popScope();
@@ -97,10 +102,91 @@ public class Emitter extends ScopeWalker {
     }
 
     @Override
-    public Void visitBlock(ZLangParser.BlockContext ctx) {
+    public Type visitBlock(ZLangParser.BlockContext ctx) {
         enterScope(ctx);
         super.visitBlock(ctx);
         popScope();
         return null;
+    }
+
+    @Override
+    public Type visitNumber(ZLangParser.NumberContext ctx) {
+        if (ctx.IntegerNumber() != null) {
+            emit(OpCode.Ldc_i32, pushRegister(), parseInteger(ctx.IntegerNumber().getText()));
+            return BuiltInTypeSymbol.INT;
+        }
+        if (ctx.RealNumber() != null) {
+            emit(OpCode.Ldc_f64, pushRegister(), parseFloat(ctx.RealNumber().getText()));
+            return BuiltInTypeSymbol.FLOAT;
+        }
+        return super.visitNumber(ctx);
+    }
+
+    private Register pushRegister() {
+        final Register register = this.topRegister;
+        this.topRegister = this.topRegister.next();
+        return register;
+    }
+
+    private Register popRegister() {
+        final Register register = this.topRegister;
+        this.topRegister = this.topRegister.previous();
+        return register;
+    }
+
+    private static int parseInteger(String text) {
+        return Integer.parseInt(text);
+    }
+
+    private static double parseFloat(String text) {
+        return Double.parseDouble(text);
+    }
+
+    private void enterFunction(FunctionSymbol function) {
+        this.currentFunction = function;
+        int top = this.currentFunction.symbols().size() + this.currentFunction.localCount() + 1;
+        this.topRegister = Register.fromNumber(top);
+    }
+
+    private void emit(OpCode opCode, Register register) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register);
+        this.instructions.add(instr);
+    }
+
+    private void emit(OpCode opCode, Register register1, Register register2) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register1);
+        instr.setRegisterArg(1, register2);
+        this.instructions.add(instr);
+    }
+
+    private void emit(OpCode opCode, Register register1, Register register2, Register register3) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register1);
+        instr.setRegisterArg(1, register2);
+        instr.setRegisterArg(2, register3);
+        this.instructions.add(instr);
+    }
+
+    private void emit(OpCode opCode, Register register, long integer) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register);
+        instr.setIntArg(integer);
+        this.instructions.add(instr);
+    }
+
+    private void emit(OpCode opCode, Register register, double floatArg) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register);
+        instr.setFloatArg(floatArg);
+        this.instructions.add(instr);
+    }
+
+    private void emit(OpCode opCode, Register register, Symbol symbol) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register);
+        instr.setSymbolArg(symbol);
+        this.instructions.add(instr);
     }
 }

@@ -4,9 +4,11 @@ import net.smackem.zlang.symbols.Symbol;
 
 public class Instruction {
     private final OpCode opCode;
-    private final int[] registerArgs = new int[3];
+    private final Register[] registerArgs = new Register[3];
     private Symbol symbolArg;
-    private int intArg;
+    private long intArg;
+    private Label labelArg;
+    private double floatArg;
 
     Instruction(OpCode opCode) {
         this.opCode = opCode;
@@ -16,11 +18,11 @@ public class Instruction {
         return this.opCode;
     }
 
-    public int registerArg(int index) {
+    public Register registerArg(int index) {
         return this.registerArgs[index];
     }
 
-    void setRegisterArg(int index, int register) {
+    void setRegisterArg(int index, Register register) {
         this.registerArgs[index] = register;
     }
 
@@ -32,11 +34,27 @@ public class Instruction {
         this.symbolArg = symbol;
     }
 
-    public int intArg() {
+    public long intArg() {
         return this.intArg;
     }
 
-    void setIntArg(int integer) {
+    void setIntArg(long integer) {
         this.intArg = integer;
+    }
+
+    public Label labelArg() {
+        return this.labelArg;
+    }
+
+    void setLabelArg(Label label) {
+        this.labelArg = label;
+    }
+
+    public double floatArg() {
+        return this.floatArg;
+    }
+
+    void setFloatArg(double floatArg) {
+        this.floatArg = floatArg;
     }
 }

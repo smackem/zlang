@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.Map;
 
-class TypeWalker extends ScopeWalker {
+class TypeWalker extends ScopeWalker<Void> {
     private final String fileName;
 
     TypeWalker(String fileName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {

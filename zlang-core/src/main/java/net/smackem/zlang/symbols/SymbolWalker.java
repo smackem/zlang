@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import java.util.Map;
 import java.util.function.BiFunction;
 
-class SymbolWalker extends ScopeWalker {
+class SymbolWalker extends ScopeWalker<Void> {
 
     SymbolWalker(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
         super(globalScope, scopes);
@@ -153,33 +153,48 @@ class SymbolWalker extends ScopeWalker {
 
     @Override
     public Void visitForIteratorStmt(ZLangParser.ForIteratorStmtContext ctx) {
-        defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        final var symbol = defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        symbol.setAddress(incrementLocalCount());
         return super.visitForIteratorStmt(ctx);
     }
 
     @Override
     public Void visitForRangeStmt(ZLangParser.ForRangeStmtContext ctx) {
-        defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        final var symbol = defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        symbol.setAddress(incrementLocalCount());
         return super.visitForRangeStmt(ctx);
     }
 
     @Override
     public Void visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
-        defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        final var symbol = defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        symbol.setAddress(incrementLocalCount());
         return super.visitBindingStmt(ctx);
     }
 
     @Override
     public Void visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
-        defineTypedIdent(ctx.parameter(), VariableSymbol::new);
+        final var symbol = defineTypedIdent(ctx.parameter(), VariableSymbol::new);
+        symbol.setAddress(incrementLocalCount());
         return super.visitVarDeclStmt(ctx);
     }
 
-    private void defineTypedIdent(ZLangParser.ParameterContext ctx, BiFunction<String, Type, Symbol> symbolFactory) {
+    private <T extends Symbol> T defineTypedIdent(ZLangParser.ParameterContext ctx, BiFunction<String, Type, T> symbolFactory) {
         final String ident = ctx.Ident().getText();
         final Type type = resolveType(ctx.type());
-        final Symbol symbol = symbolFactory.apply(ident, type);
+        final T symbol = symbolFactory.apply(ident, type);
         defineSymbol(ctx, currentScope(), symbol);
+        return symbol;
+    }
+
+    private int incrementLocalCount() {
+        final FunctionSymbol declaringFunction = Scopes.enclosingSymbol(currentScope(), FunctionSymbol.class);
+        if (declaringFunction != null) {
+            int count = declaringFunction.localCount() + 1;
+            declaringFunction.setLocalCount(count);
+            return count;
+        }
+        return 0;
     }
 
     private Type resolveType(ZLangParser.TypeContext ctx) {

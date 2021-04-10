@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.Map;
 
-public abstract class ScopeWalker extends ZLangBaseVisitor<Void> {
+public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
     private final Map<ParserRuleContext, Scope> scopes;
     private Scope currentScope;
 
@@ -48,6 +48,8 @@ public abstract class ScopeWalker extends ZLangBaseVisitor<Void> {
     void defineSymbol(ParserRuleContext ctx, Scope scope, Symbol symbol) {
         try {
             scope.define(symbol.name(), symbol);
+            symbol.setLineNumber(ctx.getStart().getLine());
+            symbol.setCharPosition(ctx.getStart().getCharPositionInLine());
         } catch (CompilationErrorException e) {
             logSemanticError(ctx, e.getMessage());
         }

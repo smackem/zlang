@@ -7,6 +7,7 @@ import java.util.stream.Collectors;
 
 public class FunctionSymbol extends Symbol implements Scope {
     private final SymbolTable symbolTable;
+    private int localCount;
 
     public FunctionSymbol(String name, Type type, Scope enclosingScope) {
         super(name, type);
@@ -39,6 +40,21 @@ public class FunctionSymbol extends Symbol implements Scope {
     @Override
     public Collection<Symbol> symbols() {
         return this.symbolTable.symbols();
+    }
+
+    public int localCount() {
+        return this.localCount;
+    }
+
+    void setLocalCount(int localCount) {
+        this.localCount = localCount;
+    }
+
+    public boolean isEntryPoint() {
+        return getClass() == FunctionSymbol.class
+               && "main".equals(name())
+               && type() == null
+               && symbols().isEmpty();
     }
 
     @Override

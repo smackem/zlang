@@ -1,0 +1,15 @@
+module coll uses std
+
+struct List {
+    array: object[]
+    count: int
+} is Equatable
+
+fn mutable List::__ensure_size(int size) {
+}
+
+fn mutable List::push(obj: object) {
+    self.__ensure_size(self.count + 1)
+    self.array[self.count] = obj
+    self.count = self.count + 1
+}

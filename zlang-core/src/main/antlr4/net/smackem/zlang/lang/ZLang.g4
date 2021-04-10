@@ -388,18 +388,18 @@ Runtime     : 'runtime';
 Interface   : 'interface';
 
 number
-    : (Plus | Minus)? Number
-    ;
-
-EnvironmentArg
-    : '$' Ident
+    : (Plus | Minus)? (IntegerNumber | RealNumber)
     ;
 
 Ident
     : ('a' .. 'z' | 'A' .. 'Z' | '_') ('a' .. 'z' | 'A' .. 'Z' | '_' | '0' .. '9')*
     ;
 
-Number
+IntegerNumber
+    : [0-9][0-9_]+
+    ;
+
+RealNumber
     : [0-9][0-9_]* ('.' [0-9_]*[0-9])?
     ;
 

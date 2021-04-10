@@ -1,21 +1,58 @@
 module std
 
+interface Equatable {
+    fn equals(other: object) -> bool
+}
+
+fn objects_are_equal(a: object, b: object) {
+    let ao: Equatable = (Equatable) a
+    let bo: Equatable = (Equatable) b
+    return ao.equals(bo) if ao != nil and bo != nil else false
+}
+
+interface Comparable {
+    fn compareTo(other: object) -> int
+}
+
+fn compare(a: object, b: object) {
+    let ao: Comparable = (Comparable) a
+    let bo: Comparable = (Comparable) b
+    return ao.compareTo(bo) if ao != nil else panic("cannot compare")
+}
+
 struct Int32 {
     value: int
 } is Equatable, Comparable
 
-fn Int32::equals(other: any) -> bool {
+fn Int32::value() -> int {
+    return self.value
+}
+
+fn Int32::equals(other: object) -> bool {
     let x: Int32 = (Int32) other
     return x.value == self.value if x != nil else false
 }
 
-fn Int32::compareTo(other: any) -> int {
+fn Int32::compareTo(other: object) -> int {
     let x: Int32 = (Int32) other
-    return self.value - x.value if x != nil else panic("could not cast")
+    return self.value - x.value if x != nil else panic("other is not integer")
 }
 
 fn box_int(value: int) -> Int32 {
     return new Int32 {
         value: value
     }
+}
+
+struct Float64 {
+    value: float
+} is Equatable, Comparable
+
+fn Float64::value() -> float {
+    return self.value
+}
+
+fn Float64::equals(other: object) {
+    let x: Float64 = (Float64) other
+    return x.value == self.value if x != nil else false
 }

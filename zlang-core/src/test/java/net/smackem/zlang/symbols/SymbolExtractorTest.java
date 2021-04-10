@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.tree.RuleNode;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +24,15 @@ public class SymbolExtractorTest {
     public void testEmpty() throws IOException, CompilationErrorException {
         final List<ParsedModule> modules = parseModule("");
         final GlobalScope globalScope = new GlobalScope();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         assertThat(scopes).hasSize(1);
         assertThat(scopes.values()).extracting(Scope::scopeName).contains("main");
         assertThat(scopes.values()).allMatch(scope -> scope instanceof ModuleSymbol);
         assertThat(globalScope.symbols()).hasSize(BuiltInTypeSymbol.builtInTypes().size() + 1);
+        // one error is expected: no main method
+        assertThat(errors).hasSize(1);
+        assertThat(errors).allMatch(s -> s.contains("main"));
     }
 
     @Test
@@ -38,11 +43,15 @@ public class SymbolExtractorTest {
                 }
                 """);
         final GlobalScope globalScope = new GlobalScope();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         assertThat(scopes).isNotEmpty();
         assertThat(scopes).hasSize(2);
         assertThat(scopes.values()).extracting(Scope::scopeName).contains("main", "StructType");
         System.out.println(symbolText(modules, globalScope, scopes));
+        // one error is expected: no main method
+        assertThat(errors).hasSize(1);
+        assertThat(errors).allMatch(s -> s.contains("main"));
     }
 
     @Test
@@ -51,7 +60,7 @@ public class SymbolExtractorTest {
                 struct StructType {
                     field: int
                 }
-                fn function(i: int) -> int {
+                fn main(i: int) -> int {
                     let o: object = nil
                     if i > 0 {
                         let v: float = 1.0
@@ -66,18 +75,19 @@ public class SymbolExtractorTest {
                 }
                 """);
         final GlobalScope globalScope = new GlobalScope();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         final String symText = symbolText(modules, null, scopes);
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > main: ModuleSymbol
                     - StructType: StructSymbol{null}
                     - UnionType: UnionSymbol{null}
-                    - function: FunctionSymbol{int}
+                    - main: FunctionSymbol{int}
                     > StructType: StructSymbol
                         - field: FieldSymbol{int}
                         - method: MethodSymbol{byte}
-                    > function: FunctionSymbol
+                    > main: FunctionSymbol
                         - i: ConstantSymbol{int}
                         > null: BlockScope
                             - o: ConstantSymbol{object}
@@ -91,6 +101,9 @@ public class SymbolExtractorTest {
                         - real: FieldSymbol{float}
                         - str: FieldSymbol{string}
                 """);
+        // one error is expected: main method signature does not fit
+        assertThat(errors).hasSize(1);
+        assertThat(errors).allMatch(s -> s.contains("main"));
     }
 
     @Test
@@ -106,7 +119,8 @@ public class SymbolExtractorTest {
                 }
                 """);
         final GlobalScope globalScope = new GlobalScope();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         final String symText = symbolText(modules, null, scopes);
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
@@ -140,7 +154,8 @@ public class SymbolExtractorTest {
                 }
                 """);
         final GlobalScope globalScope = new GlobalScope();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         final String symText = symbolText(modules, null, scopes);
         System.out.println(symText);
     }
@@ -171,7 +186,8 @@ public class SymbolExtractorTest {
         final ParsedModule module = ParsedModule.parse("main", loc);
         final Collection<ParsedModule> modules = module.flatten();
         final GlobalScope globalScope = new GlobalScope();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope);
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         final String symText = symbolText(modules, globalScope, scopes);
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
@@ -202,6 +218,7 @@ public class SymbolExtractorTest {
                                 - f: ConstantSymbol{File}
                                 - x: VariableSymbol{int}
                 """);
+        assertThat(errors).isEmpty();
     }
 
     private static List<ParsedModule> parseModule(String source) throws IOException, CompilationErrorException {
@@ -258,8 +275,8 @@ public class SymbolExtractorTest {
                     scope.scopeName(), scope.getClass().getSimpleName()));
             for (final Symbol symbol : scope.symbols()) {
                 buffer.append(indentStr);
-                buffer.append("    - %s: %s{%s}\n".formatted(
-                        symbol.name(), symbol.getClass().getSimpleName(), symbol.type() != null ? symbol.type().typeName() : null));
+                buffer.append("    - %s: %s{%s}@%d\n".formatted(
+                        symbol.name(), symbol.getClass().getSimpleName(), symbol.type() != null ? symbol.type().typeName() : null, symbol.address()));
             }
         }
 
