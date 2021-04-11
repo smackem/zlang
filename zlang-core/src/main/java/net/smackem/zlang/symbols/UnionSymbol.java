@@ -13,4 +13,13 @@ public class UnionSymbol extends AggregateTypeSymbol {
                ", symbolTable=" + symbolTableString() +
                '}';
     }
+
+    @Override
+    public int byteSize() {
+        int size = 0;
+        for (final Symbol symbol : symbols()) {
+            size = Math.max(size, symbol.type().byteSize());
+        }
+        return size;
+    }
 }

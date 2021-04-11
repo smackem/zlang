@@ -81,25 +81,25 @@ public class SymbolExtractorTest {
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > main: ModuleSymbol
-                    - StructType: StructSymbol{null}
-                    - UnionType: UnionSymbol{null}
-                    - main: FunctionSymbol{int}
+                    - StructType: StructSymbol{null}@0
+                    - UnionType: UnionSymbol{null}@0
+                    - main: FunctionSymbol{int}@0
                     > StructType: StructSymbol
-                        - field: FieldSymbol{int}
-                        - method: MethodSymbol{byte}
+                        - field: FieldSymbol{int}@0
+                        - method: MethodSymbol{byte}@0
                     > main: FunctionSymbol
-                        - i: ConstantSymbol{int}
+                        - i: ConstantSymbol{int}@1
                         > null: BlockScope
-                            - o: ConstantSymbol{object}
+                            - o: ConstantSymbol{object}@2
                             > null: BlockScope
-                                - v: ConstantSymbol{float}
+                                - v: ConstantSymbol{float}@3
                     > method: MethodSymbol
-                        - self: ConstantSymbol{StructType}
+                        - self: ConstantSymbol{StructType}@1
                         > null: BlockScope
                     > UnionType: UnionSymbol
-                        - integer: FieldSymbol{int}
-                        - real: FieldSymbol{float}
-                        - str: FieldSymbol{string}
+                        - integer: FieldSymbol{int}@0
+                        - real: FieldSymbol{float}@0
+                        - str: FieldSymbol{string}@0
                 """);
         // one error is expected: main method signature does not fit
         assertThat(errors).hasSize(1);
@@ -125,18 +125,18 @@ public class SymbolExtractorTest {
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > main: ModuleSymbol
-                    - Readable: InterfaceSymbol{null}
-                    - Socket: StructSymbol{null}
+                    - Readable: InterfaceSymbol{null}@0
+                    - Socket: StructSymbol{null}@0
                     > Readable: InterfaceSymbol
-                        - read: InterfaceMethodSymbol{int}
+                        - read: InterfaceMethodSymbol{int}@0
                         > read: InterfaceMethodSymbol
-                            - buf: ConstantSymbol{Array<byte>}
+                            - buf: ConstantSymbol{Array<byte>}@0
                     > Socket: StructSymbol
-                        - address: FieldSymbol{string}
-                        - read: MethodSymbol{int}
+                        - address: FieldSymbol{string}@0
+                        - read: MethodSymbol{int}@0
                     > read: MethodSymbol
-                        - self: ConstantSymbol{Socket}
-                        - buf: ConstantSymbol{Array<byte>}
+                        - self: ConstantSymbol{Socket}@1
+                        - buf: ConstantSymbol{Array<byte>}@2
                         > null: BlockScope
                 """);
     }
@@ -158,6 +158,85 @@ public class SymbolExtractorTest {
         final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         final String symText = symbolText(modules, null, scopes);
         System.out.println(symText);
+    }
+
+    @Test
+    public void testLocals() throws IOException, CompilationErrorException {
+        final List<ParsedModule> modules = parseModule("""
+                fn noParams() {
+                    var a: int = 0
+                    var b: float = 0.0
+                }
+                fn twoParams(p1: int, p2: bool) {
+                    var a: int = 0
+                    var b: float = 0.0
+                }
+                fn twoParamsNested(p1: int, p2: bool) {
+                    var a: int = 0
+                    var b: float = 0.0
+                    if false {
+                        let c: byte = 0
+                        for d: int in 0 .. 10 {
+                        }
+                    }
+                }
+                struct X {
+                    field: int
+                }
+                fn X::oneParamNestedMethod(p1: byte) {
+                    var a: int = 0
+                    var b: float = 0.0
+                    for c: byte in new byte[100] {
+                        let d: byte = c
+                    }
+                }
+                """);
+        final GlobalScope globalScope = new GlobalScope();
+        final Collection<String> errors = new ArrayList<>();
+        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, null, scopes);
+        System.out.println(symText);
+        assertThat(symText).isEqualTo("""
+                > main: ModuleSymbol
+                    - X: StructSymbol{null}@0
+                    - noParams: FunctionSymbol{null}@0
+                    - twoParams: FunctionSymbol{null}@0
+                    - twoParamsNested: FunctionSymbol{null}@0
+                    > noParams: FunctionSymbol
+                        > null: BlockScope
+                            - a: VariableSymbol{int}@1
+                            - b: VariableSymbol{float}@2
+                    > twoParams: FunctionSymbol
+                        - p1: ConstantSymbol{int}@1
+                        - p2: ConstantSymbol{bool}@2
+                        > null: BlockScope
+                            - a: VariableSymbol{int}@3
+                            - b: VariableSymbol{float}@4
+                    > twoParamsNested: FunctionSymbol
+                        - p1: ConstantSymbol{int}@1
+                        - p2: ConstantSymbol{bool}@2
+                        > null: BlockScope
+                            - a: VariableSymbol{int}@3
+                            - b: VariableSymbol{float}@4
+                            > null: BlockScope
+                                - c: ConstantSymbol{byte}@5
+                                > null: BlockScope
+                                    - d: ConstantSymbol{int}@6
+                                    > null: BlockScope
+                    > X: StructSymbol
+                        - field: FieldSymbol{int}@0
+                        - oneParamNestedMethod: MethodSymbol{null}@0
+                    > oneParamNestedMethod: MethodSymbol
+                        - self: ConstantSymbol{X}@1
+                        - p1: ConstantSymbol{byte}@2
+                        > null: BlockScope
+                            - a: VariableSymbol{int}@3
+                            - b: VariableSymbol{float}@4
+                            > null: BlockScope
+                                - c: ConstantSymbol{byte}@5
+                                > null: BlockScope
+                                    - d: ConstantSymbol{byte}@6
+                """);
     }
 
     @Test
@@ -192,31 +271,31 @@ public class SymbolExtractorTest {
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > null: GlobalScope
-                    - int: BuiltInTypeSymbol{null}
-                    - float: BuiltInTypeSymbol{null}
-                    - byte: BuiltInTypeSymbol{null}
-                    - object: BuiltInTypeSymbol{null}
-                    - runtime_ptr: BuiltInTypeSymbol{null}
-                    - string: BuiltInTypeSymbol{null}
-                    - bool: BuiltInTypeSymbol{null}
-                    - dep: ModuleSymbol{null}
-                    - main: ModuleSymbol{null}
+                    - int: BuiltInTypeSymbol{null}@0
+                    - float: BuiltInTypeSymbol{null}@0
+                    - byte: BuiltInTypeSymbol{null}@0
+                    - object: BuiltInTypeSymbol{null}@0
+                    - runtime_ptr: BuiltInTypeSymbol{null}@0
+                    - string: BuiltInTypeSymbol{null}@0
+                    - bool: BuiltInTypeSymbol{null}@0
+                    - dep: ModuleSymbol{null}@0
+                    - main: ModuleSymbol{null}@0
                     > dep: ModuleSymbol
-                        - Number: UnionSymbol{null}
+                        - Number: UnionSymbol{null}@0
                         > Number: UnionSymbol
-                            - integer: FieldSymbol{int}
-                            - real: FieldSymbol{float}
-                            - unsigned: FieldSymbol{byte}
+                            - integer: FieldSymbol{int}@0
+                            - real: FieldSymbol{float}@0
+                            - unsigned: FieldSymbol{byte}@0
                     > main: ModuleSymbol
-                        - File: StructSymbol{null}
-                        - main: FunctionSymbol{null}
+                        - File: StructSymbol{null}@0
+                        - main: FunctionSymbol{null}@0
                         > File: StructSymbol
-                            - handle: FieldSymbol{runtime_ptr}
-                            - name: FieldSymbol{string}
+                            - handle: FieldSymbol{runtime_ptr}@0
+                            - name: FieldSymbol{string}@8
                         > main: FunctionSymbol
                             > null: BlockScope
-                                - f: ConstantSymbol{File}
-                                - x: VariableSymbol{int}
+                                - f: ConstantSymbol{File}@1
+                                - x: VariableSymbol{int}@2
                 """);
         assertThat(errors).isEmpty();
     }

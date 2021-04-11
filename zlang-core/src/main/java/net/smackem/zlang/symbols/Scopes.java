@@ -8,7 +8,7 @@ public final class Scopes {
             if (scope == null) {
                 return null;
             }
-            if (scope.getClass().isAssignableFrom(clazz)) {
+            if (clazz.isAssignableFrom(scope.getClass())) {
                 return clazz.cast(scope);
             }
             scope = scope.enclosingScope();

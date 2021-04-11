@@ -28,6 +28,7 @@ class SymbolWalker extends ScopeWalker<Void> {
                 : null;
 
         final FunctionSymbol functionSymbol;
+        int paramRegisterNumber;
         if (ctx.declaringTypePrefix() != null) {
             final String declTypeName = ctx.declaringTypePrefix().Ident().getText();
             final Symbol declType = currentScope().resolve(declTypeName);
@@ -47,10 +48,14 @@ class SymbolWalker extends ScopeWalker<Void> {
                 logSemanticError(ctx, "interface methods must not be implemented " + declTypeName);
                 return null;
             }
+            paramRegisterNumber = 2;
             functionSymbol = new MethodSymbol(name, returnType, (MemberScope) currentScope());
-            defineSymbol(ctx, functionSymbol, new ConstantSymbol("self", (Type) declType));
+            final Symbol self = new ConstantSymbol("self", (Type) declType);
+            self.setAddress(1);
+            defineSymbol(ctx, functionSymbol, self);
             defineSymbol(ctx, (MemberScope) declType, functionSymbol);
         } else {
+            paramRegisterNumber = 1;
             functionSymbol = new FunctionSymbol(name, returnType, currentScope());
             defineSymbol(ctx, currentScope(), functionSymbol);
         }
@@ -58,7 +63,9 @@ class SymbolWalker extends ScopeWalker<Void> {
         pushScope(ctx, functionSymbol);
         if (ctx.parameters() != null) {
             for (final var p : ctx.parameters().parameter()) {
-                defineTypedIdent(p, ConstantSymbol::new);
+                final var symbol = defineTypedIdent(p, ConstantSymbol::new);
+                symbol.setAddress(paramRegisterNumber);
+                paramRegisterNumber++;
             }
         }
         super.visitFunctionDecl(ctx);
@@ -77,9 +84,14 @@ class SymbolWalker extends ScopeWalker<Void> {
     @Override
     public Void visitStructDecl(ZLangParser.StructDeclContext ctx) {
         enterScope(ctx);
+        int fieldAddr = 0;
         for (final var p : ctx.parameter()) {
-            defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            symbol.setAddress(fieldAddr);
+            assert symbol.type().byteSize() > 0;
+            fieldAddr += symbol.type().byteSize();
         }
+        assert fieldAddr == ((Type) currentScope()).byteSize();
         super.visitStructDecl(ctx);
         popScope();
         return null;
@@ -88,9 +100,13 @@ class SymbolWalker extends ScopeWalker<Void> {
     @Override
     public Void visitUnionDecl(ZLangParser.UnionDeclContext ctx) {
         enterScope(ctx);
+        int size = 0;
         for (final var p : ctx.parameter()) {
-            defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            assert symbol.type().byteSize() > 0;
+            size = Math.max(size, symbol.type().byteSize());
         }
+        assert size == ((Type) currentScope()).byteSize();
         super.visitUnionDecl(ctx);
         popScope();
         return null;
@@ -187,12 +203,16 @@ class SymbolWalker extends ScopeWalker<Void> {
         return symbol;
     }
 
+    /**
+     * increments the number of local variables of the current function and returns
+     * the address (register number) of the newest variable.
+     */
     private int incrementLocalCount() {
         final FunctionSymbol declaringFunction = Scopes.enclosingSymbol(currentScope(), FunctionSymbol.class);
         if (declaringFunction != null) {
             int count = declaringFunction.localCount() + 1;
             declaringFunction.setLocalCount(count);
-            return count;
+            return declaringFunction.symbols().size() + count;
         }
         return 0;
     }

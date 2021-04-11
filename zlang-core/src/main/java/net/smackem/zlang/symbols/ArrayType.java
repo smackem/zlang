@@ -37,4 +37,9 @@ public class ArrayType implements Type {
                "elementType=" + elementType +
                '}';
     }
+
+    @Override
+    public int byteSize() {
+        return BuiltInTypeSymbol.OBJECT.byteSize();
+    }
 }

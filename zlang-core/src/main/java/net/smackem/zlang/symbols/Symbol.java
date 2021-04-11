@@ -5,7 +5,7 @@ import java.util.Objects;
 public abstract class Symbol {
     private final String name;
     private final Type type;
-    private long address;
+    private int address;
     private int line;
     private int position;
 
@@ -22,11 +22,11 @@ public abstract class Symbol {
         return this.type;
     }
 
-    public long address() {
+    public int address() {
         return this.address;
     }
 
-    public void setAddress(long address) {
+    public void setAddress(int address) {
         this.address = address;
     }
 

@@ -96,11 +96,11 @@ statement
     ;
 
 bindingStmt
-    : DocComment? Let parameter Beq expr
+    : DocComment? Let parameter (Beq expr)?
     ;
 
 varDeclStmt
-    : DocComment? Var parameter Beq expr
+    : DocComment? Var parameter (Beq expr)?
     ;
 
 assignStmt

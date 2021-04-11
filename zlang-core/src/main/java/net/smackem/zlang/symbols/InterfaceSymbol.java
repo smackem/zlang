@@ -57,4 +57,9 @@ public class InterfaceSymbol extends Symbol implements Type, MemberScope {
                ", symbolTable=" + symbolTable +
                '}';
     }
+
+    @Override
+    public int byteSize() {
+        throw new UnsupportedOperationException("not implemented");
+    }
 }

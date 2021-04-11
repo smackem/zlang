@@ -12,4 +12,13 @@ public class StructSymbol extends AggregateTypeSymbol {
                ", symbolTable=" + symbolTableString() +
                '}';
     }
+
+    @Override
+    public int byteSize() {
+        int size = 0;
+        for (final Symbol symbol : symbols()) {
+            size += symbol.type().byteSize();
+        }
+        return size;
+    }
 }

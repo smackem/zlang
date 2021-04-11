@@ -9,6 +9,7 @@ public class Instruction {
     private long intArg;
     private Label labelArg;
     private double floatArg;
+    private String strArg;
 
     Instruction(OpCode opCode) {
         this.opCode = opCode;
@@ -56,5 +57,13 @@ public class Instruction {
 
     void setFloatArg(double floatArg) {
         this.floatArg = floatArg;
+    }
+
+    public String strArg() {
+        return this.strArg;
+    }
+
+    void setStrArg(String str) {
+        this.strArg = str;
     }
 }
