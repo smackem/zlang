@@ -1,5 +1,10 @@
 package net.smackem.zlang.emit.ir;
 
+import net.smackem.zlang.symbols.BuiltInTypeSymbol;
+import net.smackem.zlang.symbols.Type;
+
+import java.util.Map;
+
 public enum OpCode {
     /**
      * nop():
@@ -301,5 +306,204 @@ public enum OpCode {
 
     public int code() {
         return this.code;
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> ldGlb = Map.of(
+            BuiltInTypeSymbol.INT, LdGlb_i32,
+            BuiltInTypeSymbol.FLOAT, LdGlb_f64,
+            BuiltInTypeSymbol.BYTE, LdGlb_u8,
+            BuiltInTypeSymbol.OBJECT, LdGlb_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, LdGlb_ptr);
+
+    public static OpCode ldGlb(Type type) {
+        return ldGlb.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> ldFld = Map.of(
+            BuiltInTypeSymbol.INT, LdFld_i32,
+            BuiltInTypeSymbol.FLOAT, LdFld_f64,
+            BuiltInTypeSymbol.BYTE, LdFld_u8,
+            BuiltInTypeSymbol.OBJECT, LdFld_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, LdFld_ptr);
+
+    public static OpCode ldFld(Type type) {
+        return ldFld.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> ldElem = Map.of(
+            BuiltInTypeSymbol.INT, LdElem_i32,
+            BuiltInTypeSymbol.FLOAT, LdElem_f64,
+            BuiltInTypeSymbol.BYTE, LdElem_u8,
+            BuiltInTypeSymbol.OBJECT, LdElem_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, LdElem_ptr);
+
+    public static OpCode ldElem(Type type) {
+        return ldElem.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> stGlb = Map.of(
+            BuiltInTypeSymbol.INT, StGlb_i32,
+            BuiltInTypeSymbol.FLOAT, StGlb_f64,
+            BuiltInTypeSymbol.BYTE, StGlb_u8,
+            BuiltInTypeSymbol.OBJECT, StGlb_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, StGlb_ptr);
+
+    public static OpCode stGlb(Type type) {
+        return stGlb.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> stFld = Map.of(
+            BuiltInTypeSymbol.INT, StFld_i32,
+            BuiltInTypeSymbol.FLOAT, StFld_f64,
+            BuiltInTypeSymbol.BYTE, StFld_u8,
+            BuiltInTypeSymbol.OBJECT, StFld_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, StFld_ptr);
+
+    public static OpCode stFld(Type type) {
+        return stFld.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> stElem = Map.of(
+            BuiltInTypeSymbol.INT, StElem_i32,
+            BuiltInTypeSymbol.FLOAT, StElem_f64,
+            BuiltInTypeSymbol.BYTE, StElem_u8,
+            BuiltInTypeSymbol.OBJECT, StElem_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, StElem_ptr);
+
+    public static OpCode stElem(Type type) {
+        return stElem.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> ldc = Map.of(
+            BuiltInTypeSymbol.INT, Ldc_i32,
+            BuiltInTypeSymbol.FLOAT, Ldc_f64,
+            BuiltInTypeSymbol.OBJECT, Ldc_ref);
+
+    public static OpCode ldc(Type type) {
+        return ldc.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> add = Map.of(
+            BuiltInTypeSymbol.INT, Add_i32,
+            BuiltInTypeSymbol.FLOAT, Add_f64,
+            BuiltInTypeSymbol.BYTE, Add_u8,
+            BuiltInTypeSymbol.STRING, Add_str);
+
+    public static OpCode add(Type type) {
+        return add.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> sub = Map.of(
+            BuiltInTypeSymbol.INT, Sub_i32,
+            BuiltInTypeSymbol.FLOAT, Sub_f64,
+            BuiltInTypeSymbol.BYTE, Sub_u8);
+
+    public static OpCode sub(Type type) {
+        return sub.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> mul = Map.of(
+            BuiltInTypeSymbol.INT, Mul_i32,
+            BuiltInTypeSymbol.FLOAT, Mul_f64,
+            BuiltInTypeSymbol.BYTE, Mul_u8);
+
+    public static OpCode mul(Type type) {
+        return mul.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> div = Map.of(
+            BuiltInTypeSymbol.INT, Div_i32,
+            BuiltInTypeSymbol.FLOAT, Div_f64,
+            BuiltInTypeSymbol.BYTE, Div_u8);
+
+    public static OpCode div(Type type) {
+        return div.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> eq = Map.of(
+            BuiltInTypeSymbol.INT, Eq_i32,
+            BuiltInTypeSymbol.FLOAT, Eq_f64,
+            BuiltInTypeSymbol.BYTE, Eq_u8,
+            BuiltInTypeSymbol.OBJECT, Eq_ref,
+            BuiltInTypeSymbol.STRING, Eq_str,
+            BuiltInTypeSymbol.RUNTIME_PTR, Eq_ptr);
+
+    public static OpCode eq(Type type) {
+        return eq.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> ne = Map.of(
+            BuiltInTypeSymbol.INT, Ne_i32,
+            BuiltInTypeSymbol.FLOAT, Ne_f64,
+            BuiltInTypeSymbol.BYTE, Ne_u8,
+            BuiltInTypeSymbol.OBJECT, Ne_ref,
+            BuiltInTypeSymbol.STRING, Ne_str,
+            BuiltInTypeSymbol.RUNTIME_PTR, Ne_ptr);
+
+    public static OpCode ne(Type type) {
+        return ne.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> gt = Map.of(
+            BuiltInTypeSymbol.INT, Gt_i32,
+            BuiltInTypeSymbol.FLOAT, Gt_f64,
+            BuiltInTypeSymbol.BYTE, Gt_u8,
+            BuiltInTypeSymbol.STRING, Gt_str);
+
+    public static OpCode gt(Type type) {
+        return gt.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> ge = Map.of(
+            BuiltInTypeSymbol.INT, Ge_i32,
+            BuiltInTypeSymbol.FLOAT, Ge_f64,
+            BuiltInTypeSymbol.BYTE, Ge_u8,
+            BuiltInTypeSymbol.STRING, Ge_str);
+
+    public static OpCode ge(Type type) {
+        return ge.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> lt = Map.of(
+            BuiltInTypeSymbol.INT, Lt_i32,
+            BuiltInTypeSymbol.FLOAT, Lt_f64,
+            BuiltInTypeSymbol.BYTE, Lt_u8,
+            BuiltInTypeSymbol.STRING, Lt_str);
+
+    public static OpCode lt(Type type) {
+        return lt.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> le = Map.of(
+            BuiltInTypeSymbol.INT, Le_i32,
+            BuiltInTypeSymbol.FLOAT, Le_f64,
+            BuiltInTypeSymbol.BYTE, Le_u8,
+            BuiltInTypeSymbol.STRING, Le_str);
+
+    public static OpCode le(Type type) {
+        return le.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> conv = Map.of(
+            BuiltInTypeSymbol.INT, Conv_i32,
+            BuiltInTypeSymbol.FLOAT, Conv_f64,
+            BuiltInTypeSymbol.BYTE, Conv_u8,
+            BuiltInTypeSymbol.OBJECT, Conv_ref,
+            BuiltInTypeSymbol.STRING, Conv_str,
+            BuiltInTypeSymbol.RUNTIME_PTR, Conv_ptr);
+
+    public static OpCode conv(Type type) {
+        return conv.get(type.primitive());
+    }
+
+    private static final Map<BuiltInTypeSymbol, OpCode> newArr = Map.of(
+            BuiltInTypeSymbol.INT, NewArr_i32,
+            BuiltInTypeSymbol.FLOAT, NewArr_f64,
+            BuiltInTypeSymbol.BYTE, NewArr_u8,
+            BuiltInTypeSymbol.OBJECT, NewArr_ref,
+            BuiltInTypeSymbol.RUNTIME_PTR, NewArr_ptr);
+
+    public static OpCode newArr(Type type) {
+        return newArr.get(type.primitive());
     }
 }

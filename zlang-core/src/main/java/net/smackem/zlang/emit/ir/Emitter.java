@@ -110,23 +110,180 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
     }
 
     @Override
+    public Value visitRelationalExpr(ZLangParser.RelationalExprContext ctx) {
+        if (ctx.relationalOp() == null) {
+            return super.visitRelationalExpr(ctx);
+        }
+
+        final Value left = ctx.additiveExpr(0).accept(this);
+        final Value right = ctx.additiveExpr(1).accept(this);
+        final Register target = allocFreedRegister(left.register, right.register);
+        if (left.type != right.type) {
+            return logLocalError(ctx, "incompatible operand types in relational expression");
+        }
+
+        final OpCode opc;
+        if (ctx.relationalOp().Eq() != null) {
+            opc = OpCode.eq(left.type);
+        } else if(ctx.relationalOp().Ne() != null) {
+            opc = OpCode.ne(left.type);
+        } else if(ctx.relationalOp().Gt() != null) {
+            opc = OpCode.gt(left.type);
+        } else if(ctx.relationalOp().Ge() != null) {
+            opc = OpCode.ge(left.type);
+        } else if(ctx.relationalOp().Lt() != null) {
+            opc = OpCode.lt(left.type);
+        } else if(ctx.relationalOp().Le() != null) {
+            opc = OpCode.le(left.type);
+        } else {
+            throw new UnsupportedOperationException("unsupported relational operator");
+        }
+
+        if (opc == null) {
+            return logLocalError(ctx, "unsupported type for relational operator " + left.type);
+        }
+        emit(opc, target, left.register, right.register);
+        return value(target, left.type);
+    }
+
+    @Override
+    public Value visitAdditiveExpr(ZLangParser.AdditiveExprContext ctx) {
+        if (ctx.additiveOp() == null) {
+            return super.visitAdditiveExpr(ctx);
+        }
+
+        final Value left = ctx.additiveExpr().accept(this);
+        final Value right = ctx.multiplicativeExpr().accept(this);
+        final Register target = allocFreedRegister(left.register, right.register);
+        if (left.type != right.type) {
+            return logLocalError(ctx, "incompatible operand types in additive expression");
+        }
+
+        final OpCode opc;
+        if (ctx.additiveOp().Plus() != null) {
+            opc = OpCode.add(left.type);
+        } else if(ctx.additiveOp().Minus() != null) {
+            opc = OpCode.sub(left.type);
+        } else {
+            throw new UnsupportedOperationException("unsupported additive operator");
+        }
+
+        if (opc == null) {
+            return logLocalError(ctx, "unsupported type for additive operator " + left.type);
+        }
+        emit(opc, target, left.register, right.register);
+        return value(target, left.type);
+    }
+
+    @Override
+    public Value visitMultiplicativeExpr(ZLangParser.MultiplicativeExprContext ctx) {
+        if (ctx.multiplicativeOp() == null) {
+            return super.visitMultiplicativeExpr(ctx);
+        }
+
+        final Value left = ctx.multiplicativeExpr().accept(this);
+        final Value right = ctx.unaryExpr().accept(this);
+        final Register target = allocFreedRegister(left.register, right.register);
+        if (left.type != right.type) {
+            return logLocalError(ctx, "incompatible operand types in multiplicative expression");
+        }
+
+        final OpCode opc;
+        if (ctx.multiplicativeOp().Times() != null) {
+            opc = OpCode.mul(left.type);
+        } else if(ctx.multiplicativeOp().Div() != null) {
+            opc = OpCode.div(left.type);
+        } else {
+            throw new UnsupportedOperationException("unsupported multiplicative operator");
+        }
+
+        if (opc == null) {
+            return logLocalError(ctx, "unsupported type for multiplicative operator " + left.type);
+        }
+        emit(opc, target, left.register, right.register);
+        return value(target, left.type);
+    }
+
+    @Override
+    public Value visitUnaryExpr(ZLangParser.UnaryExprContext ctx) {
+        if (ctx.unaryOp() == null) {
+            return super.visitUnaryExpr(ctx);
+        }
+
+        final Value value = ctx.unaryExpr().accept(this);
+
+        if (ctx.unaryOp().Minus() != null) {
+            final OpCode opcSub = OpCode.sub(value.type);
+            if (opcSub == null) {
+                return logLocalError(ctx, "operator - not supported for type " + value.type);
+            }
+            final Register zero = allocFreedRegister();
+            emit(OpCode.Ldc_zero, zero);
+            final Register target = allocFreedRegister(value.register, zero);
+            emit(opcSub, target, zero, value.register);
+            return value(target, value.type);
+        }
+
+        if (ctx.unaryOp().Not() != null) {
+            final OpCode opcEq = OpCode.eq(value.type);
+            if (opcEq == null) {
+                return logLocalError(ctx, "operator == not supported for type " + value.type);
+            }
+            final Register zero = allocFreedRegister();
+            emit(OpCode.Ldc_zero, zero);
+            final Register target = allocFreedRegister(value.register, zero);
+            emit(opcEq, target, zero, value.register);
+            return value(target, value.type);
+        }
+
+        throw new UnsupportedOperationException("unsupported unary expression");
+    }
+
+    @Override
+    public Value visitCastExpr(ZLangParser.CastExprContext ctx) {
+        final Type type = resolveType(ctx.type());
+        final Value value = ctx.unaryExpr().accept(this);
+        final Register target = allocFreedRegister(value.register);
+        emit(OpCode.conv(value.type), target, value.register, type.primitive().id());
+        return value(target, type);
+    }
+
+    @Override
     public Value visitPostFixedPrimary(ZLangParser.PostFixedPrimaryContext ctx) {
         if (ctx.primary() != null) {
             return ctx.primary().accept(this);
         }
+
         final Value primary = ctx.postFixedPrimary().accept(this);
+
         if (ctx.arrayAccessPostfix() != null) {
             if (primary.type instanceof ArrayType == false) {
-                logSemanticError(ctx, "indexed value is not an array");
-                return emptyValue();
+                return logLocalError(ctx, "indexed value is not an array");
             }
             final Value index = ctx.arrayAccessPostfix().expr().accept(this);
             if (index.type != BuiltInTypeSymbol.INT) {
-                logSemanticError(ctx, "index is not of type int");
-                return emptyValue();
+                return logLocalError(ctx, "index is not of type int");
             }
+            final Register target = allocFreedRegister(primary.register, index.register);
+            emit(OpCode.ldElem(primary.type), target, primary.register, index.register);
+            return value(target, primary.type);
         }
-        return emptyValue();
+
+        if (ctx.fieldAccessPostfix() != null) {
+            if (primary.type instanceof AggregateType == false) {
+                return logLocalError(ctx, "field target is not an aggregate");
+            }
+            final MemberScope memberScope = (MemberScope) primary.type;
+            final Symbol field = memberScope.resolveMember(ctx.fieldAccessPostfix().Ident().getText());
+            if (field instanceof FieldSymbol == false) {
+                return logLocalError(ctx, "field id does not refer to a field");
+            }
+            final Register target = allocFreedRegister(primary.register);
+            emit(OpCode.ldFld(primary.type), target, primary.register, field.address());
+            return value(target, field.type());
+        }
+
+        throw new UnsupportedOperationException("unsupported postFixedPrimary");
     }
 
     @Override
@@ -134,16 +291,19 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         if (ctx.Self() != null) {
             final Symbol self = currentScope().resolve("self");
             if (self == null) {
-                logSemanticError(ctx, "self is not defined in this context");
-                return emptyValue();
+                return logLocalError(ctx, "self is not defined in this context");
             }
             return value(Register.fromNumber(self.address()), self.type());
         }
         if (ctx.Ident() != null) {
             final Symbol symbol = currentScope().resolve(ctx.Ident().getText());
             if (symbol == null) {
-                logSemanticError(ctx, "'" + ctx.Ident() + "' is not defined in this context");
-                return emptyValue();
+                return logLocalError(ctx, "'" + ctx.Ident() + "' is not defined in this context");
+            }
+            if (symbol instanceof VariableSymbol == false) {
+                return logLocalError(ctx, "'" + ctx.Ident() + "' is not a variable or constant");
+            }
+            if (((VariableSymbol) symbol).isGlobal()) {
             }
             return value(Register.fromNumber(symbol.address()), symbol.type());
         }
@@ -154,22 +314,22 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
     @Override
     public Value visitLiteral(ZLangParser.LiteralContext ctx) {
         if (ctx.True() != null) {
-            final Register target = allocRegister();
+            final Register target = allocFreedRegister();
             emit(OpCode.Ldc_i32, target, 1);
             return value(target, BuiltInTypeSymbol.BOOL);
         }
         if (ctx.False() != null) {
-            final Register target = allocRegister();
+            final Register target = allocFreedRegister();
             emit(OpCode.Ldc_zero, target);
             return value(target, BuiltInTypeSymbol.BOOL);
         }
         if (ctx.Nil() != null) {
-            final Register target = allocRegister();
+            final Register target = allocFreedRegister();
             emit(OpCode.Ldc_zero, target);
             return value(target, BuiltInTypeSymbol.OBJECT);
         }
         if (ctx.NullPtr() != null) {
-            final Register target = allocRegister();
+            final Register target = allocFreedRegister();
             emit(OpCode.Ldc_zero, target);
             return value(target, BuiltInTypeSymbol.RUNTIME_PTR);
         }
@@ -181,7 +341,7 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
 
     @Override
     public Value visitNumber(ZLangParser.NumberContext ctx) {
-        final Register target = allocRegister();
+        final Register target = allocFreedRegister();
         if (ctx.IntegerNumber() != null) {
             emit(OpCode.Ldc_i32, target, parseInteger(ctx.IntegerNumber().getText()));
             return value(target, BuiltInTypeSymbol.INT);
@@ -193,16 +353,15 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         throw new UnsupportedOperationException("unsupported number type");
     }
 
-    private Register allocRegister() {
+    private Register allocFreedRegister(Register... registersToFree) {
+        for (final Register register : registersToFree) {
+            this.allocatedRegisters.remove(register);
+        }
         Register r = this.firstVolatileRegister;
         while (this.allocatedRegisters.contains(r)) {
             r = r.next();
         }
         return r;
-    }
-
-    private void freeRegister(Register register) {
-        this.allocatedRegisters.remove(register);
     }
 
     private static Value value(Register register, Type type) {
@@ -225,6 +384,7 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         this.currentFunction = function;
         int top = this.currentFunction.symbols().size() + this.currentFunction.localCount() + 1;
         this.firstVolatileRegister = Register.fromNumber(top);
+        this.allocatedRegisters.clear();
     }
 
     private void emit(OpCode opCode, Register register) {
@@ -245,6 +405,14 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         instr.setRegisterArg(0, register1);
         instr.setRegisterArg(1, register2);
         instr.setRegisterArg(2, register3);
+        this.instructions.add(instr);
+    }
+
+    private void emit(OpCode opCode, Register register1, Register register2, long integer) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register1);
+        instr.setRegisterArg(1, register2);
+        instr.setIntArg(integer);
         this.instructions.add(instr);
     }
 
@@ -276,13 +444,11 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         this.instructions.add(instr);
     }
 
-    public static class Value {
-        private final Register register;
-        private final Type type;
+    public record Value(Register register, Type type) {
+    }
 
-        private Value(Register register, Type type) {
-            this.register = register;
-            this.type = type;
-        }
+    private Value logLocalError(ParserRuleContext ctx, String message) {
+        logSemanticError(ctx, message);
+        return emptyValue();
     }
 }

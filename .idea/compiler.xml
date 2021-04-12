@@ -11,9 +11,9 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="zlang" target="15" />
-      <module name="zlang-cli" target="15" />
-      <module name="zlang-core" target="15" />
+      <module name="zlang" target="16" />
+      <module name="zlang-cli" target="16" />
+      <module name="zlang-core" target="16" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

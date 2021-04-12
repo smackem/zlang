@@ -7,9 +7,15 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 class SymbolWalker extends ScopeWalker<Void> {
+    private int globalSegmentSize = 0;
 
-    SymbolWalker(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
+    SymbolWalker(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes, int globalSegmentSize) {
         super(globalScope, scopes);
+        this.globalSegmentSize = globalSegmentSize;
+    }
+
+    public int globalSegmentSize() {
+        return this.globalSegmentSize;
     }
 
     @Override
@@ -50,7 +56,7 @@ class SymbolWalker extends ScopeWalker<Void> {
             }
             paramRegisterNumber = 2;
             functionSymbol = new MethodSymbol(name, returnType, (MemberScope) currentScope());
-            final Symbol self = new ConstantSymbol("self", (Type) declType);
+            final Symbol self = new ConstantSymbol("self", (Type) declType, false);
             self.setAddress(1);
             defineSymbol(ctx, functionSymbol, self);
             defineSymbol(ctx, (MemberScope) declType, functionSymbol);
@@ -63,7 +69,7 @@ class SymbolWalker extends ScopeWalker<Void> {
         pushScope(ctx, functionSymbol);
         if (ctx.parameters() != null) {
             for (final var p : ctx.parameters().parameter()) {
-                final var symbol = defineTypedIdent(p, ConstantSymbol::new);
+                final var symbol = defineTypedIdent(p, (ident, type) -> new ConstantSymbol(ident, type, false));
                 symbol.setAddress(paramRegisterNumber);
                 paramRegisterNumber++;
             }
@@ -133,7 +139,7 @@ class SymbolWalker extends ScopeWalker<Void> {
         pushScope(ctx, imd);
         if (ctx.parameters() != null) {
             for (final var p : ctx.parameters().parameter()) {
-                defineTypedIdent(p, ConstantSymbol::new);
+                defineTypedIdent(p, (ident, type) -> new ConstantSymbol(ident, type, false));
             }
         }
         super.visitInterfaceMethodDecl(ctx);
@@ -169,29 +175,35 @@ class SymbolWalker extends ScopeWalker<Void> {
 
     @Override
     public Void visitForIteratorStmt(ZLangParser.ForIteratorStmtContext ctx) {
-        final var symbol = defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        final var symbol = defineTypedIdent(ctx.parameter(),
+                (ident, type) -> new ConstantSymbol(ident, type, false));
         symbol.setAddress(incrementLocalCount());
         return super.visitForIteratorStmt(ctx);
     }
 
     @Override
     public Void visitForRangeStmt(ZLangParser.ForRangeStmtContext ctx) {
-        final var symbol = defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
+        final var symbol = defineTypedIdent(ctx.parameter(),
+                (ident, type) -> new ConstantSymbol(ident, type, false));
         symbol.setAddress(incrementLocalCount());
         return super.visitForRangeStmt(ctx);
     }
 
     @Override
     public Void visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
-        final var symbol = defineTypedIdent(ctx.parameter(), ConstantSymbol::new);
-        symbol.setAddress(incrementLocalCount());
+        final int register = incrementLocalCount();
+        final var symbol = defineTypedIdent(ctx.parameter(),
+                (ident, type) -> new ConstantSymbol(ident, type, register == 0));
+        symbol.setAddress(register != 0 ? register : incrementGlobalSegmentSize(symbol));
         return super.visitBindingStmt(ctx);
     }
 
     @Override
     public Void visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
-        final var symbol = defineTypedIdent(ctx.parameter(), VariableSymbol::new);
-        symbol.setAddress(incrementLocalCount());
+        final int register = incrementLocalCount();
+        final var symbol = defineTypedIdent(ctx.parameter(),
+                (ident, type) -> new VariableSymbol(ident, type, register == 0));
+        symbol.setAddress(register != 0 ? register : incrementGlobalSegmentSize(symbol));
         return super.visitVarDeclStmt(ctx);
     }
 
@@ -217,20 +229,7 @@ class SymbolWalker extends ScopeWalker<Void> {
         return 0;
     }
 
-    private Type resolveType(ZLangParser.TypeContext ctx) {
-        final String typeName = ctx.simpleType().getText();
-        final Symbol innerTypeSymbol = currentScope().resolve(typeName);
-        if (innerTypeSymbol == null) {
-            logSemanticError(ctx, "type '" + typeName + "' not found!");
-            return null;
-        }
-        if (innerTypeSymbol instanceof Type == false) {
-            logSemanticError(ctx, "'" + typeName + "' is not a type!");
-            return null;
-        }
-        if (ctx.LBracket() != null) {
-            return new ArrayType((Type) innerTypeSymbol);
-        }
-        return (Type) innerTypeSymbol;
+    private int incrementGlobalSegmentSize(Symbol symbol) {
+        return this.globalSegmentSize += symbol.type().primitive().byteSize();
     }
 }

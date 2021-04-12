@@ -5,9 +5,9 @@ import net.smackem.zlang.modules.ParsedModule;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class SymbolExtractor {
+    private int globalSegmentSize;
 
     /**
      * Extracts all scopes and their contained symbols from the the specified modules.
@@ -26,14 +26,16 @@ public class SymbolExtractor {
      * @return A map that associates AST nodes to scopes to be used when traversing ASTs.
      */
     public static Map<ParserRuleContext, Scope> extractSymbols(Collection<ParsedModule> modules, GlobalScope globalScope, Collection<String> outErrors) {
+        int globalSegmentSize = 0;
         final Map<ParserRuleContext, Scope> scopes = new HashMap<>();
         for (final ParsedModule module : modules) {
             final TypeWalker typeWalker = new TypeWalker(module.moduleName(), globalScope, scopes);
             module.ast().accept(typeWalker);
         }
         for (final ParsedModule module : modules) {
-            final SymbolWalker symbolWalker = new SymbolWalker(globalScope, scopes);
+            final SymbolWalker symbolWalker = new SymbolWalker(globalScope, scopes, globalSegmentSize);
             module.ast().accept(symbolWalker);
+            globalSegmentSize = symbolWalker.globalSegmentSize();
         }
 
         final long entryPointCount = scopes.values().stream()

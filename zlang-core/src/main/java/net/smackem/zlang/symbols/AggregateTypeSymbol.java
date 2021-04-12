@@ -71,4 +71,9 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
     public Collection<Type> implementedInterfaces() {
         return Collections.unmodifiableCollection(this.implementedInterfaces);
     }
+
+    @Override
+    public BuiltInTypeSymbol primitive() {
+        return BuiltInTypeSymbol.OBJECT;
+    }
 }

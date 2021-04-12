@@ -42,4 +42,9 @@ public class ArrayType implements Type {
     public int byteSize() {
         return BuiltInTypeSymbol.OBJECT.byteSize();
     }
+
+    @Override
+    public BuiltInTypeSymbol primitive() {
+        return BuiltInTypeSymbol.OBJECT;
+    }
 }

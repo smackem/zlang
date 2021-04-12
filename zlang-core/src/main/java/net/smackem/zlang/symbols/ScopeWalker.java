@@ -2,6 +2,7 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.lang.ZLangBaseVisitor;
+import net.smackem.zlang.lang.ZLangParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.Map;
@@ -53,5 +54,22 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
         } catch (CompilationErrorException e) {
             logSemanticError(ctx, e.getMessage());
         }
+    }
+
+    protected Type resolveType(ZLangParser.TypeContext ctx) {
+        final String typeName = ctx.simpleType().getText();
+        final Symbol innerTypeSymbol = currentScope().resolve(typeName);
+        if (innerTypeSymbol == null) {
+            logSemanticError(ctx, "type '" + typeName + "' not found!");
+            return null;
+        }
+        if (innerTypeSymbol instanceof Type == false) {
+            logSemanticError(ctx, "'" + typeName + "' is not a type!");
+            return null;
+        }
+        if (ctx.LBracket() != null) {
+            return new ArrayType((Type) innerTypeSymbol);
+        }
+        return (Type) innerTypeSymbol;
     }
 }

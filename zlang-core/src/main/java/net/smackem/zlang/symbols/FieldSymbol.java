@@ -4,7 +4,7 @@ public class FieldSymbol extends VariableSymbol {
     private final Type declaringType;
 
     public FieldSymbol(String name, Type type, Type declaringType) {
-        super(name, type);
+        super(name, type, false);
         this.declaringType = declaringType;
     }
 

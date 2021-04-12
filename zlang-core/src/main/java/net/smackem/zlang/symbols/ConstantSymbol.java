@@ -1,8 +1,8 @@
 package net.smackem.zlang.symbols;
 
 public class ConstantSymbol extends VariableSymbol {
-    ConstantSymbol(String name, Type type) {
-        super(name, type);
+    ConstantSymbol(String name, Type type, boolean global) {
+        super(name, type, global);
     }
 
     @Override
