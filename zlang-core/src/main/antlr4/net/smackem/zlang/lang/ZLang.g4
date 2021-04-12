@@ -14,7 +14,7 @@ usesClause
 
 globalDecl
     : functionDecl
-    | bindingStmt
+    | (bindingStmt LineBreak)
     | typeDecl
     ;
 

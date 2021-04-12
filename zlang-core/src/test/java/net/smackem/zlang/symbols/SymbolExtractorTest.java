@@ -25,10 +25,10 @@ public class SymbolExtractorTest {
         final List<ParsedModule> modules = parseModule("");
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        assertThat(scopes).hasSize(1);
-        assertThat(scopes.values()).extracting(Scope::scopeName).contains("main");
-        assertThat(scopes.values()).allMatch(scope -> scope instanceof ModuleSymbol);
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        assertThat(ps.scopes()).hasSize(1);
+        assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("main");
+        assertThat(ps.scopes().values()).allMatch(scope -> scope instanceof ModuleSymbol);
         assertThat(globalScope.symbols()).hasSize(BuiltInTypeSymbol.builtInTypes().size() + 1);
         // one error is expected: no main method
         assertThat(errors).hasSize(1);
@@ -44,11 +44,11 @@ public class SymbolExtractorTest {
                 """);
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        assertThat(scopes).isNotEmpty();
-        assertThat(scopes).hasSize(2);
-        assertThat(scopes.values()).extracting(Scope::scopeName).contains("main", "StructType");
-        System.out.println(symbolText(modules, globalScope, scopes));
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        assertThat(ps.scopes()).isNotEmpty();
+        assertThat(ps.scopes()).hasSize(2);
+        assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("main", "StructType");
+        System.out.println(symbolText(modules, globalScope, ps.scopes()));
         // one error is expected: no main method
         assertThat(errors).hasSize(1);
         assertThat(errors).allMatch(s -> s.contains("main"));
@@ -76,8 +76,8 @@ public class SymbolExtractorTest {
                 """);
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        final String symText = symbolText(modules, null, scopes);
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > main: ModuleSymbol
@@ -120,8 +120,8 @@ public class SymbolExtractorTest {
                 """);
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        final String symText = symbolText(modules, null, scopes);
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > main: ModuleSymbol
@@ -155,8 +155,25 @@ public class SymbolExtractorTest {
                 """);
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        final String symText = symbolText(modules, null, scopes);
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, null, ps.scopes());
+        System.out.println(symText);
+    }
+
+    @Test
+    public void testGlobals() throws IOException, CompilationErrorException {
+        final List<ParsedModule> modules = parseModule("""
+                let a: int = 0
+                let b: float = 0
+                let c: byte = 0
+                let d: runtime_ptr = null_ptr
+                fn main() {
+                }
+                """);
+        final GlobalScope globalScope = new GlobalScope();
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
     }
 
@@ -193,8 +210,8 @@ public class SymbolExtractorTest {
                 """);
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        final String symText = symbolText(modules, null, scopes);
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > main: ModuleSymbol
@@ -266,8 +283,8 @@ public class SymbolExtractorTest {
         final Collection<ParsedModule> modules = module.flatten();
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
-        final Map<ParserRuleContext, Scope> scopes = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        final String symText = symbolText(modules, globalScope, scopes);
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
+        final String symText = symbolText(modules, globalScope, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > null: GlobalScope

@@ -30,24 +30,6 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
     }
 
     @Override
-    public Value visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
-        if (this.currentFunction == null) {
-            // global var
-            enterFunction(this.initFunction);
-        }
-        return super.visitVarDeclStmt(ctx);
-    }
-
-    @Override
-    public Value visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
-        if (this.currentFunction == null) {
-            // global var
-            enterFunction(this.initFunction);
-        }
-        return super.visitBindingStmt(ctx);
-    }
-
-    @Override
     public Value visitModule(ZLangParser.ModuleContext ctx) {
         enterScope(ctx);
         super.visitModule(ctx);
@@ -107,6 +89,92 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         super.visitBlock(ctx);
         popScope();
         return null;
+    }
+
+    @Override
+    public Value visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
+        if (this.currentFunction == null) {
+            // global var
+            enterFunction(this.initFunction);
+        }
+        return super.visitVarDeclStmt(ctx);
+    }
+
+    @Override
+    public Value visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
+        if (this.currentFunction == null) {
+            // global var
+            enterFunction(this.initFunction);
+        }
+        return super.visitBindingStmt(ctx);
+    }
+
+    @Override
+    public Value visitAssignStmt(ZLangParser.AssignStmtContext ctx) {
+        if (ctx.Ident() == null) {
+            throw new UnsupportedOperationException("unsupported lvalue");
+        }
+        final Symbol symbol = currentScope().resolve(ctx.Ident().getText());
+        if (symbol == null) {
+            return logLocalError(ctx, "'" + ctx.Ident() + "' is not defined in this context");
+        }
+        if (symbol instanceof VariableSymbol == false) {
+            return logLocalError(ctx, "'" + ctx.Ident() + "' is not a variable");
+        }
+        final VariableSymbol variable = (VariableSymbol) symbol;
+        if (variable.isAssignable() == false) {
+            return logLocalError(ctx, "'" + ctx.Ident() + "' is not assignable");
+        }
+        final Value value = ctx.expr().accept(this);
+        if (variable.isGlobal()) {
+            emit(OpCode.stGlb(symbol.type()), value.register, symbol.address());
+        } else {
+            emit(OpCode.Mov, Register.fromNumber(symbol.address()), value.register);
+        }
+        return null;
+    }
+
+    @Override
+    public Value visitReturnStmt(ZLangParser.ReturnStmtContext ctx) {
+        final Value value = ctx.expr().accept(this);
+        if (this.currentFunction.type() != value.type()) {
+            return logLocalError(ctx, "incompatible return type");
+        }
+        emit(OpCode.Mov, Register.R000, value.register);
+        this.allocatedRegisters.remove(value.register);
+        return super.visitReturnStmt(ctx);
+    }
+
+    @Override
+    public Value visitConditionalOrExpr(ZLangParser.ConditionalOrExprContext ctx) {
+        if (ctx.Or() == null) {
+            return super.visitConditionalOrExpr(ctx);
+        }
+        final Value left = ctx.conditionalAndExpr().accept(this);
+        final Value right = ctx.conditionalOrExpr().accept(this);
+        final Register target = allocFreedRegister(left.register, right.register);
+        if (left.type != BuiltInTypeSymbol.BOOL || right.type != BuiltInTypeSymbol.BOOL) {
+            return logLocalError(ctx, "non-boolean operand in OR expression");
+        }
+
+        emit(OpCode.Or, target, left.register, right.register);
+        return value(target, BuiltInTypeSymbol.BOOL);
+    }
+
+    @Override
+    public Value visitConditionalAndExpr(ZLangParser.ConditionalAndExprContext ctx) {
+        if (ctx.And() == null) {
+            return super.visitConditionalAndExpr(ctx);
+        }
+        final Value left = ctx.relationalExpr().accept(this);
+        final Value right = ctx.conditionalAndExpr().accept(this);
+        final Register target = allocFreedRegister(left.register, right.register);
+        if (left.type != BuiltInTypeSymbol.BOOL || right.type != BuiltInTypeSymbol.BOOL) {
+            return logLocalError(ctx, "non-boolean operand in AND expression");
+        }
+
+        emit(OpCode.And, target, left.register, right.register);
+        return value(target, BuiltInTypeSymbol.BOOL);
     }
 
     @Override
@@ -304,6 +372,9 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
                 return logLocalError(ctx, "'" + ctx.Ident() + "' is not a variable or constant");
             }
             if (((VariableSymbol) symbol).isGlobal()) {
+                final Register target = allocFreedRegister();
+                emit(OpCode.ldGlb(symbol.type()), target, symbol.address());
+                return value(target, symbol.type());
             }
             return value(Register.fromNumber(symbol.address()), symbol.type());
         }

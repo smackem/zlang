@@ -230,6 +230,8 @@ class SymbolWalker extends ScopeWalker<Void> {
     }
 
     private int incrementGlobalSegmentSize(Symbol symbol) {
-        return this.globalSegmentSize += symbol.type().primitive().byteSize();
+        int size = this.globalSegmentSize;
+        this.globalSegmentSize += symbol.type().primitive().byteSize();
+        return size;
     }
 }

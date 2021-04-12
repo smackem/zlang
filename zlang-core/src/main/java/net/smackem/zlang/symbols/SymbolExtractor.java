@@ -1,13 +1,11 @@
 package net.smackem.zlang.symbols;
 
-import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.modules.ParsedModule;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
 
 public class SymbolExtractor {
-    private int globalSegmentSize;
 
     /**
      * Extracts all scopes and their contained symbols from the the specified modules.
@@ -25,7 +23,7 @@ public class SymbolExtractor {
      *
      * @return A map that associates AST nodes to scopes to be used when traversing ASTs.
      */
-    public static Map<ParserRuleContext, Scope> extractSymbols(Collection<ParsedModule> modules, GlobalScope globalScope, Collection<String> outErrors) {
+    public static ProgramStructure extractSymbols(Collection<ParsedModule> modules, GlobalScope globalScope, Collection<String> outErrors) {
         int globalSegmentSize = 0;
         final Map<ParserRuleContext, Scope> scopes = new HashMap<>();
         for (final ParsedModule module : modules) {
@@ -49,6 +47,6 @@ public class SymbolExtractor {
             outErrors.add("the program does defines multiple entry points with the signature `fn main()`.");
         }
 
-        return scopes;
+        return new ProgramStructure(globalSegmentSize, scopes);
     }
 }
