@@ -39,7 +39,7 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
                 }
             }
         }
-        return null;
+        return symbol;
     }
 
     @Override

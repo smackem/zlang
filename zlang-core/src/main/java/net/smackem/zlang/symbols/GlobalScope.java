@@ -7,7 +7,7 @@ import java.util.Collection;
 public class GlobalScope implements Scope {
     private final SymbolTable symbolTable;
 
-    GlobalScope() {
+    public GlobalScope() {
         this.symbolTable = new SymbolTable(null);
         initTypeSystem();
     }

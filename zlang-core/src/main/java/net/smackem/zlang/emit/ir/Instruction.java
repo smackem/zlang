@@ -2,6 +2,10 @@ package net.smackem.zlang.emit.ir;
 
 import net.smackem.zlang.symbols.Symbol;
 
+import java.util.Arrays;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
 public class Instruction {
     private final OpCode opCode;
     private final Register[] registerArgs = new Register[3];
@@ -65,5 +69,26 @@ public class Instruction {
 
     void setStrArg(String str) {
         this.strArg = str;
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder sb = new StringBuilder(this.opCode.toString()).append(" ");
+        sb.append(Arrays.stream(this.registerArgs)
+                .filter(Objects::nonNull)
+                .map(Object::toString)
+                .collect(Collectors.joining(" ")));
+        sb.append(" int=").append(intArg);
+        sb.append(" float=").append(floatArg);
+        if (symbolArg != null) {
+            sb.append(" symbol=").append(symbolArg);
+        }
+        if (labelArg != null) {
+            sb.append(" symbol=").append(labelArg);
+        }
+        if (strArg != null) {
+            sb.append(" symbol=").append(strArg);
+        }
+        return sb.toString();
     }
 }

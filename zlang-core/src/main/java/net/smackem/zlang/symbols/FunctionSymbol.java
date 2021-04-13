@@ -61,10 +61,10 @@ public class FunctionSymbol extends Symbol implements Scope {
     public String toString() {
         return "FunctionSymbol{" +
                "name=" + name() +
-               "returnType=" + type() +
-               "parameters=" + this.symbolTable.symbols().stream()
+               ", returnType=" + type() +
+               ", parameters=[" + this.symbolTable.symbols().stream()
                        .map(s -> s.name() + ':' + s.type().typeName())
                        .collect(Collectors.joining(", ")) +
-               '}';
+               "]}";
     }
 }

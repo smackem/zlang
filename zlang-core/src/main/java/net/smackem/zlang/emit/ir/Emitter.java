@@ -1,32 +1,39 @@
 package net.smackem.zlang.emit.ir;
 
+import com.google.common.base.CharMatcher;
 import net.smackem.zlang.lang.ZLangParser;
 import net.smackem.zlang.symbols.*;
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public class Emitter extends ScopeWalker<Emitter.Value> {
+    private final static Logger log = LoggerFactory.getLogger(Emitter.class);
     private final List<Type> types = new ArrayList<>();
     private final List<FunctionSymbol> functions = new ArrayList<>();
     private final List<Instruction> instructions = new ArrayList<>();
+    private final Map<FunctionSymbol, Instruction> codeMap = new HashMap<>();
     private final FunctionSymbol initFunction;
     private final Set<Register> allocatedRegisters = new HashSet<>();
+    private final List<Instruction> initInstructions = new ArrayList<>();
+    private List<Instruction> currentInstructions = instructions;
     private FunctionSymbol currentFunction;
     private Register firstVolatileRegister;
 
-    Emitter(String moduleName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
-        super(globalScope, scopes);
-        this.initFunction = new FunctionSymbol("@init:" + moduleName, null, globalScope);
+    Emitter(String moduleName, ProgramStructure programStructure) {
+        super(programStructure.globalScope(), programStructure.scopes());
+        this.initFunction = new FunctionSymbol("@init:" + moduleName, null, programStructure.globalScope());
         this.functions.add(this.initFunction);
     }
 
-    Collection<Type> types() {
-        return Collections.unmodifiableCollection(this.types);
-    }
-
-    Collection<FunctionSymbol> functions() {
-        return Collections.unmodifiableCollection(this.functions);
+    public EmittedModule buildModule() {
+        if (this.initInstructions.isEmpty() == false) {
+            this.initInstructions.add(new Instruction(OpCode.Ret));
+        }
+        this.instructions.addAll(this.initInstructions);
+        return new EmittedModule(this.types, this.functions, this.instructions, this.codeMap);
     }
 
     @Override
@@ -67,9 +74,11 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
     @Override
     public Value visitFunctionDecl(ZLangParser.FunctionDeclContext ctx) {
         enterScope(ctx);
-        enterFunction((FunctionSymbol) currentScope());
+        final FunctionSymbol function = (FunctionSymbol) currentScope();
+        enterFunction(function, this.instructions);
         this.functions.add(this.currentFunction);
         super.visitFunctionDecl(ctx);
+        emit(function.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
         popScope();
         this.currentFunction = null;
         return null;
@@ -93,55 +102,121 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
 
     @Override
     public Value visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
-        if (this.currentFunction == null) {
-            // global var
-            enterFunction(this.initFunction);
-        }
-        return super.visitVarDeclStmt(ctx);
+        emitInitAssignment(ctx, ctx.parameter().Ident().getText(), ctx.expr());
+        return null;
     }
 
     @Override
     public Value visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
+        emitInitAssignment(ctx, ctx.parameter().Ident().getText(), ctx.expr());
+        return null;
+    }
+
+    private void emitInitAssignment(ParserRuleContext ctx, String ident, ZLangParser.ExprContext expr) {
         if (this.currentFunction == null) {
             // global var
-            enterFunction(this.initFunction);
+            enterFunction(this.initFunction, this.initInstructions);
         }
-        return super.visitBindingStmt(ctx);
+        if (expr != null) {
+            final Value rvalue = expr.accept(this);
+            emitIdentAssign(ctx, ident, rvalue, true);
+        }
     }
 
     @Override
     public Value visitAssignStmt(ZLangParser.AssignStmtContext ctx) {
-        if (ctx.Ident() == null) {
-            throw new UnsupportedOperationException("unsupported lvalue");
-        }
-        final Symbol symbol = currentScope().resolve(ctx.Ident().getText());
-        if (symbol == null) {
-            return logLocalError(ctx, "'" + ctx.Ident() + "' is not defined in this context");
-        }
-        if (symbol instanceof VariableSymbol == false) {
-            return logLocalError(ctx, "'" + ctx.Ident() + "' is not a variable");
-        }
-        final VariableSymbol variable = (VariableSymbol) symbol;
-        if (variable.isAssignable() == false) {
-            return logLocalError(ctx, "'" + ctx.Ident() + "' is not assignable");
-        }
-        final Value value = ctx.expr().accept(this);
-        if (variable.isGlobal()) {
-            emit(OpCode.stGlb(symbol.type()), value.register, symbol.address());
+        final Value rvalue = ctx.expr().accept(this);
+        if (ctx.postFixedPrimary() != null) {
+            emitPostFixedPrimaryAssign(ctx.postFixedPrimary(), rvalue);
         } else {
-            emit(OpCode.Mov, Register.fromNumber(symbol.address()), value.register);
+            emitIdentAssign(ctx, ctx.Ident().getText(), rvalue, false);
         }
         return null;
+    }
+
+    private void emitIdentAssign(ParserRuleContext ctx, String ident, Value rvalue, boolean init) {
+        final Symbol symbol = currentScope().resolve(ident);
+        if (symbol == null) {
+            logLocalError(ctx, "'" + ident + "' is not defined in this context");
+            return;
+        }
+        if (symbol instanceof VariableSymbol == false) {
+            logLocalError(ctx, "'" + ident + "' is not a variable");
+            return;
+        }
+        final VariableSymbol variable = (VariableSymbol) symbol;
+        if (init == false && variable.isAssignable() == false) {
+            logLocalError(ctx, "'" + ident + "' is not assignable");
+            return;
+        }
+        if (Types.isAssignable(variable.type(), rvalue.type) == false) {
+            logLocalError(ctx, "incompatible types in assignment");
+            return;
+        }
+        if (variable.isGlobal()) {
+            emit(OpCode.stGlb(symbol.type()), rvalue.register, symbol.address());
+        } else {
+            emit(OpCode.Mov, Register.fromNumber(symbol.address()), rvalue.register);
+        }
+        freeRegister(rvalue.register);
+    }
+
+    public void emitPostFixedPrimaryAssign(ZLangParser.PostFixedPrimaryContext ctx, Value rvalue) {
+        final Value primary = ctx.primary() != null
+                ? ctx.primary().accept(this)
+                : ctx.postFixedPrimary().accept(this);
+
+        if (ctx.arrayAccessPostfix() != null) {
+            if (primary.type instanceof ArrayType == false) {
+                logLocalError(ctx, "indexed value is not an array");
+                return;
+            }
+            final Value index = ctx.arrayAccessPostfix().expr().accept(this);
+            if (index.type != BuiltInTypeSymbol.INT) {
+                logLocalError(ctx, "index is not of type int");
+                return;
+            }
+            final ArrayType arrayType = (ArrayType) primary.type;
+            if (Types.isAssignable(arrayType.elementType(), rvalue.type) == false) {
+                logLocalError(ctx, "incompatible types in assignment");
+                return;
+            }
+            emit(OpCode.stElem(arrayType.elementType()), rvalue.register, primary.register, index.register);
+            freeRegister(rvalue.register, primary.register, index.register);
+            return;
+        }
+
+        if (ctx.fieldAccessPostfix() != null) {
+            if (primary.type instanceof AggregateType == false) {
+                logLocalError(ctx, "field target is not an aggregate");
+                return;
+            }
+            final MemberScope memberScope = (MemberScope) primary.type;
+            final Symbol field = memberScope.resolveMember(ctx.fieldAccessPostfix().Ident().getText());
+            if (field instanceof FieldSymbol == false) {
+                logLocalError(ctx, "field id does not refer to a field");
+                return;
+            }
+            if (Types.isAssignable(field.type(), rvalue.type) == false) {
+                logLocalError(ctx, "incompatible types in assignment");
+                return;
+            }
+            emit(OpCode.stFld(field.type()), rvalue.register, primary.register, field.address());
+            freeRegister(rvalue.register, primary.register);
+            return;
+        }
+
+        throw new UnsupportedOperationException("unsupported postFixedPrimary");
     }
 
     @Override
     public Value visitReturnStmt(ZLangParser.ReturnStmtContext ctx) {
         final Value value = ctx.expr().accept(this);
-        if (this.currentFunction.type() != value.type()) {
+        if (Types.isAssignable(this.currentFunction.type(), value.type()) == false) {
             return logLocalError(ctx, "incompatible return type");
         }
         emit(OpCode.Mov, Register.R000, value.register);
-        this.allocatedRegisters.remove(value.register);
+        freeRegister(value.register);
         return super.visitReturnStmt(ctx);
     }
 
@@ -328,13 +403,14 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
             if (primary.type instanceof ArrayType == false) {
                 return logLocalError(ctx, "indexed value is not an array");
             }
+            final Type elementType = ((ArrayType) primary.type).elementType();
             final Value index = ctx.arrayAccessPostfix().expr().accept(this);
             if (index.type != BuiltInTypeSymbol.INT) {
                 return logLocalError(ctx, "index is not of type int");
             }
             final Register target = allocFreedRegister(primary.register, index.register);
-            emit(OpCode.ldElem(primary.type), target, primary.register, index.register);
-            return value(target, primary.type);
+            emit(OpCode.ldElem(elementType), target, primary.register, index.register);
+            return value(target, elementType);
         }
 
         if (ctx.fieldAccessPostfix() != null) {
@@ -397,7 +473,7 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         if (ctx.Nil() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_zero, target);
-            return value(target, BuiltInTypeSymbol.OBJECT);
+            return value(target, NilType.INSTANCE);
         }
         if (ctx.NullPtr() != null) {
             final Register target = allocFreedRegister();
@@ -424,14 +500,21 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         throw new UnsupportedOperationException("unsupported number type");
     }
 
-    private Register allocFreedRegister(Register... registersToFree) {
+    private void freeRegister(Register... registersToFree) {
         for (final Register register : registersToFree) {
             this.allocatedRegisters.remove(register);
         }
+        log.info("allocated registers: {}", this.allocatedRegisters);
+    }
+
+    private Register allocFreedRegister(Register... registersToFree) {
+        freeRegister(registersToFree);
         Register r = this.firstVolatileRegister;
         while (this.allocatedRegisters.contains(r)) {
             r = r.next();
         }
+        this.allocatedRegisters.add(r);
+        log.info("allocated registers: {}", this.allocatedRegisters);
         return r;
     }
 
@@ -444,31 +527,41 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
     }
 
     private static int parseInteger(String text) {
-        return Integer.parseInt(text);
+        return Integer.parseInt(CharMatcher.is('_').removeFrom(text));
     }
 
     private static double parseFloat(String text) {
-        return Double.parseDouble(text);
+        return Double.parseDouble(CharMatcher.is('_').removeFrom(text));
     }
 
-    private void enterFunction(FunctionSymbol function) {
+    private void enterFunction(FunctionSymbol function, List<Instruction> instructions) {
+        this.currentInstructions = instructions;
+        this.codeMap.computeIfAbsent(function, ignored -> {
+            final Instruction nop = new Instruction(OpCode.Nop);
+            this.currentInstructions.add(nop);
+            return nop;
+        });
         this.currentFunction = function;
         int top = this.currentFunction.symbols().size() + this.currentFunction.localCount() + 1;
         this.firstVolatileRegister = Register.fromNumber(top);
         this.allocatedRegisters.clear();
     }
 
+    private void emit(OpCode opCode) {
+        this.currentInstructions.add(new Instruction(opCode));
+    }
+
     private void emit(OpCode opCode, Register register) {
         final Instruction instr = new Instruction(opCode);
         instr.setRegisterArg(0, register);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register1, Register register2) {
         final Instruction instr = new Instruction(opCode);
         instr.setRegisterArg(0, register1);
         instr.setRegisterArg(1, register2);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register1, Register register2, Register register3) {
@@ -476,7 +569,7 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         instr.setRegisterArg(0, register1);
         instr.setRegisterArg(1, register2);
         instr.setRegisterArg(2, register3);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register1, Register register2, long integer) {
@@ -484,35 +577,35 @@ public class Emitter extends ScopeWalker<Emitter.Value> {
         instr.setRegisterArg(0, register1);
         instr.setRegisterArg(1, register2);
         instr.setIntArg(integer);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register, long integer) {
         final Instruction instr = new Instruction(opCode);
         instr.setRegisterArg(0, register);
         instr.setIntArg(integer);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register, double floatArg) {
         final Instruction instr = new Instruction(opCode);
         instr.setRegisterArg(0, register);
         instr.setFloatArg(floatArg);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register, String strArg) {
         final Instruction instr = new Instruction(opCode);
         instr.setRegisterArg(0, register);
         instr.setStrArg(strArg);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     private void emit(OpCode opCode, Register register, Symbol symbol) {
         final Instruction instr = new Instruction(opCode);
         instr.setRegisterArg(0, register);
         instr.setSymbolArg(symbol);
-        this.instructions.add(instr);
+        this.currentInstructions.add(instr);
     }
 
     public record Value(Register register, Type type) {

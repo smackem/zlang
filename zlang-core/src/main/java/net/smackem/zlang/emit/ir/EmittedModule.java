@@ -3,10 +3,12 @@ package net.smackem.zlang.emit.ir;
 import net.smackem.zlang.symbols.FunctionSymbol;
 import net.smackem.zlang.symbols.Type;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
-public class EmittedModule {
-    private final List<Type> types = new ArrayList<>();
-    private final List<FunctionSymbol> functions = new ArrayList<>();
+public record EmittedModule(List<Type> types,
+                            List<FunctionSymbol> functions,
+                            List<Instruction> instructions,
+                            Map<FunctionSymbol, Instruction> codeMap) {
 }

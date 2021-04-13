@@ -105,7 +105,7 @@ varDeclStmt
 
 assignStmt
     : Ident Beq expr
-    | primary Beq expr
+    | postFixedPrimary Beq expr
     ;
 
 invocationStmt

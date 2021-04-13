@@ -16,12 +16,12 @@ public class SymbolExtractor {
      *
      * @param globalScope
      *      The global scope to be filled with the module definitions. May contain app-defined
-     *      symbols like types.
+     *      symbols like constants or types.
      *
      * @param outErrors
      *      A modifiable collection that receives error messages.
      *
-     * @return A map that associates AST nodes to scopes to be used when traversing ASTs.
+     * @return The {@link ProgramStructure}.
      */
     public static ProgramStructure extractSymbols(Collection<ParsedModule> modules, GlobalScope globalScope, Collection<String> outErrors) {
         int globalSegmentSize = 0;
@@ -47,6 +47,6 @@ public class SymbolExtractor {
             outErrors.add("the program does defines multiple entry points with the signature `fn main()`.");
         }
 
-        return new ProgramStructure(globalSegmentSize, scopes);
+        return new ProgramStructure(globalSegmentSize, globalScope, scopes);
     }
 }
