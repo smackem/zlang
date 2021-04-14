@@ -5,7 +5,9 @@ import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.*;
 
-public class SymbolExtractor {
+public final class SymbolExtractor {
+
+    private SymbolExtractor() { }
 
     /**
      * Extracts all scopes and their contained symbols from the the specified modules.

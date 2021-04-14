@@ -37,12 +37,8 @@ public class EmitterTest {
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
-        for (final ParsedModule module : modules) {
-            final Emitter emitter = new Emitter(module.moduleName(), ps);
-            module.ast().accept(emitter);
-            final EmittedModule em = emitter.buildModule();
-            assertThat(em.instructions()).isNotEmpty();
-        }
+        final Program program = Emitter.emit(ps, modules);
+        assertThat(program.instructions()).isNotEmpty();
     }
 
     private static List<ParsedModule> parseModule(String source) throws IOException, CompilationErrorException {
