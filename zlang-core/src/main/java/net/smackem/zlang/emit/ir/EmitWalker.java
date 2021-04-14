@@ -24,7 +24,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     EmitWalker(String moduleName, ProgramStructure programStructure) {
         super(programStructure.globalScope(), programStructure.scopes());
-        this.initFunction = new FunctionSymbol("@init:" + moduleName, null, programStructure.globalScope());
+        this.initFunction = new FunctionSymbol(Naming.GENERATED_INIT_FUNCTION_PREFIX + moduleName, null, programStructure.globalScope());
         this.functions.add(this.initFunction);
     }
 

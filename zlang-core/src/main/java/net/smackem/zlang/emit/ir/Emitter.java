@@ -18,10 +18,10 @@ public final class Emitter {
             module.ast().accept(emitWalker);
             ems.add(emitWalker.buildModule());
         }
-        return buildProgram(ems);
+        return buildProgram(ems, ps);
     }
 
-    private static Program buildProgram(Collection<EmittedModule> emittedModules) {
+    private static Program buildProgram(Collection<EmittedModule> emittedModules, ProgramStructure ps) {
         final List<Instruction> instructions = new ArrayList<>();
         final List<Type> types = new ArrayList<>();
         final Map<FunctionSymbol, Instruction> codeMap = new HashMap<>();
@@ -41,6 +41,23 @@ public final class Emitter {
                 codeMap.put(entry.getKey(), entry.getValue());
             }
         }
-        return new Program(instructions, types, codeMap, entryPoint, entryPointBaseInstruction);
+        final Program program = new Program(instructions, types, ps.globals(), codeMap, entryPoint, entryPointBaseInstruction);
+        fixupEntryPoint(program);
+        return program.freeze();
+    }
+
+    private static void fixupEntryPoint(Program program) {
+        final Instruction instr = program.codeMap().get(program.entryPoint());
+        final List<Instruction> instructions = program.instructions();
+        final int index = instructions.indexOf(instr);
+        program.codeMap().keySet().stream()
+                .filter(f -> f.name().startsWith(Naming.GENERATED_INIT_FUNCTION_PREFIX))
+                .forEach(f -> {
+                    final Instruction call = new Instruction(OpCode.Call);
+                    call.setRegisterArg(0, Register.R000);
+                    call.setRegisterArg(1, Register.R000);
+                    call.setSymbolArg(f);
+                    instructions.add(index + 1, call);
+                });
     }
 }

@@ -35,8 +35,8 @@ public class GlobalScope implements Scope {
         }
         // walk all nested module scopes to resolve symbol
         for (final Symbol s : this.symbolTable.symbols()) {
-            if (s instanceof ModuleSymbol) {
-                symbol = ((ModuleSymbol) s).resolveMember(name);
+            if (s instanceof ModuleSymbol ms) {
+                symbol = ms.resolveMember(name);
                 if (symbol != null) {
                     return symbol;
                 }
