@@ -31,7 +31,7 @@ class ConstSegmentWriter extends NativeValueWriter {
     public void writeType(InterfaceSymbol symbol) throws IOException {
         symbol.setAddress(bytesWritten());
         writeString(symbol.name(), typeNameByteLength);
-        writeInt64(0);
+        writeInt32(0);
         for (int i = 0; i < maxImplementedInterfaces; i++) {
             writeAddr(0);
         }
@@ -42,7 +42,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         symbol.setAddress(bytesWritten());
         writeString(symbol.name(), typeNameByteLength);
         final int implCount = symbol.implementedInterfaces().size();
-        writeInt64(implCount);
+        writeInt32(implCount);
         for (final Type ifc : symbol.implementedInterfaces()) {
             writeAddr(((InterfaceSymbol) ifc).address());
         }

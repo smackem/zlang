@@ -789,6 +789,7 @@ int main() {
     MemoryLayout heap;
     fprintf(stdout, "zln_test v%d.%d\n", zln_VERSION_MAJOR, zln_VERSION_MINOR);
     fprintf(stdout, "RemoveRef=%d\n", OPC_RemoveRef);
+    fprintf(stdout, "sizeof(size_t)=%lu\n", sizeof(size_t));
     fprintf(stdout, ">>> running tests...\n");
     int n = 1;
 
