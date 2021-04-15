@@ -14,13 +14,15 @@ public record Program(List<Instruction> instructions,
                       Collection<VariableSymbol> globals,
                       Map<FunctionSymbol, Instruction> codeMap,
                       FunctionSymbol entryPoint,
-                      Instruction entryPointBaseInstruction) {
+                      Instruction entryPointBaseInstruction,
+                      Collection<Label> labels) {
     Program freeze() {
         return new Program(Collections.unmodifiableList(this.instructions),
                 Collections.unmodifiableCollection(this.types),
                 Collections.unmodifiableCollection(this.globals),
                 Collections.unmodifiableMap(this.codeMap),
                 this.entryPoint,
-                this.entryPointBaseInstruction);
+                this.entryPointBaseInstruction,
+                Collections.unmodifiableCollection(this.labels));
     }
 }

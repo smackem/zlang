@@ -25,6 +25,7 @@ public final class Emitter {
         final List<Instruction> instructions = new ArrayList<>();
         final List<Type> types = new ArrayList<>();
         final Map<FunctionSymbol, Instruction> codeMap = new HashMap<>();
+        final List<Label> labels = new ArrayList<>();
         FunctionSymbol entryPoint = null;
         Instruction entryPointBaseInstruction = null;
         for (final EmittedModule em : emittedModules) {
@@ -40,8 +41,9 @@ public final class Emitter {
             for (final var entry : em.codeMap().entrySet()) {
                 codeMap.put(entry.getKey(), entry.getValue());
             }
+            labels.addAll(em.labels());
         }
-        final Program program = new Program(instructions, types, ps.globals(), codeMap, entryPoint, entryPointBaseInstruction);
+        final Program program = new Program(instructions, types, ps.globals(), codeMap, entryPoint, entryPointBaseInstruction, labels);
         fixupEntryPoint(program);
         return program.freeze();
     }

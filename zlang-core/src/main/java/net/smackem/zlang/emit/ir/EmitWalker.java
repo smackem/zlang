@@ -18,6 +18,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final FunctionSymbol initFunction;
     private final Set<Register> allocatedRegisters = new HashSet<>();
     private final List<Instruction> initInstructions = new ArrayList<>();
+    private final List<Label> labels = new ArrayList<>();
     private List<Instruction> currentInstructions = instructions;
     private FunctionSymbol currentFunction;
     private Register firstVolatileRegister;
@@ -33,7 +34,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             this.initInstructions.add(new Instruction(OpCode.Ret));
         }
         this.instructions.addAll(this.initInstructions);
-        return new EmittedModule(this.types, this.functions, this.instructions, this.codeMap);
+        return new EmittedModule(this.types, this.functions, this.instructions, this.codeMap, this.labels);
     }
 
     @Override
