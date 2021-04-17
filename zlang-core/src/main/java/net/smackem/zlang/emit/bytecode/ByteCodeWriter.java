@@ -21,12 +21,7 @@ public class ByteCodeWriter implements AutoCloseable {
     public static final byte MAJOR_VERSION = 0;
     public static final byte MINOR_VERSION = 1;
 
-    private final OutputStream os;
     private final ConstSegmentWriter constSegment = new ConstSegmentWriter();
-
-    public ByteCodeWriter(OutputStream os) {
-        this.os = Objects.requireNonNull(os);
-    }
 
     /**
      * ZL byte code format v0.1:
@@ -35,26 +30,28 @@ public class ByteCodeWriter implements AutoCloseable {
      * - global segment (length @header)
      * - code segment (all remaining bytes)
      */
-    public void writeProgram(Program program) throws Exception {
+    public ByteBuffer writeProgram(Program program) throws Exception {
         // render const segment to memory
         renderTypes(program.types());
         renderFunctions(program.codeMap().keySet());
         // render code segment to memory
         final byte[] codeSegment = renderCode(program.instructions(), program.labels());
         final byte[] constSegment = this.constSegment.fixup(program.codeMap());
-
-        // header
-        writeHeaderBytes(program, constSegment.length);
-        // const segment
-        this.os.write(constSegment);
-        // global segment - chunk of zeroed memory
-        this.os.write(new byte[program.globalSegmentSize()]);
-        // code
-        this.os.write(codeSegment);
+        final int headerSize = 20;
+        final int globalSegmentSize = program.globalSegmentSize();
+        final int size = headerSize + constSegment.length + globalSegmentSize + codeSegment.length;
+        final ByteBuffer buf = ByteBuffer.allocateDirect(size);
+        // 1) header
+        writeHeaderBytes(program, constSegment.length, buf);
+        // 2) const segment
+        buf.put(headerSize, constSegment);
+        // 3) just skip space for globals segment
+        // 4) code segment
+        buf.put(headerSize + globalSegmentSize, codeSegment);
+        return buf;
     }
 
-    private void writeHeaderBytes(Program program, int constSegmentSize) throws IOException {
-        final ByteBuffer buf = ByteBuffer.allocate(20).order(ByteOrder.nativeOrder());
+    private void writeHeaderBytes(Program program, int constSegmentSize, ByteBuffer buf) throws IOException {
         buf.put(0, (byte) 'Z');
         buf.put(1, (byte) 'L');
         buf.put(2, MAJOR_VERSION);
@@ -64,7 +61,6 @@ public class ByteCodeWriter implements AutoCloseable {
         buf.putInt(8, entryPoint.firstInstr().address());
         buf.putInt(12, constSegmentSize);
         buf.putInt(16, program.globalSegmentSize());
-        this.os.write(buf.array(), buf.arrayOffset(), buf.capacity());
     }
 
     private void renderTypes(Collection<Type> types) throws IOException {
@@ -190,6 +186,5 @@ public class ByteCodeWriter implements AutoCloseable {
     @Override
     public void close() throws Exception {
         this.constSegment.close();
-        this.os.close();
     }
 }

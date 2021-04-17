@@ -19,7 +19,7 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="zlang-cli" options="-Xlint:all" />
-      <module name="zlang-core" options="-Xlint:all" />
+      <module name="zlang-core" options="-Xlint:all -h target/headers" />
     </option>
   </component>
 </project>
