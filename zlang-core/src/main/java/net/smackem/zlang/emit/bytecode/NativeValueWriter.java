@@ -34,6 +34,13 @@ class NativeValueWriter implements AutoCloseable {
         this.buf.put(value);
     }
 
+    public void writeByte(int value) throws IOException {
+        if (this.buf.hasRemaining() == false) {
+            flush();
+        }
+        this.buf.put((byte) value);
+    }
+
     public void writeInt32(int value) throws IOException {
         if (this.buf.remaining() < BuiltInTypeSymbol.INT.byteSize()) {
             flush();
@@ -103,7 +110,7 @@ class NativeValueWriter implements AutoCloseable {
         this.buf.put((byte) 0);
     }
 
-    private void flush() throws IOException {
+    void flush() throws IOException {
         int size = this.buf.position();
         if (size > 0) {
             this.os.write(this.buf.array(), this.buf.arrayOffset(), size);

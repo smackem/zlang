@@ -1,9 +1,14 @@
 package net.smackem.zlang.emit.bytecode;
 
+import net.smackem.zlang.emit.ir.FunctionCode;
+import net.smackem.zlang.emit.ir.Label;
 import net.smackem.zlang.symbols.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.Map;
 
 class ConstSegmentWriter extends NativeValueWriter {
     private static final int typeNameByteLength = 64;
@@ -85,9 +90,16 @@ class ConstSegmentWriter extends NativeValueWriter {
         writeString(symbol.name());
     }
 
-    public byte[] fixup() {
+    public byte[] fixup(Map<FunctionSymbol, FunctionCode> codeMap) throws IOException {
+        flush();
         final byte[] bytes = ((ByteArrayOutputStream) outputStream()).toByteArray();
-        // TODO fixup function pcs
+        final ByteBuffer buf = ByteBuffer.wrap(bytes);
+        for (final var entry : codeMap.entrySet()) {
+            final int offset = entry.getKey().address();
+            final FunctionCode fc = entry.getValue();
+            buf.putInt(offset, fc.moduleInstr().address());
+            buf.putInt(offset + 4, fc.firstInstr().address());
+        }
         return bytes;
     }
 }
