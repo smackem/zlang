@@ -49,6 +49,12 @@ public final class Program {
         return this.globals;
     }
 
+    public int globalSegmentSize() {
+        return this.globals.stream()
+                .mapToInt(s -> s.type().byteSize())
+                .sum();
+    }
+
     public Map<FunctionSymbol, FunctionCode> codeMap() {
         if (this.cachedCodeMap == null) {
             this.cachedCodeMap = this.modules.stream()

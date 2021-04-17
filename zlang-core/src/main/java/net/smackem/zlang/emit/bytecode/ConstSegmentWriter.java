@@ -9,7 +9,7 @@ class ConstSegmentWriter extends NativeValueWriter {
     private static final int typeNameByteLength = 64;
     private static final int maxImplementedInterfaces = 8;
 
-    public ConstSegmentWriter() {
+    ConstSegmentWriter() {
         super(new ByteArrayOutputStream());
     }
 
@@ -54,11 +54,40 @@ class ConstSegmentWriter extends NativeValueWriter {
         }
     }
 
+    // typedef struct function_meta {
+    //     /// the base instruction address of the module that defines the function
+    //     addr_t base_pc;
+    //
+    //     /// the offset of the function's first instruction within the module
+    //     addr_t pc;
+    //
+    //     /// the number of local variables of the function
+    //     int local_count;
+    //
+    //     /// the number of arguments accepted by the function
+    //     int arg_count;
+    //
+    //     /// the return type of the function
+    //     Type ret_type;
+    //
+    //     /// zero-terminated string containing the function name. when contained in the constant segment,
+    //     /// the length of the string may be variable.
+    //     char name[32];
+    // } FunctionMeta;
+
     public void writeFunction(FunctionSymbol symbol) throws IOException {
         symbol.setAddress(bytesWritten());
+        writeAddr(0); // base pc - fixup later
+        writeAddr(0); // pc - fixup later
+        writeInt32(symbol.localCount());
+        writeInt32(symbol.symbols().size());
+        writeByte((byte) symbol.type().primitive().id());
+        writeString(symbol.name());
     }
 
-    public byte[] getBytes() {
-        return ((ByteArrayOutputStream) outputStream()).toByteArray();
+    public byte[] fixup() {
+        final byte[] bytes = ((ByteArrayOutputStream) outputStream()).toByteArray();
+        // TODO fixup function pcs
+        return bytes;
     }
 }

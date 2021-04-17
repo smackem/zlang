@@ -14,6 +14,7 @@ public class Instruction {
     private Label labelArg;
     private double floatArg;
     private String strArg;
+    private int address;
 
     Instruction(OpCode opCode) {
         this.opCode = opCode;
@@ -71,9 +72,18 @@ public class Instruction {
         this.strArg = str;
     }
 
+    public int address() {
+        return this.address;
+    }
+
+    public void setAddress(int address) {
+        this.address = address;
+    }
+
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder(this.opCode.toString()).append(" ");
+        final StringBuilder sb = new StringBuilder(String.format("%08x ", this.address));
+        sb.append(this.opCode.toString()).append(" ");
         sb.append(Arrays.stream(this.registerArgs)
                 .filter(Objects::nonNull)
                 .map(Object::toString)
