@@ -39,6 +39,14 @@ public class EmitterTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         final Program program = Emitter.emit(ps, modules);
         assertThat(program.instructions()).isNotEmpty();
+        final StringBuilder sb = new StringBuilder();
+        int index = 0;
+        for (final Instruction instr : program.instructions()) {
+            sb.append(String.format("%02d ", index));
+            sb.append(instr).append(System.lineSeparator());
+            index++;
+        }
+        System.out.println(sb);
     }
 
     private static List<ParsedModule> parseModule(String source) throws IOException, CompilationErrorException {

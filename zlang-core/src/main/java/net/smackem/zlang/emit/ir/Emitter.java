@@ -1,9 +1,7 @@
 package net.smackem.zlang.emit.ir;
 
 import net.smackem.zlang.modules.ParsedModule;
-import net.smackem.zlang.symbols.FunctionSymbol;
 import net.smackem.zlang.symbols.ProgramStructure;
-import net.smackem.zlang.symbols.Type;
 
 import java.util.*;
 
@@ -22,36 +20,15 @@ public final class Emitter {
     }
 
     private static Program buildProgram(Collection<EmittedModule> emittedModules, ProgramStructure ps) {
-        final List<Instruction> instructions = new ArrayList<>();
-        final List<Type> types = new ArrayList<>();
-        final Map<FunctionSymbol, Instruction> codeMap = new HashMap<>();
-        final List<Label> labels = new ArrayList<>();
-        FunctionSymbol entryPoint = null;
-        Instruction entryPointBaseInstruction = null;
-        for (final EmittedModule em : emittedModules) {
-            final Optional<FunctionSymbol> ep = em.functions().stream()
-                    .filter(f -> Objects.equals(f.name(), "main"))
-                    .findFirst();
-            if (ep.isPresent()) {
-                entryPoint = ep.get();
-                entryPointBaseInstruction = em.instructions().get(0); // if the module has an entry point, it also has instructions
-            }
-            instructions.addAll(em.instructions());
-            types.addAll(em.types());
-            for (final var entry : em.codeMap().entrySet()) {
-                codeMap.put(entry.getKey(), entry.getValue());
-            }
-            labels.addAll(em.labels());
-        }
-        final Program program = new Program(instructions, types, ps.globals(), codeMap, entryPoint, entryPointBaseInstruction, labels);
+        final Program program = Program.emit(emittedModules, ps.globals());
         fixupEntryPoint(program);
         return program.freeze();
     }
 
     private static void fixupEntryPoint(Program program) {
-        final Instruction instr = program.codeMap().get(program.entryPoint());
+        final FunctionCode fc = program.codeMap().get(program.entryPoint());
         final List<Instruction> instructions = program.instructions();
-        final int index = instructions.indexOf(instr);
+        final int index = instructions.indexOf(fc.firstInstr());
         program.codeMap().keySet().stream()
                 .filter(f -> f.name().startsWith(Naming.GENERATED_INIT_FUNCTION_PREFIX))
                 .forEach(f -> {
