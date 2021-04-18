@@ -7,6 +7,7 @@ import net.smackem.zlang.symbols.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.Map;
 
@@ -86,14 +87,14 @@ class ConstSegmentWriter extends NativeValueWriter {
         writeAddr(0); // pc - fixup later
         writeInt32(symbol.localCount());
         writeInt32(symbol.symbols().size());
-        writeByte((byte) symbol.type().primitive().id());
+        writeByte(symbol.type() != null ? (byte) symbol.type().primitive().id() : 0);
         writeString(symbol.name());
     }
 
     public byte[] fixup(Map<FunctionSymbol, FunctionCode> codeMap) throws IOException {
         flush();
         final byte[] bytes = ((ByteArrayOutputStream) outputStream()).toByteArray();
-        final ByteBuffer buf = ByteBuffer.wrap(bytes);
+        final ByteBuffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
         for (final var entry : codeMap.entrySet()) {
             final int offset = entry.getKey().address();
             final FunctionCode fc = entry.getValue();

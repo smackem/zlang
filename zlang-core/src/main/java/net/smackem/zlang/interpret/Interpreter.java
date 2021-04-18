@@ -9,9 +9,11 @@ import java.nio.ByteBuffer;
 public class Interpreter {
     private static final Logger log = LoggerFactory.getLogger(Interpreter.class);
 
-    public static void run(ByteBuffer zl, Program program) {
-        final byte[] heap = Zln.executeProgram(zl);
-        assert heap != null;
-        log.info("returned heap size: {}", heap.length);
+    private Interpreter() { }
+
+    public static int run(ByteBuffer zl, Program program) {
+        final int retVal = Zln.executeProgram(zl);
+        log.info("returned value: {}", retVal);
+        return retVal;
     }
 }

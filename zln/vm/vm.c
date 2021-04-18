@@ -299,3 +299,21 @@ void print_registers(FILE *f, const Register *registers, int count) {
         fprintf(f, "r%02d = %08x|%lf\n", i, registers->i32, registers->f64);
     }
 }
+
+void dump_cpu(addr_t pc,
+              addr_t base_pc,
+              const Instruction *instr,
+              size_t stack_depth,
+              const StackFrame *stack_frame,
+              const Register *registers,
+              size_t register_count) {
+    fprintf(stdout, "-----------------------");
+    for (stack_frame -= stack_depth - 1; stack_depth > 0; stack_depth--, stack_frame++) {
+        fprintf(stdout, " %s", stack_frame->meta->name);
+    }
+    fputc('\n', stdout);
+    print_registers(stdout, registers, (int) register_count);
+    fprintf(stdout, "%08x ", base_pc + pc);
+    print_instruction(stdout, instr);
+    fputc('\n', stdout);
+}

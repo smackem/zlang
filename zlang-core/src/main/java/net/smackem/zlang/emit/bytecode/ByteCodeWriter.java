@@ -1,23 +1,21 @@
 package net.smackem.zlang.emit.bytecode;
 
-import net.smackem.zlang.emit.ir.FunctionCode;
-import net.smackem.zlang.emit.ir.Instruction;
-import net.smackem.zlang.emit.ir.Label;
-import net.smackem.zlang.emit.ir.Program;
+import net.smackem.zlang.emit.ir.*;
 import net.smackem.zlang.symbols.FunctionSymbol;
 import net.smackem.zlang.symbols.InterfaceSymbol;
 import net.smackem.zlang.symbols.StructSymbol;
 import net.smackem.zlang.symbols.Type;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
-import java.util.Objects;
 
 public class ByteCodeWriter implements AutoCloseable {
+    private static final Logger log = LoggerFactory.getLogger(ByteCodeWriter.class);
     public static final byte MAJOR_VERSION = 0;
     public static final byte MINOR_VERSION = 1;
 
@@ -25,12 +23,13 @@ public class ByteCodeWriter implements AutoCloseable {
 
     /**
      * ZL byte code format v0.1:
-     * - header (20 bytes)
-     * - const segment (length @header)
-     * - global segment (length @header)
-     * - code segment (all remaining bytes)
+     * 1) header (20 bytes)
+     * 2) code segment (length @header)
+     * 3) const segment (length @header)
+     * 4) global segment (zeroed memory, length @header)
+     * 5) heap memory (zeroed memory, all remaining bytes)
      */
-    public ByteBuffer writeProgram(Program program) throws Exception {
+    public ByteBuffer writeProgram(Program program, int heapSize) throws Exception {
         // render const segment to memory
         renderTypes(program.types());
         renderFunctions(program.codeMap().keySet());
@@ -39,28 +38,36 @@ public class ByteCodeWriter implements AutoCloseable {
         final byte[] constSegment = this.constSegment.fixup(program.codeMap());
         final int headerSize = 20;
         final int globalSegmentSize = program.globalSegmentSize();
-        final int size = headerSize + constSegment.length + globalSegmentSize + codeSegment.length;
-        final ByteBuffer buf = ByteBuffer.allocateDirect(size);
+        final int size = headerSize + codeSegment.length + constSegment.length + globalSegmentSize + heapSize;
+        final ByteBuffer buf = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         // 1) header
-        writeHeaderBytes(program, constSegment.length, buf);
-        // 2) const segment
-        buf.put(headerSize, constSegment);
-        // 3) just skip space for globals segment
-        // 4) code segment
-        buf.put(headerSize + globalSegmentSize, codeSegment);
+        writeHeaderBytes(buf, codeSegment.length, constSegment.length, globalSegmentSize, program.entryPoint());
+        // 2) code segment
+        buf.put(headerSize, codeSegment);
+        // 3) const segment
+        buf.put(headerSize + codeSegment.length, constSegment);
+        // 4) global segment - just reserve space
+        // 5) heap segment - just reserve space
         return buf;
     }
 
-    private void writeHeaderBytes(Program program, int constSegmentSize, ByteBuffer buf) throws IOException {
+    private void writeHeaderBytes(ByteBuffer buf,
+                                  int codeSegmentSize,
+                                  int constSegmentSize,
+                                  int globalSegmentSize,
+                                  FunctionSymbol entryPoint) throws IOException {
+        log.info("ZL header: codeSize={} constSize={} globalSize={} entryPoint={}",
+                codeSegmentSize, constSegmentSize, globalSegmentSize, entryPoint.address());
         buf.put(0, (byte) 'Z');
         buf.put(1, (byte) 'L');
         buf.put(2, MAJOR_VERSION);
         buf.put(3, MINOR_VERSION);
-        final FunctionCode entryPoint = program.codeMap().get(program.entryPoint());
-        buf.putInt(4, entryPoint.moduleInstr().address());
-        buf.putInt(8, entryPoint.firstInstr().address());
-        buf.putInt(12, constSegmentSize);
-        buf.putInt(16, program.globalSegmentSize());
+        buf.putInt(4, codeSegmentSize);
+        buf.putInt(8, constSegmentSize);
+        buf.putInt(12, globalSegmentSize);
+        buf.putInt(16, entryPoint.address());
+        // max register count
+        // max stack depth
     }
 
     private void renderTypes(Collection<Type> types) throws IOException {
@@ -86,28 +93,47 @@ public class ByteCodeWriter implements AutoCloseable {
 
     private byte[] renderCode(Collection<Instruction> instructions, Collection<Label> labels) throws Exception {
         // write instructions
+        int highestRegister = -1;
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try (final NativeValueWriter writer = new NativeValueWriter(bos)) {
             for (final Instruction instr : instructions) {
+                highestRegister = Math.max(highestRegister, getHighestRegister(instr));
                 renderInstruction(instr, writer);
             }
         }
+        log.info("highest register = {}", highestRegister);
+
         // fixup branch instructions using labels
         final byte[] bytes = bos.toByteArray();
-        final ByteBuffer buf = ByteBuffer.wrap(bytes);
+        final ByteBuffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
         for (final Label label : labels) {
             for (final Instruction sourceInstr : label.sources()) {
                 final int offset = sourceInstr.address();
                 switch (sourceInstr.opCode()) {
-                    case Br -> buf.putInt(offset, label.target().address());
-                    case Br_zero -> buf.putInt(offset + 1, label.target().address());
+                    case Br -> buf.putInt(offset + 1, label.target().address());
+                    case Br_zero -> buf.putInt(offset + 2, label.target().address());
                     default -> {
+                        log.error("invalid opcode for branch source instruction: {}", sourceInstr);
                         assert false;
                     }
                 }
             }
         }
         return bytes;
+    }
+
+    private static int getHighestRegister(Instruction instr) {
+        int registerNumber = -1;
+        for (int i = 0; i < 3; i++) {
+            final Register r = instr.registerArg(i);
+            if (r == null) {
+                continue;
+            }
+            if (r.number() > registerNumber) {
+                registerNumber = r.number();
+            }
+        }
+        return registerNumber;
     }
 
     private void renderInstruction(Instruction instr, NativeValueWriter writer) throws IOException {

@@ -4,6 +4,7 @@ import com.google.common.base.Strings;
 import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.lang.ZLangBaseVisitor;
 import net.smackem.zlang.modules.ParsedModule;
+import net.smackem.zlang.modules.ParsedModules;
 import net.smackem.zlang.modules.SourceFileLocation;
 import net.smackem.zlang.modules.SourceFileLocations;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -22,7 +23,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testEmpty() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("");
+        final List<ParsedModule> modules = ParsedModules.single("");
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
@@ -37,7 +38,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testSingleType() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("""
+        final List<ParsedModule> modules = ParsedModules.single("""
                 struct StructType {
                     field: int
                 }
@@ -56,7 +57,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testComplexModule() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("""
+        final List<ParsedModule> modules = ParsedModules.single("""
                 struct StructType {
                     field: int
                 }
@@ -108,7 +109,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testModuleWithInterface() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("""
+        final List<ParsedModule> modules = ParsedModules.single("""
                 interface Readable {
                     fn read(buf: byte[]) -> int
                 }
@@ -143,7 +144,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testModuleWithInterfaceTwistedOrder() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("""
+        final List<ParsedModule> modules = ParsedModules.single("""
                 struct Socket {
                     address: string
                 } is Readable
@@ -162,7 +163,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testGlobals() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("""
+        final List<ParsedModule> modules = ParsedModules.single("""
                 let a: int = 0
                 let b: float = 0
                 let c: byte = 0
@@ -179,7 +180,7 @@ public class SymbolExtractorTest {
 
     @Test
     public void testLocals() throws IOException, CompilationErrorException {
-        final List<ParsedModule> modules = parseModule("""
+        final List<ParsedModule> modules = ParsedModules.single("""
                 fn noParams() {
                     var a: int = 0
                     var b: float = 0.0
@@ -315,11 +316,6 @@ public class SymbolExtractorTest {
                                 - x: VariableSymbol{int}@2
                 """);
         assertThat(errors).isEmpty();
-    }
-
-    private static List<ParsedModule> parseModule(String source) throws IOException, CompilationErrorException {
-        return List.of(ParsedModule.parse("main",
-                SourceFileLocations.ofMap(Map.of("main", source))));
     }
 
     private static String symbolText(Collection<ParsedModule> modules, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {

@@ -15,6 +15,7 @@ usesClause
 globalDecl
     : functionDecl
     | (bindingStmt LineBreak)
+    | (varDeclStmt LineBreak)
     | typeDecl
     ;
 
@@ -396,11 +397,11 @@ Ident
     ;
 
 IntegerNumber
-    : [0-9][0-9_]+
+    : [0-9][0-9_]*
     ;
 
 RealNumber
-    : [0-9][0-9_]* ('.' [0-9_]*[0-9])?
+    : [0-9][0-9_]* '.' [0-9_]*[0-9]
     ;
 
 Color

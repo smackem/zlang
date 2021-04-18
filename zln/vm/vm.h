@@ -5,6 +5,7 @@
 #ifndef ZLN_VM_H
 #define ZLN_VM_H
 
+#include <stdio.h>
 #include "cpu.h"
 
 /**
@@ -31,5 +32,16 @@ void print_code(FILE *f, const byte_t *code, size_t code_size);
  * Prints all register contents to the specified stream.
  */
 void print_registers(FILE *f, const Register *registers, int count);
+
+/**
+ * Prints the current CPU state. Can be used as CPU debug callback.
+ */
+void dump_cpu(addr_t pc,
+              addr_t base_pc,
+              const Instruction *instr,
+              size_t stack_depth,
+              const StackFrame *stack_frame,
+              const Register *registers,
+              size_t register_count);
 
 #endif //ZLN_VM_H

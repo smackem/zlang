@@ -10,9 +10,9 @@ extern "C" {
 /*
  * Class:     net_smackem_zlang_interpret_Zln
  * Method:    executeProgram
- * Signature: (Ljava/nio/ByteBuffer;)[B
+ * Signature: (Ljava/nio/ByteBuffer;)I
  */
-JNIEXPORT jbyteArray JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram
+JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram
   (JNIEnv *, jclass, jobject);
 
 #ifdef __cplusplus

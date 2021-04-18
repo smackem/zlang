@@ -17,24 +17,6 @@ static FunctionMeta default_entry_point = {
         .name = "main",
 };
 
-static void dump_cpu(addr_t pc,
-                     addr_t base_pc,
-                     const Instruction *instr,
-                     size_t stack_depth,
-                     const StackFrame *stack_frame,
-                     const Register *registers,
-                     size_t register_count) {
-    fprintf(stdout, "-----------------------");
-    for (stack_frame -= stack_depth - 1; stack_depth > 0; stack_depth--, stack_frame++) {
-        fprintf(stdout, " %s", stack_frame->meta->name);
-    }
-    fputc('\n', stdout);
-    print_registers(stdout, registers, register_count);
-    fprintf(stdout, "%08x ", base_pc + pc);
-    print_instruction(stdout, instr);
-    fputc('\n', stdout);
-}
-
 // ---------------------------------------------------------------------
 // TEST 1
 // - load integer constants and store globals
