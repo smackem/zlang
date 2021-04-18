@@ -303,7 +303,7 @@ fieldInitializer
     ;
 
 arrayInstanceCreation
-    : New simpleType LBracket expr RBracket
+    : New type LBracket expr RBracket
     ;
 
 literal

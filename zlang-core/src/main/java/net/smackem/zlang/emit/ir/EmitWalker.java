@@ -460,6 +460,15 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitArrayInstanceCreation(ZLangParser.ArrayInstanceCreationContext ctx) {
+        final Value size = ctx.expr().accept(this);
+        final Type elementType = resolveType(ctx.type());
+        final Register target = allocFreedRegister(size.register);
+        emit(OpCode.newArr(elementType), target, size.register);
+        return new Value(target, new ArrayType(elementType));
+    }
+
+    @Override
     public Value visitLiteral(ZLangParser.LiteralContext ctx) {
         if (ctx.True() != null) {
             final Register target = allocFreedRegister();

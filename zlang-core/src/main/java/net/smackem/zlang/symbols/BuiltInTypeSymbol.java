@@ -45,7 +45,7 @@ public class BuiltInTypeSymbol extends Symbol implements Type {
 
     @Override
     public BuiltInTypeSymbol primitive() {
-        return this;
+        return this == BOOL ? INT : this;
     }
 
     @Override

@@ -5,7 +5,7 @@ import java.util.Objects;
 public class ArrayType implements Type {
     private final Type elementType;
 
-    ArrayType(Type elementType) {
+    public ArrayType(Type elementType) {
         this.elementType = Objects.requireNonNull(elementType);
     }
 

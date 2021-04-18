@@ -14,13 +14,10 @@ typedef struct zl_header {
 } ZLHeader;
 
 JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEnv *env_ptr, jclass cls, jobject buf) {
-    fprintf(stdout, "A\n");
     assert_equal(sizeof(ZLHeader), 20, "header size");
-    fprintf(stdout, "B\n");
     JNIEnv env = *env_ptr;
     jlong buf_size = env->GetDirectBufferCapacity(env_ptr, buf);
     byte_t *bytes = env->GetDirectBufferAddress(env_ptr, buf);
-    fprintf(stdout, "C\n");
     const ZLHeader *header = (ZLHeader *) bytes;
     const byte_t *code_segment = &bytes[sizeof(ZLHeader)];
     size_t non_memory_size = sizeof(ZLHeader) + header->code_segment_size;
@@ -40,10 +37,12 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
             .max_stack_depth = 16,
             .debug_callback = dump_cpu,
     };
+#ifndef NDEBUG
     print_code(stdout, code_segment, header->code_segment_size);
+#endif
     const FunctionMeta *entry_point = (FunctionMeta *) &memory.base[header->entry_point_address];
     execute(code_segment, entry_point, &memory, &config);
     printf("FINISH\n");
-    *(int *)NULL = 123; // seg fault!
+    fflush(stdout);
     return 0;
 }
