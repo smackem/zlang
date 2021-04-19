@@ -34,3 +34,5 @@ buildNumber.properties
 hs_err_pid*
 /**/target/*
 /.idea/libraries/
+/**/cmake-build-debug/
+/**/cmake-build-release/
