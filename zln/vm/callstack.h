@@ -74,10 +74,10 @@ typedef struct call_stack {
     StackFrame *stack_frame_buf;
 
     /// the maximum stack depth
-    size_t max_stack_depth;
+    uint32_t max_stack_depth;
 
     /// the number of registers per stack frame
-    size_t register_count;
+    uint32_t register_count;
 
     /// the current stack frame
     StackFrame *top;
@@ -107,8 +107,8 @@ typedef struct call_stack {
 void init_call_stack(CallStack *call_stack,
                      Register *register_buf,
                      StackFrame *stack_frame_buf,
-                     size_t max_stack_depth,
-                     size_t register_count,
+                     uint32_t max_stack_depth,
+                     uint32_t register_count,
                      const FunctionMeta *entry_point);
 
 /**
@@ -146,6 +146,6 @@ StackFrame *pop_stack_frame(CallStack *call_stack);
 /**
  * @return the current stack depth
  */
-size_t current_stack_depth(const CallStack *call_stack);
+uint32_t current_stack_depth(const CallStack *call_stack);
 
 #endif //ZLN_CALLSTACK_H

@@ -21,12 +21,12 @@ const char *type_name(Type type);
 /**
  * Prints the given instruction to the specified stream.
  */
-size_t print_instruction(FILE *f, const Instruction *instr);
+uint32_t print_instruction(FILE *f, const Instruction *instr);
 
 /**
  * Prints all instructions that make up the given code to the specified stream.
  */
-void print_code(FILE *f, const byte_t *code, size_t code_size);
+void print_code(FILE *f, const byte_t *code, uint32_t code_size);
 
 /**
  * Prints all register contents to the specified stream.
@@ -39,9 +39,9 @@ void print_registers(FILE *f, const Register *registers, int count);
 void dump_cpu(addr_t pc,
               addr_t base_pc,
               const Instruction *instr,
-              size_t stack_depth,
+              uint32_t stack_depth,
               const StackFrame *stack_frame,
               const Register *registers,
-              size_t register_count);
+              uint32_t register_count);
 
 #endif //ZLN_VM_H

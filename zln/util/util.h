@@ -10,9 +10,13 @@
 #include <stdlib.h>
 
 #ifdef NDEBUG
-#define NDEBUG_INLINE inline
+#define INLINE inline
 #else
 #define INLINE
+#endif
+
+#ifndef bzero
+#define bzero(ptr, size) (memset(ptr, 0, size))
 #endif
 
 void assert_that(bool condition, const char *format, ...);

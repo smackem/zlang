@@ -7,8 +7,8 @@
 void init_call_stack(CallStack *call_stack,
                      Register *register_buf,
                      StackFrame *stack_frame_buf,
-                     size_t max_stack_depth,
-                     size_t register_count,
+                     uint32_t max_stack_depth,
+                     uint32_t register_count,
                      const FunctionMeta *entry_point) {
     assert(call_stack != NULL);
     assert(register_buf != NULL);
@@ -49,6 +49,6 @@ StackFrame *pop_stack_frame(CallStack *call_stack) {
     return call_stack->top--;
 }
 
-inline size_t current_stack_depth(const CallStack *call_stack) {
+inline uint32_t current_stack_depth(const CallStack *call_stack) {
     return call_stack->top - call_stack->stack_frame_buf + 1;
 }

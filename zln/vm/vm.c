@@ -125,8 +125,8 @@ const char *type_name(Type type) {
     return type_names[type];
 }
 
-size_t print_instruction(FILE *f, const Instruction *instr) {
-    size_t size = 0;
+uint32_t print_instruction(FILE *f, const Instruction *instr) {
+    uint32_t size = 0;
     switch (instr->opc) {
         case OPC_Nop:
             fprintf(f, "%12s", opcode_name(instr->opc));
@@ -285,8 +285,8 @@ size_t print_instruction(FILE *f, const Instruction *instr) {
     return size;
 }
 
-void print_code(FILE *f, const byte_t *code, size_t code_size) {
-    for (size_t offset = 0; offset < code_size; ) {
+void print_code(FILE *f, const byte_t *code, uint32_t code_size) {
+    for (uint32_t offset = 0; offset < code_size; ) {
         const Instruction *instr = (const Instruction *) (code + offset);
         fprintf(f, "%08lx ", offset);
         offset += print_instruction(f, instr);
@@ -303,10 +303,10 @@ void print_registers(FILE *f, const Register *registers, int count) {
 void dump_cpu(addr_t pc,
               addr_t base_pc,
               const Instruction *instr,
-              size_t stack_depth,
+              uint32_t stack_depth,
               const StackFrame *stack_frame,
               const Register *registers,
-              size_t register_count) {
+              uint32_t register_count) {
     fprintf(stdout, "-----------------------");
     for (stack_frame -= stack_depth - 1; stack_depth > 0; stack_depth--, stack_frame++) {
         fprintf(stdout, " %s", stack_frame->meta->name);

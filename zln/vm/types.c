@@ -5,7 +5,7 @@
 #include <util.h>
 #include "types.h"
 
-size_t sizeof_type(Type type) {
+uint32_t sizeof_type(Type type) {
     switch (type) {
         case TYPE_Int32:
             return sizeof(int32_t);

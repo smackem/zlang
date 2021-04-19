@@ -55,10 +55,10 @@ typedef struct memory_layout {
 typedef void (*debug_callback_t)(addr_t pc,
         addr_t base_pc,
         const Instruction *instr,
-        size_t stack_depth,
+        uint32_t stack_depth,
         const StackFrame *stack_frame,
         const Register *registers,
-        size_t register_count);
+        uint32_t register_count);
 
 /**
  * Holds runtime parameters like number of base_registers and maximum stack depth.

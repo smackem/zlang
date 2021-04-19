@@ -20,7 +20,7 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
     byte_t *bytes = env->GetDirectBufferAddress(env_ptr, buf);
     const ZLHeader *header = (ZLHeader *) bytes;
     const byte_t *code_segment = &bytes[sizeof(ZLHeader)];
-    size_t non_memory_size = sizeof(ZLHeader) + header->code_segment_size;
+    uint32_t non_memory_size = sizeof(ZLHeader) + header->code_segment_size;
     const MemoryLayout memory = {
             .base = &bytes[non_memory_size],
             .const_segment_size = header->const_segment_size,

@@ -79,7 +79,7 @@ void execute(const byte_t *code,
         int size = 0;
 
         if (config->debug_callback != NULL) {
-            size_t stack_depth = current_stack_depth(&cpu.call_stack);
+            uint32_t stack_depth = current_stack_depth(&cpu.call_stack);
             config->debug_callback(pc, base_pc, instr, stack_depth, cpu.call_stack.top, reg(&cpu), config->register_count);
         }
 

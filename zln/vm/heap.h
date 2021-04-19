@@ -40,7 +40,7 @@ typedef struct heap_entry {
     uint32_t ref_count;
 
     /// the data data_size in bytes
-    size_t data_size;
+    uint32_t data_size;
 
     /// first data byte. actual number of bytes can be deducted from header.
     /// padded in struct to 8 bytes
@@ -48,7 +48,7 @@ typedef struct heap_entry {
 } HeapEntry;
 
 #define HEAP_ENTRY_TYPE_META_FLAG 0x80000000
-#define HEAP_ENTRY_MIN_SIZE 24
+#define HEAP_ENTRY_MIN_SIZE 20
 #define HEAP_ENTRY_HEADER_SIZE 12
 
 /**
@@ -59,7 +59,7 @@ typedef struct heap {
     byte_t *memory;
 
     /// the data_size of the heap
-    size_t size;
+    uint32_t size;
 
     /// the current tail (position after last heap entry)
     addr_t tail;
@@ -83,7 +83,7 @@ typedef struct heap {
  * @param const_segment
  *      The address of the constant segment used to look up TypeMeta information.
  */
-void init_heap(Heap *heap, byte_t *memory, size_t size, const byte_t *const_segment);
+void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_segment);
 
 /**
  * Allocates a new array on the heap with an initial reference count of 1.
@@ -99,7 +99,7 @@ void init_heap(Heap *heap, byte_t *memory, size_t size, const byte_t *const_segm
  *
  * @return The heap address of the new entry or 0 if out of memory.
  */
-addr_t alloc_array(Heap *heap, Type element_type, size_t size);
+addr_t alloc_array(Heap *heap, Type element_type, uint32_t size);
 
 /**
  * Allocates a new object on the heap with an initial reference count of 1.
@@ -160,7 +160,7 @@ uint32_t remove_ref(Heap *heap, addr_t heap_addr);
 /**
  * @return the data_size of an instance of the specified TypeMeta
  */
-size_t sizeof_instance(const TypeMeta *type);
+uint32_t sizeof_instance(const TypeMeta *type);
 
 /**
  * @return a pointer to the TypeMeta describing the heap entry's type or NULL if the

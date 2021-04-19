@@ -7,13 +7,13 @@
 #include <util.h>
 #include "heap.h"
 
-static inline size_t unallocated_byte_count(Heap *heap) {
+static inline uint32_t unallocated_byte_count(Heap *heap) {
     return heap->size - heap->tail;
 }
 
-static inline addr_t alloc_chunk(Heap *heap, size_t data_size, addr_t header) {
-    size_t entry_size = data_size + HEAP_ENTRY_HEADER_SIZE;
-    size_t free_size = unallocated_byte_count(heap);
+static inline addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
+    uint32_t entry_size = data_size + HEAP_ENTRY_HEADER_SIZE;
+    uint32_t free_size = unallocated_byte_count(heap);
     assert_that(entry_size <= free_size, "out of memory");
     addr_t entry_addr = heap->tail;
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
@@ -25,7 +25,7 @@ static inline addr_t alloc_chunk(Heap *heap, size_t data_size, addr_t header) {
     return entry_addr;
 }
 
-static inline size_t heap_entry_data_size(const Heap *heap, const HeapEntry *heap_entry) {
+static inline uint32_t heap_entry_data_size(const Heap *heap, const HeapEntry *heap_entry) {
 #ifndef NDEBUG
     if ((heap_entry->header & HEAP_ENTRY_TYPE_META_FLAG) != 0) {
         addr_t const_addr = heap_entry->header & ~HEAP_ENTRY_TYPE_META_FLAG;
@@ -44,8 +44,8 @@ const TypeMeta *instance_type(const Heap *heap, const HeapEntry *entry) {
     return (TypeMeta *) &heap->const_segment[const_addr];
 }
 
-size_t sizeof_instance(const TypeMeta *type) {
-    size_t size = 0;
+uint32_t sizeof_instance(const TypeMeta *type) {
+    uint32_t size = 0;
     const Type *field_type_ptr = type->field_types;
     for ( ; *field_type_ptr != TYPE_Void; field_type_ptr++) {
         size += sizeof_type(*field_type_ptr);
@@ -55,7 +55,7 @@ size_t sizeof_instance(const TypeMeta *type) {
 
 #define HEAP_RESERVED_BYTES 0x10
 
-void init_heap(Heap *heap, byte_t *memory, size_t size, const byte_t *const_segment) {
+void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_segment) {
     assert(heap != NULL);
     assert(memory != NULL);
     assert(size > HEAP_RESERVED_BYTES);
@@ -66,10 +66,10 @@ void init_heap(Heap *heap, byte_t *memory, size_t size, const byte_t *const_segm
     heap->const_segment = const_segment;
 }
 
-addr_t alloc_array(Heap *heap, Type element_type, size_t size) {
+addr_t alloc_array(Heap *heap, Type element_type, uint32_t size) {
     assert(heap != NULL);
     assert(size >= 0);
-    size_t data_size = sizeof_type(element_type) * size;
+    uint32_t data_size = sizeof_type(element_type) * size;
     return alloc_chunk(heap, data_size, element_type);
 }
 
@@ -79,7 +79,7 @@ addr_t alloc_obj(Heap *heap, addr_t type_meta_const_addr) {
     return alloc_chunk(heap, sizeof_instance(type_meta), type_meta_const_addr | HEAP_ENTRY_TYPE_META_FLAG);
 }
 
-inline addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
+INLINE addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
     const HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     assert_that(offset < heap_entry_data_size(heap, entry), "field address out of bounds");
     return entry_addr + offset + HEAP_ENTRY_HEADER_SIZE;
@@ -100,7 +100,7 @@ uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
     // call remove_ref for all instances referenced by this instance
     // a) array of ref
     if (entry->header == TYPE_Ref) {
-        size_t elem_count = entry->data_size / sizeof_type(TYPE_Ref);
+        uint32_t elem_count = entry->data_size / sizeof_type(TYPE_Ref);
         addr_t *addr_ptr = (addr_t *) entry->data;
         for ( ; elem_count > 0; elem_count--, addr_ptr++) {
             if (*addr_ptr != 0) {

@@ -25,7 +25,7 @@ typedef byte_t Type;
 /**
  * Returns the data_size of the specified type in bytes.
  */
-size_t sizeof_type(Type type);
+uint32_t sizeof_type(Type type);
 
 #define get_byte(ptr, offset) *((ptr) + offset)
 #define set_byte(ptr, offset, b) (*((ptr) + offset) = b)

@@ -1,5 +1,5 @@
 # prerequisites
-cmake_minimum_required(VERSION 3.17)
+cmake_minimum_required(VERSION 3.16)
 
 # project definition with config header
 project(zln LANGUAGES C VERSION 0.1)
@@ -47,7 +47,14 @@ add_executable(zln_test test.c emit.c)
 # -------------------------------------
 add_library(zln SHARED lib.c)
 
-string(TOLOWER ${CMAKE_SYSTEM_NAME} JAVA_SYSTEM_INCLUDE_DIR)
+message(STATUS ${CMAKE_SYSTEM_NAME})
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(JAVA_SYSTEM_INCLUDE_DIR win32)
+else()
+    string(TOLOWER ${CMAKE_SYSTEM_NAME} JAVA_SYSTEM_INCLUDE_DIR)
+endif()
+
 message(STATUS "system include: ${JAVA_SYSTEM_INCLUDE_DIR}")
 
 target_include_directories(zln PUBLIC
