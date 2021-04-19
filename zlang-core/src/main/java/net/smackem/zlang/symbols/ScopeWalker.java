@@ -58,17 +58,25 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
 
     protected Type resolveType(ZLangParser.TypeContext ctx) {
         final String typeName = ctx.simpleType().getText();
-        final Symbol innerTypeSymbol = currentScope().resolve(typeName);
-        if (innerTypeSymbol == null) {
-            logSemanticError(ctx, "type '" + typeName + "' not found!");
-            return null;
-        }
-        if (innerTypeSymbol instanceof Type == false) {
-            logSemanticError(ctx, "'" + typeName + "' is not a type!");
+        final Type type = resolveType(ctx, typeName);
+        if (type == null) {
             return null;
         }
         if (ctx.LBracket() != null) {
-            return new ArrayType((Type) innerTypeSymbol);
+            return new ArrayType(type);
+        }
+        return type;
+    }
+
+    protected Type resolveType(ParserRuleContext ctx, String ident) {
+        final Symbol innerTypeSymbol = currentScope().resolve(ident);
+        if (innerTypeSymbol == null) {
+            logSemanticError(ctx, "type '" + ident + "' not found!");
+            return null;
+        }
+        if (innerTypeSymbol instanceof Type == false) {
+            logSemanticError(ctx, "'" + ident + "' is not a type!");
+            return null;
         }
         return (Type) innerTypeSymbol;
     }

@@ -424,7 +424,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return logLocalError(ctx, "field id does not refer to a field");
             }
             final Register target = allocFreedRegister(primary.register);
-            emit(OpCode.ldFld(primary.type), target, primary.register, field.address());
+            emit(OpCode.ldFld(field.type()), target, primary.register, field.address());
             return value(target, field.type());
         }
 
@@ -470,7 +470,27 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     @Override
     public Value visitStructOrUnionInstanceCreation(ZLangParser.StructOrUnionInstanceCreationContext ctx) {
-        return super.visitStructOrUnionInstanceCreation(ctx);
+        final Type type = resolveType(ctx, ctx.Ident().getText());
+        if (type instanceof AggregateType == false) {
+            return logLocalError(ctx, "'" + type + "' is not an aggregate type");
+        }
+        final Symbol typeSymbol = (Symbol) type;
+        final MemberScope typeScope = (MemberScope) typeSymbol;
+        final Register target = allocFreedRegister();
+        emit(OpCode.NewObj, target, typeSymbol);
+        for (final var initializer : ctx.fieldInitializer()) {
+            final Symbol field = typeScope.resolveMember(initializer.Ident().getText());
+            if (field instanceof FieldSymbol == false) {
+                return logLocalError(ctx, "field id does not refer to a field: " + initializer.Ident().getText());
+            }
+            final Value rvalue = initializer.expr().accept(this);
+            if (Types.isAssignable(field.type(), rvalue.type) == false) {
+                return logLocalError(ctx, "incompatible types in assignment");
+            }
+            emit(OpCode.stFld(rvalue.type), rvalue.register, target, field.address());
+            freeRegister(rvalue.register);
+        }
+        return value(target, type);
     }
 
     @Override

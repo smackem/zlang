@@ -93,4 +93,35 @@ public class InterpreterTest {
         assertThat(globals.get("a2")).isEqualTo(2);
         assertThat(globals.get("a3")).isEqualTo(3);
     }
+
+    @Test
+    public void structs() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct Sample {
+                    index: int
+                    value: float
+                }
+                let a: Sample = new Sample {
+                    index: 1
+                    value: 12.5
+                }
+                var index: int
+                var value: float
+                fn main() {
+                    index = a.index
+                    value = a.value
+                }
+                """);
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, 16 * 1024);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        assertThat(globals.get("index")).isEqualTo(1);
+        assertThat(globals.get("value")).isEqualTo(12.5);
+        assertThat(globals.get("a")).isEqualTo(Map.of("index", (Object) 1, "value", (Object) 12.5));
+    }
 }
