@@ -469,6 +469,11 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitStructOrUnionInstanceCreation(ZLangParser.StructOrUnionInstanceCreationContext ctx) {
+        return super.visitStructOrUnionInstanceCreation(ctx);
+    }
+
+    @Override
     public Value visitLiteral(ZLangParser.LiteralContext ctx) {
         if (ctx.True() != null) {
             final Register target = allocFreedRegister();

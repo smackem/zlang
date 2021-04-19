@@ -8,6 +8,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #ifdef NDEBUG
 #define INLINE inline
@@ -15,9 +16,7 @@
 #define INLINE
 #endif
 
-#ifndef bzero
-#define bzero(ptr, size) (memset(ptr, 0, size))
-#endif
+#define zero_memory(b, len) memset(b, 0, len)
 
 void assert_that(bool condition, const char *format, ...);
 

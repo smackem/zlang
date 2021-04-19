@@ -21,7 +21,7 @@ void init_call_stack(CallStack *call_stack,
     call_stack->register_count = register_count;
     call_stack->top = stack_frame_buf;
     StackFrame *top = call_stack->top;
-    bzero(top, sizeof(StackFrame));
+    zero_memory(top, sizeof(StackFrame));
     top->registers = register_buf;
     top->meta = entry_point;
 }

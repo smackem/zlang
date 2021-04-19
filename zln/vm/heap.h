@@ -50,6 +50,7 @@ typedef struct heap_entry {
 #define HEAP_ENTRY_TYPE_META_FLAG 0x80000000
 #define HEAP_ENTRY_MIN_SIZE 20
 #define HEAP_ENTRY_HEADER_SIZE 12
+#define HEAP_RESERVED_BYTES 0x10
 
 /**
  * The heap - memory segment to hold dynamically allocated objects

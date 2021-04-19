@@ -20,7 +20,7 @@ static inline addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) 
     entry->header = header;
     entry->ref_count = 1;
     entry->data_size = data_size;
-    bzero(entry->data, data_size);
+    zero_memory(entry->data, data_size);
     heap->tail += entry_size;
     return entry_addr;
 }
@@ -52,8 +52,6 @@ uint32_t sizeof_instance(const TypeMeta *type) {
     }
     return size;
 }
-
-#define HEAP_RESERVED_BYTES 0x10
 
 void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_segment) {
     assert(heap != NULL);

@@ -43,7 +43,7 @@ static void free_cpu(Cpu *cpu) {
     if (cpu->call_stack.stack_frame_buf != NULL) {
         free(cpu->call_stack.stack_frame_buf);
     }
-    bzero(cpu, sizeof(Cpu));
+    zero_memory(cpu, sizeof(Cpu));
 }
 
 static void base_assertions() {
@@ -194,7 +194,7 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 reg(&cpu)[r_target].ref = get_int(cpu.heap.memory,
-                  get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
+                  get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(int32_t)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_f64:
@@ -202,7 +202,7 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 reg(&cpu)[r_target].ref = get_float(cpu.heap.memory,
-                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
+                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(double)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_u8:
@@ -210,7 +210,7 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 reg(&cpu)[r_target].ref = get_byte(cpu.heap.memory,
-                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
+                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(byte_t)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_ref:
@@ -218,7 +218,7 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 reg(&cpu)[r_target].ref = get_addr(cpu.heap.memory,
-                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
+                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(addr_t)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_ptr:
@@ -226,7 +226,7 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 reg(&cpu)[r_target].ptr = get_ptr(cpu.heap.memory,
-                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref));
+                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(intptr_t)));
                 size = 1 + 3;
                 break;
 
@@ -308,7 +308,7 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_int(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
+                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(int32_t)),
                         reg(&cpu)[r_left].ref);
                 size = 1 + 3;
                 break;
@@ -317,7 +317,7 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_float(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
+                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(double)),
                         reg(&cpu)[r_left].ref);
                 size = 1 + 3;
                 break;
@@ -326,7 +326,7 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_byte(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
+                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(byte_t)),
                         reg(&cpu)[r_left].ref);
                 size = 1 + 3;
                 break;
@@ -335,7 +335,7 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_addr(cpu.heap.memory,
-                         get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
+                         get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(addr_t)),
                          reg(&cpu)[r_left].ref);
                 size = 1 + 3;
                 break;
@@ -344,7 +344,7 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_ptr(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref),
+                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(intptr_t)),
                         reg(&cpu)[r_left].ptr);
                 size = 1 + 3;
                 break;

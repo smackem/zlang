@@ -288,7 +288,7 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
 void print_code(FILE *f, const byte_t *code, uint32_t code_size) {
     for (uint32_t offset = 0; offset < code_size; ) {
         const Instruction *instr = (const Instruction *) (code + offset);
-        fprintf(f, "%08lx ", offset);
+        fprintf(f, "%08x ", offset);
         offset += print_instruction(f, instr);
         fputc('\n', f);
     }
@@ -316,4 +316,8 @@ void dump_cpu(addr_t pc,
     fprintf(stdout, "%08x ", base_pc + pc);
     print_instruction(stdout, instr);
     fputc('\n', stdout);
+}
+
+void dump_heap(const Heap *heap) {
+
 }

@@ -429,7 +429,7 @@ void test09(byte_t *code, MemoryLayout *memory) {
 
     // act
     FunctionMeta entry_point;
-    bzero(&entry_point, sizeof(entry_point));
+    zero_memory(&entry_point, sizeof(entry_point));
     entry_point.base_pc = 3;
     execute(code, &entry_point, memory, &config);
 
@@ -447,7 +447,7 @@ void test10(byte_t *code, MemoryLayout *memory) {
     // constants
     const addr_t const_func1 = 0;
     FunctionMeta *func_meta = (FunctionMeta *) memory->base;
-    bzero(func_meta, sizeof(FunctionMeta));
+    zero_memory(func_meta, sizeof(FunctionMeta));
     strcpy(func_meta->name, "func1");
     memory->const_segment_size = sizeof(FunctionMeta);
 
@@ -493,7 +493,7 @@ void test11(byte_t *code, MemoryLayout *memory) {
     // constants
     const addr_t const_func1 = 0;
     FunctionMeta *func_meta = (FunctionMeta *) memory->base;
-    bzero(func_meta, sizeof(FunctionMeta));
+    zero_memory(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Int32;
     strcpy(func_meta->name, "func1");
     memory->const_segment_size = sizeof(FunctionMeta);
@@ -535,7 +535,7 @@ void test12(byte_t *code, MemoryLayout *memory) {
     set_float(memory->base, 0, 1000.125);
     const addr_t const_func1 = 8;
     FunctionMeta *func_meta = (FunctionMeta *) &memory->base[const_func1];
-    bzero(func_meta, sizeof(FunctionMeta));
+    zero_memory(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Ref;
     func_meta->arg_count = 2;
     strcpy(func_meta->name, "func1");
@@ -588,14 +588,14 @@ void test13(byte_t *code, MemoryLayout *memory) {
     // f(int, double) -> ref
     const addr_t const_func1 = 8;
     FunctionMeta *func1_meta = (FunctionMeta *) &memory->base[const_func1];
-    bzero(func1_meta, sizeof(FunctionMeta));
+    zero_memory(func1_meta, sizeof(FunctionMeta));
     func1_meta->ret_type = TYPE_Int32;
     func1_meta->arg_count = 2;
     strcpy(func1_meta->name, "func1");
     // g(byte) -> int
     const addr_t const_func2 = 8 + sizeof(FunctionMeta);
     FunctionMeta *func2_meta = (FunctionMeta *) &memory->base[const_func2];
-    bzero(func2_meta, sizeof(FunctionMeta));
+    zero_memory(func2_meta, sizeof(FunctionMeta));
     func2_meta->ret_type = TYPE_Int32;
     func2_meta->arg_count = 1;
     strcpy(func2_meta->name, "func2");
@@ -667,7 +667,7 @@ void test14(byte_t *code, MemoryLayout *memory) {
     // constants
     const addr_t const_func1 = 0;
     FunctionMeta *func_meta = (FunctionMeta *) &memory->base[const_func1];
-    bzero(func_meta, sizeof(FunctionMeta));
+    zero_memory(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Int32;
     func_meta->arg_count = 1;
     strcpy(func_meta->name, "func1");
@@ -771,15 +771,14 @@ int main() {
     MemoryLayout heap;
     fprintf(stdout, "zln_test v%d.%d\n", zln_VERSION_MAJOR, zln_VERSION_MINOR);
     fprintf(stdout, "RemoveRef=%d\n", OPC_RemoveRef);
-    fprintf(stdout, "sizeof(uint32_t)=%lu\n", sizeof(uint32_t));
     fprintf(stdout, ">>> running tests...\n");
     int n = 1;
 
     for (const struct test *test_ptr = tests; test_ptr->proc != NULL; test_ptr++, n++) {
         fprintf(stdout, "%d) %s\n", n, test_ptr->name);
-        bzero(heap_memory, sizeof(heap_memory));
-        bzero(code_memory, sizeof(code_memory));
-        bzero(&heap, sizeof(heap));
+        zero_memory(heap_memory, sizeof(heap_memory));
+        zero_memory(code_memory, sizeof(code_memory));
+        zero_memory(&heap, sizeof(heap));
         heap.base = heap_memory;
         heap.total_size = sizeof(heap_memory);
         test_ptr->proc(code_memory, &heap);

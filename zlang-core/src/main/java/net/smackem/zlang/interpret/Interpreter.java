@@ -13,6 +13,8 @@ import java.util.Map;
 
 public class Interpreter {
     private static final Logger log = LoggerFactory.getLogger(Interpreter.class);
+    private static final int heapEntryHeaderSize = 12;
+    private static final int heapReservedBytes = 16;
 
     private Interpreter() { }
 
@@ -25,7 +27,7 @@ public class Interpreter {
         final int globalSize = zl.getInt(12);
         final int heapOffset = globalOffset + globalSize;
         final Map<String, Object> globals = new HashMap<>();
-        readObject(zl, globalOffset, heapOffset, program.globals(), globals);
+        readObject(zl, globalOffset, heapOffset + heapReservedBytes, program.globals(), globals);
         return globals;
     }
 
@@ -60,7 +62,7 @@ public class Interpreter {
         if (type instanceof Scope scope) {
             final int ref = buf.getInt(index);
             final Map<String, Object> obj = new HashMap<>();
-            readObject(buf, heapOffset + ref, heapOffset, scope.symbols(), obj);
+            readObject(buf, heapOffset + heapEntryHeaderSize + ref, heapOffset, scope.symbols(), obj);
             return obj;
         }
         if (type instanceof ArrayType) {
