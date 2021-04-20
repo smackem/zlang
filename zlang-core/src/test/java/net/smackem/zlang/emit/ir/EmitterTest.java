@@ -3,7 +3,6 @@ package net.smackem.zlang.emit.ir;
 import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.modules.ParsedModule;
 import net.smackem.zlang.modules.ParsedModules;
-import net.smackem.zlang.modules.SourceFileLocations;
 import net.smackem.zlang.symbols.GlobalScope;
 import net.smackem.zlang.symbols.ProgramStructure;
 import net.smackem.zlang.symbols.SymbolExtractor;
@@ -13,7 +12,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -18,15 +18,22 @@ public class BuiltInTypeSymbol extends Symbol implements Type {
     public static final BuiltInTypeSymbol STRING = new BuiltInTypeSymbol("string", 4, TypeId.String);
     public static final BuiltInTypeSymbol BOOL = new BuiltInTypeSymbol("bool", 4, TypeId.Int32);
 
-    public static Collection<BuiltInTypeSymbol> builtInTypes() {
-        return List.of(INT, FLOAT, BYTE, OBJECT, RUNTIME_PTR, STRING, BOOL);
-    }
-
     private BuiltInTypeSymbol(String typeName, int byteSize, TypeId id) {
         super(typeName, null);
         this.typeName = typeName;
         this.byteSize = byteSize;
         this.id = id;
+    }
+
+    public static Collection<BuiltInTypeSymbol> builtInTypes() {
+        return List.of(INT, FLOAT, BYTE, OBJECT, RUNTIME_PTR, STRING, BOOL);
+    }
+
+    public static BuiltInTypeSymbol fromId(int id) {
+        return builtInTypes().stream()
+                .filter(t -> t.id() == id)
+                .findFirst()
+                .orElseThrow();
     }
 
     public int id() {

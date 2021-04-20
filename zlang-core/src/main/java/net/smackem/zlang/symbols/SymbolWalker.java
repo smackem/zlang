@@ -94,7 +94,10 @@ class SymbolWalker extends ScopeWalker<Void> {
         for (final var p : ctx.parameter()) {
             final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
             symbol.setAddress(fieldAddr);
-            assert symbol.type().byteSize() > 0;
+            if (symbol.type().byteSize() == 0) {
+                logSemanticError(p, "reference to undefined type " + symbol.type());
+                return null;
+            }
             fieldAddr += symbol.type().byteSize();
         }
         assert fieldAddr == ((Type) currentScope()).byteSize();

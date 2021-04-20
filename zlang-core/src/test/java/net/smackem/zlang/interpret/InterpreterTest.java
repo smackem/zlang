@@ -6,6 +6,8 @@ import net.smackem.zlang.emit.ir.Instructions;
 import net.smackem.zlang.emit.ir.Program;
 import net.smackem.zlang.modules.ParsedModule;
 import net.smackem.zlang.modules.ParsedModules;
+import net.smackem.zlang.modules.SourceFileLocation;
+import net.smackem.zlang.modules.SourceFileLocations;
 import net.smackem.zlang.symbols.GlobalScope;
 import net.smackem.zlang.symbols.ProgramStructure;
 import net.smackem.zlang.symbols.SymbolExtractor;
@@ -17,6 +19,7 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class InterpreterTest {
+    private static final int defaultHeapSize = 1024;
 
     @Test
     public void minimal() throws Exception {
@@ -32,11 +35,11 @@ public class InterpreterTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, 16 * 1024);
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
         assertThat(zl.isDirect()).isTrue();
-        assertThat(zl.capacity()).isGreaterThan(16 * 1024);
+        assertThat(zl.capacity()).isGreaterThan(defaultHeapSize);
         final Map<String, Object> globals = Interpreter.run(zl, program);
         assertThat(globals.get("number")).isEqualTo(12 + 23);
     }
@@ -44,7 +47,8 @@ public class InterpreterTest {
     @Test
     public void initGlobals() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
-                let f: float = 12.5
+                let f1: float = 12.5
+                let f2: float = 13.5
                 let n: int = 12
                 let b: byte = (byte) 255
                 let l: bool = true
@@ -55,18 +59,19 @@ public class InterpreterTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, 16 * 1024);
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
         final Map<String, Object> globals = Interpreter.run(zl, program);
-        assertThat(globals.get("f")).isEqualTo(12.5);
+        assertThat(globals.get("f1")).isEqualTo(12.5);
+        assertThat(globals.get("f2")).isEqualTo(13.5);
         assertThat(globals.get("n")).isEqualTo(12);
         assertThat(globals.get("b")).isEqualTo((byte) 255);
         assertThat(globals.get("l")).isEqualTo(true);
     }
 
     @Test
-    public void arrays() throws Exception {
+    public void simpleArray() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 let a: int[] = new int[3]
                 var a1: int
@@ -85,7 +90,7 @@ public class InterpreterTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, 16 * 1024);
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
         final Map<String, Object> globals = Interpreter.run(zl, program);
@@ -95,7 +100,55 @@ public class InterpreterTest {
     }
 
     @Test
-    public void structs() throws Exception {
+    public void moreArrays() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                let ints: int[] = new int[2]
+                let floats: float[] = new float[2]
+                let bytes: byte[] = new byte[2]
+                let arrays: bool[][] = new bool[][2]
+                var f0: float
+                var i0: int
+                var a0: bool[]
+                var a1: bool[]
+
+                fn main() {
+                    ints[0] = 1
+                    ints[1] = 2
+                    i0 = ints[0]
+                    floats[0] = 12.5
+                    floats[1] = 13.5
+                    f0 = floats[0]
+                    bytes[0] = (byte) 10
+                    bytes[1] = (byte) 11
+                    arrays[0] = new bool[2]
+                    arrays[0][0] = true
+                    arrays[0][1] = false
+                    arrays[1] = new bool[2]
+                    arrays[1][0] = false
+                    arrays[1][1] = true
+                    a0 = arrays[0]
+                    a1 = arrays[1]
+                }
+                """);
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        assertThat(globals.get("i0")).isEqualTo(1);
+        assertThat(globals.get("ints")).isEqualTo(new int[] { 1, 2 });
+        assertThat(globals.get("f0")).isEqualTo(12.5);
+        assertThat(globals.get("floats")).isEqualTo(new double[] { 12.5, 13.5 });
+        assertThat(globals.get("bytes")).isEqualTo(new byte[] { 10, 11 });
+        assertThat(globals.get("a0")).isEqualTo(new int[] { 1, 0 });
+        assertThat(globals.get("a1")).isEqualTo(new int[] { 0, 1 });
+    }
+
+    @Test
+    public void simpleStruct() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 struct Sample {
                     index: int
@@ -116,12 +169,146 @@ public class InterpreterTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, 16 * 1024);
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
         final Map<String, Object> globals = Interpreter.run(zl, program);
         assertThat(globals.get("index")).isEqualTo(1);
         assertThat(globals.get("value")).isEqualTo(12.5);
-        assertThat(globals.get("a")).isEqualTo(Map.of("index", (Object) 1, "value", (Object) 12.5));
+        assertThat(globals.get("a")).isEqualTo(Map.of("index", 1, "value", 12.5));
+    }
+
+    @Test
+    public void nestedStruct() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct SubSample {
+                    id: byte
+                    flag: bool
+                }
+                struct Sample {
+                    index: int
+                    value: float
+                    sub: SubSample
+                }
+                let sample: Sample = new Sample {
+                    index: 123
+                    value: 12.5
+                    sub: new SubSample {
+                        id: (byte) 234
+                    }
+                }
+                fn main() {
+                    sample.sub.flag = true
+                }
+                """);
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        assertThat(globals.get("sample")).isEqualTo(Map.of(
+                "index", 123,
+                "value", 12.5,
+                "sub", Map.of(
+                        "id", (byte) 234,
+                        "flag", true
+                )
+        ));
+    }
+
+    @Test
+    public void arraysOfStructs() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct Sample {
+                    id: int
+                    flag: bool
+                    data: float[]
+                }
+                let samples: mutable Sample[] = new Sample[2]
+                var firstSample: Sample
+                fn main() {
+                    samples[0] = new Sample {
+                        id: 123
+                        data: new float[2]
+                    }
+                    samples[0].data[0] = 12.5
+                    samples[0].data[1] = 13.5
+                    firstSample = samples[0]
+                }
+                """);
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        //noinspection unchecked
+        assertThat((Map<String, Object>) globals.get("firstSample")).containsOnly(
+                Map.entry("id", 123),
+                Map.entry("flag", false),
+                Map.entry("data", new double[] { 12.5, 13.5 }));
+    }
+
+    @Test
+    public void nil() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                let x: object = nil
+                var y: int[]
+                struct NilContainer {
+                    m: object
+                    n: float[]
+                }
+                var nilContainer: NilContainer
+                fn main() {
+                    nilContainer = new NilContainer {}
+                }
+                """);
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        assertThat(globals.get("x")).isNull();
+        assertThat(globals.get("y")).isNull();
+        //noinspection unchecked
+        assertThat(((Map<String, Object>) globals.get("nilContainer")).get("m")).isNull();
+        //noinspection unchecked
+        assertThat(((Map<String, Object>) globals.get("nilContainer")).get("n")).isNull();
+    }
+
+    @Test
+    public void multiModule() throws Exception {
+        final String mainSource = """
+                module main uses dep
+                let mainX: int = 123
+                fn main() {
+                }
+                """;
+        final String depSource = """
+                let depY: int = 234
+                """;
+        final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
+                "main", mainSource,
+                "dep", depSource));
+        final ParsedModule module = ParsedModule.parse("main", loc);
+        final Collection<ParsedModule> modules = module.flatten();
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        assertThat(globals.get("mainX")).isEqualTo(123);
+        assertThat(globals.get("depY")).isEqualTo(234);
     }
 }

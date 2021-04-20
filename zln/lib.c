@@ -27,11 +27,13 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
             .global_segment_size = header->global_segment_size,
             .total_size = buf_size - non_memory_size,
     };
-    fprintf(stdout, "code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point:%u\n",
+    fprintf(stdout, "code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: %u\nheap_offset: %u\ntotal_memory: %u\n",
             header->code_segment_size,
             header->const_segment_size,
             header->global_segment_size,
-            header->entry_point_address);
+            header->entry_point_address,
+            (uint32_t)sizeof(ZLHeader) + non_memory_size + header->const_segment_size + header->global_segment_size,
+            memory.total_size);
     const RuntimeConfig config = {
             .register_count = 8,
             .max_stack_depth = 16,

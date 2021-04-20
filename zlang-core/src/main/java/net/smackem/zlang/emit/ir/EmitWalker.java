@@ -485,7 +485,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             }
             final Value rvalue = initializer.expr().accept(this);
             if (Types.isAssignable(field.type(), rvalue.type) == false) {
-                return logLocalError(ctx, "incompatible types in assignment");
+                return logLocalError(ctx, "incompatible types in assignment to '%s'. left='%s', right='%s'"
+                        .formatted(field.name(), field.type(), rvalue.type));
             }
             emit(OpCode.stFld(rvalue.type), rvalue.register, target, field.address());
             freeRegister(rvalue.register);

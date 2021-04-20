@@ -16,14 +16,12 @@ import java.util.Collection;
 
 public class ByteCodeWriter implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ByteCodeWriter.class);
-    public static final byte MAJOR_VERSION = 0;
-    public static final byte MINOR_VERSION = 1;
 
     private final ConstSegmentWriter constSegment = new ConstSegmentWriter();
 
     /**
      * ZL byte code format v0.1:
-     * 1) header (20 bytes)
+     * 1) header (ByteCode.HEADER_SIZE bytes)
      * 2) code segment (length @header)
      * 3) const segment (length @header)
      * 4) global segment (zeroed memory, length @header)
@@ -36,7 +34,7 @@ public class ByteCodeWriter implements AutoCloseable {
         // render code segment to memory
         final byte[] codeSegment = renderCode(program.instructions(), program.labels());
         final byte[] constSegment = this.constSegment.fixup(program.codeMap());
-        final int headerSize = 20;
+        final int headerSize = ByteCode.HEADER_SIZE;
         final int globalSegmentSize = program.globalSegmentSize();
         final int size = headerSize + codeSegment.length + constSegment.length + globalSegmentSize + heapSize;
         final ByteBuffer buf = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
@@ -48,6 +46,7 @@ public class ByteCodeWriter implements AutoCloseable {
         buf.put(headerSize + codeSegment.length, constSegment);
         // 4) global segment - just reserve space
         // 5) heap segment - just reserve space
+        log.info("heap offset: {}", headerSize + codeSegment.length + constSegment.length + globalSegmentSize);
         return buf;
     }
 
@@ -60,8 +59,8 @@ public class ByteCodeWriter implements AutoCloseable {
                 codeSegmentSize, constSegmentSize, globalSegmentSize, entryPoint.address());
         buf.put(0, (byte) 'Z');
         buf.put(1, (byte) 'L');
-        buf.put(2, MAJOR_VERSION);
-        buf.put(3, MINOR_VERSION);
+        buf.put(2, ByteCode.MAJOR_VERSION);
+        buf.put(3, ByteCode.MINOR_VERSION);
         buf.putInt(4, codeSegmentSize);
         buf.putInt(8, constSegmentSize);
         buf.putInt(12, globalSegmentSize);

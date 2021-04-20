@@ -9,7 +9,7 @@ public final class Emitter {
 
     private Emitter() { }
 
-    public static Program emit(ProgramStructure ps, List<ParsedModule> parsedModules) {
+    public static Program emit(ProgramStructure ps, Collection<ParsedModule> parsedModules) {
         final List<EmittedModule> ems = new ArrayList<>();
         for (final ParsedModule module : parsedModules) {
             final EmitWalker emitWalker = new EmitWalker(module.moduleName(), ps);

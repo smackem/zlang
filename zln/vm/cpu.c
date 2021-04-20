@@ -201,7 +201,7 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].ref = get_float(cpu.heap.memory,
+                reg(&cpu)[r_target].f64 = get_float(cpu.heap.memory,
                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(double)));
                 size = 1 + 3;
                 break;
@@ -209,7 +209,7 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].ref = get_byte(cpu.heap.memory,
+                reg(&cpu)[r_target].i32 = get_byte(cpu.heap.memory,
                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(byte_t)));
                 size = 1 + 3;
                 break;
@@ -309,7 +309,7 @@ void execute(const byte_t *code,
                 r_addr = get_byte(instr->args, 2);
                 set_int(cpu.heap.memory,
                         get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(int32_t)),
-                        reg(&cpu)[r_left].ref);
+                        reg(&cpu)[r_left].i32);
                 size = 1 + 3;
                 break;
             case OPC_StElem_f64:
@@ -318,7 +318,7 @@ void execute(const byte_t *code,
                 r_addr = get_byte(instr->args, 2);
                 set_float(cpu.heap.memory,
                         get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(double)),
-                        reg(&cpu)[r_left].ref);
+                        reg(&cpu)[r_left].f64);
                 size = 1 + 3;
                 break;
             case OPC_StElem_u8:
@@ -327,7 +327,7 @@ void execute(const byte_t *code,
                 r_addr = get_byte(instr->args, 2);
                 set_byte(cpu.heap.memory,
                         get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(byte_t)),
-                        reg(&cpu)[r_left].ref);
+                        reg(&cpu)[r_left].i32);
                 size = 1 + 3;
                 break;
             case OPC_StElem_ref:

@@ -53,6 +53,8 @@ uint32_t sizeof_instance(const TypeMeta *type) {
     return size;
 }
 
+#define HEAP_RESERVED_BYTES 0x10
+
 void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_segment) {
     assert(heap != NULL);
     assert(memory != NULL);

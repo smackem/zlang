@@ -33,7 +33,7 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
     }
 
     protected void logSemanticError(ParserRuleContext ctx, String message) {
-        throw new RuntimeException(message);
+        throw new RuntimeException("%d:%d %s".formatted(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(), message));
     }
 
     void pushScope(ParserRuleContext ctx, Scope scope) {
@@ -58,12 +58,12 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
 
     protected Type resolveType(ZLangParser.TypeContext ctx) {
         final String typeName = ctx.simpleType().getText();
-        final Type type = resolveType(ctx, typeName);
+        Type type = resolveType(ctx, typeName);
         if (type == null) {
             return null;
         }
-        if (ctx.LBracket() != null) {
-            return new ArrayType(type);
+        for (final var ignored : ctx.LBracket()) {
+            type = new ArrayType(type);
         }
         return type;
     }

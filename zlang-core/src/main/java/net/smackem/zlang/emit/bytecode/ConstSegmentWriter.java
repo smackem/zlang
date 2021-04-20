@@ -58,6 +58,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         for (final Symbol field : symbol.symbols()) {
             writeByte((byte) field.type().primitive().id());
         }
+        writeByte((byte) 0); // zero-terminated
     }
 
     // typedef struct function_meta {
@@ -99,7 +100,7 @@ class ConstSegmentWriter extends NativeValueWriter {
             final int offset = entry.getKey().address();
             final FunctionCode fc = entry.getValue();
             buf.putInt(offset, fc.moduleInstr().address());
-            buf.putInt(offset + 4, fc.firstInstr().address());
+            buf.putInt(offset + 4, fc.firstInstr().address() - fc.moduleInstr().address());
         }
         return bytes;
     }

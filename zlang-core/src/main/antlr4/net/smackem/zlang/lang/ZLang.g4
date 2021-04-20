@@ -40,7 +40,7 @@ returnType
     ;
 
 type
-    : Mutable? simpleType (LBracket RBracket)?
+    : Mutable? simpleType (LBracket RBracket)*
     ;
 
 simpleType
@@ -97,7 +97,7 @@ statement
     ;
 
 bindingStmt
-    : DocComment? Let parameter (Beq expr)?
+    : DocComment? Let parameter Beq expr
     ;
 
 varDeclStmt
@@ -417,7 +417,7 @@ StringLiteral
     ;
 
 DocCommentLine
-    : '///' ~ [\r\n]*
+    : '///' ~[\r\n]*
     ;
 
 DocComment
@@ -425,7 +425,7 @@ DocComment
     ;
 
 Comment
-    : '//' ~ [\r\n]* -> skip
+    : '//' ~[\r\n]* -> skip
     ;
 
 LineBreak
