@@ -314,4 +314,44 @@ public class InterpreterTest {
         assertThat(globals.get("depY")).isEqualTo(234);
         assertThat(globals.get("depYCopy")).isEqualTo(234);
     }
+
+    @Test
+    public void multiModuleTypes() throws Exception {
+        final String mainSource = """
+                module main uses dep1
+                var dep1: Dep1Type = new Dep1Type {}
+                var dep2: Dep2Type = new Dep2Type {}
+                fn main() {
+                    dep1.f = 123
+                    dep2.f = 234
+                }
+                """;
+        final String dep1Source = """
+                module dep1 uses dep2
+                struct Dep1Type {
+                    f: int
+                }
+                """;
+        final String dep2Source = """
+                struct Dep2Type {
+                    f: int
+                }
+                """;
+        final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
+                "main", mainSource,
+                "dep1", dep1Source,
+                "dep2", dep2Source));
+        final ParsedModule module = ParsedModule.parse("main", loc);
+        final Collection<ParsedModule> modules = module.flatten();
+        final Collection<String> errors = new ArrayList<>();
+        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
+        final Program program = Emitter.emit(ps, modules);
+        final ByteCodeWriter writer = new ByteCodeWriter();
+        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        System.out.println(Instructions.print(program.instructions()));
+        assertThat(errors).isEmpty();
+        final Map<String, Object> globals = Interpreter.run(zl, program);
+        assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 123));
+        assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 234));
+    }
 }
