@@ -37,7 +37,6 @@ void print_registers(FILE *f, const Register *registers, int count);
  * Prints the current CPU state. Can be used as CPU debug callback.
  */
 void dump_cpu(addr_t pc,
-              addr_t base_pc,
               const Instruction *instr,
               uint32_t stack_depth,
               const StackFrame *stack_frame,

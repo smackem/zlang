@@ -301,7 +301,6 @@ void print_registers(FILE *f, const Register *registers, int count) {
 }
 
 void dump_cpu(addr_t pc,
-              addr_t base_pc,
               const Instruction *instr,
               uint32_t stack_depth,
               const StackFrame *stack_frame,
@@ -313,11 +312,7 @@ void dump_cpu(addr_t pc,
     }
     fputc('\n', stdout);
     print_registers(stdout, registers, (int) register_count);
-    fprintf(stdout, "%08x ", base_pc + pc);
+    fprintf(stdout, "%08x ", pc);
     print_instruction(stdout, instr);
     fputc('\n', stdout);
-}
-
-void dump_heap(const Heap *heap) {
-
 }

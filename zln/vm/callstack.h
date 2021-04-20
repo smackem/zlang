@@ -13,10 +13,7 @@
  * Holds information about a function, stored in the const segment
  */
 typedef struct function_meta {
-    /// the base instruction address of the module that defines the function
-    addr_t base_pc;
-
-    /// the offset of the function's first instruction within the module
+    /// the offset of the function's first instruction
     addr_t pc;
 
     /// the number of local variables of the function
@@ -33,7 +30,7 @@ typedef struct function_meta {
     char name[32];
 } FunctionMeta;
 
-#define FUNCTION_META_MIN_SIZE 52
+#define FUNCTION_META_MIN_SIZE 48
 
 /**
  * Defines a register containing either an integer, a reference or a float.

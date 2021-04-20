@@ -289,7 +289,9 @@ public class InterpreterTest {
         final String mainSource = """
                 module main uses dep
                 let mainX: int = 123
+                var depYCopy: int
                 fn main() {
+                    depYCopy = depY
                 }
                 """;
         final String depSource = """
@@ -310,5 +312,6 @@ public class InterpreterTest {
         final Map<String, Object> globals = Interpreter.run(zl, program);
         assertThat(globals.get("mainX")).isEqualTo(123);
         assertThat(globals.get("depY")).isEqualTo(234);
+        assertThat(globals.get("depYCopy")).isEqualTo(234);
     }
 }

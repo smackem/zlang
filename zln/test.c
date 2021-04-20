@@ -10,7 +10,6 @@
 static RuntimeConfig config = { .register_count = 8, .max_stack_depth = 256 };
 
 static FunctionMeta default_entry_point = {
-        .base_pc = 0,
         .pc = 0,
         .arg_count = 0,
         .local_count = 0,
@@ -410,16 +409,16 @@ void test09(byte_t *code, MemoryLayout *memory) {
     // r1 <- 0
     const byte_t *module1_ptr = code_ptr;
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 1, 0);
-    // while r1 < 100 do r1 <- r1 + 1
+     // while r1 < 100 do r1 <- r1 + 1
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 100);
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 3, 1);
-    addr_t label_loop = code_ptr - module1_ptr;
+    addr_t label_loop = code_ptr - code;
     code_ptr += emit_reg3(code_ptr, OPC_Lt_i32, 4, 1, 2);
     Instruction *branch_instr = (Instruction *) code_ptr; // branch instr needs fixup later
     code_ptr += emit_reg_int(code_ptr, OPC_Br_zero, 4, 0);
     code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 1, 1, 3);
     code_ptr += emit_addr(code_ptr, OPC_Br, label_loop);
-    set_addr(branch_instr->args, 1, code_ptr - module1_ptr); // fixup branch instr
+    set_addr(branch_instr->args, 1, code_ptr - code); // fixup branch instr
     // i1 <- r1
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 1, glb_i1);
     *code_ptr = OPC_Halt;
@@ -430,7 +429,6 @@ void test09(byte_t *code, MemoryLayout *memory) {
     // act
     FunctionMeta entry_point;
     zero_memory(&entry_point, sizeof(entry_point));
-    entry_point.base_pc = 3;
     execute(code, &entry_point, memory, &config);
 
     // assert
@@ -640,8 +638,7 @@ void test13(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg3(code_ptr, OPC_Add_i32, 0, 3, 4);
     *code_ptr++ = OPC_Ret;
     // def func2:
-    func2_meta->base_pc = code_ptr - code;
-    func2_meta->pc = 1;
+    func2_meta->pc = code_ptr - code;
     *code_ptr++ = OPC_Nop;
     // ret r1 * 2
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 0x2);

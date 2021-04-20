@@ -62,10 +62,7 @@ class ConstSegmentWriter extends NativeValueWriter {
     }
 
     // typedef struct function_meta {
-    //     /// the base instruction address of the module that defines the function
-    //     addr_t base_pc;
-    //
-    //     /// the offset of the function's first instruction within the module
+    //     /// the offset of the function's first instruction
     //     addr_t pc;
     //
     //     /// the number of local variables of the function
@@ -84,7 +81,6 @@ class ConstSegmentWriter extends NativeValueWriter {
 
     public void writeFunction(FunctionSymbol symbol) throws IOException {
         symbol.setAddress(bytesWritten());
-        writeAddr(0); // base pc - fixup later
         writeAddr(0); // pc - fixup later
         writeInt32(symbol.localCount());
         writeInt32(symbol.symbols().size());
@@ -99,8 +95,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         for (final var entry : codeMap.entrySet()) {
             final int offset = entry.getKey().address();
             final FunctionCode fc = entry.getValue();
-            buf.putInt(offset, fc.moduleInstr().address());
-            buf.putInt(offset + 4, fc.firstInstr().address() - fc.moduleInstr().address());
+            buf.putInt(offset, fc.firstInstr().address());
         }
         return bytes;
     }

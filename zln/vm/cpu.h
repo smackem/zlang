@@ -53,7 +53,6 @@ typedef struct memory_layout {
  * Can be called by the cpu for each instruction.
  */
 typedef void (*debug_callback_t)(addr_t pc,
-        addr_t base_pc,
         const Instruction *instr,
         uint32_t stack_depth,
         const StackFrame *stack_frame,
