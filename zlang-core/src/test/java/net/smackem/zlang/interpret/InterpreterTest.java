@@ -11,6 +11,7 @@ import net.smackem.zlang.modules.SourceFileLocations;
 import net.smackem.zlang.symbols.GlobalScope;
 import net.smackem.zlang.symbols.ProgramStructure;
 import net.smackem.zlang.symbols.SymbolExtractor;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -31,16 +32,7 @@ public class InterpreterTest {
                     number = x + y
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        assertThat(zl.isDirect()).isTrue();
-        assertThat(zl.capacity()).isGreaterThan(defaultHeapSize);
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("number")).isEqualTo(12 + 23);
     }
 
@@ -55,14 +47,7 @@ public class InterpreterTest {
                 fn main() {
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("f1")).isEqualTo(12.5);
         assertThat(globals.get("f2")).isEqualTo(13.5);
         assertThat(globals.get("n")).isEqualTo(12);
@@ -86,14 +71,7 @@ public class InterpreterTest {
                     a3 = a[2]
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("a1")).isEqualTo(1);
         assertThat(globals.get("a2")).isEqualTo(2);
         assertThat(globals.get("a3")).isEqualTo(3);
@@ -130,14 +108,7 @@ public class InterpreterTest {
                     a1 = arrays[1]
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("i0")).isEqualTo(1);
         assertThat(globals.get("ints")).isEqualTo(new int[] { 1, 2 });
         assertThat(globals.get("f0")).isEqualTo(12.5);
@@ -165,14 +136,7 @@ public class InterpreterTest {
                     value = a.value
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("index")).isEqualTo(1);
         assertThat(globals.get("value")).isEqualTo(12.5);
         assertThat(globals.get("a")).isEqualTo(Map.of("index", 1, "value", 12.5));
@@ -201,14 +165,7 @@ public class InterpreterTest {
                     sample.sub.flag = true
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("sample")).isEqualTo(Map.of(
                 "index", 123,
                 "value", 12.5,
@@ -239,14 +196,7 @@ public class InterpreterTest {
                     firstSample = samples[0]
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         //noinspection unchecked
         assertThat((Map<String, Object>) globals.get("firstSample")).containsOnly(
                 Map.entry("id", 123),
@@ -268,14 +218,7 @@ public class InterpreterTest {
                     nilContainer = new NilContainer {}
                 }
                 """);
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(modules);
         assertThat(globals.get("x")).isNull();
         assertThat(globals.get("y")).isNull();
         //noinspection unchecked
@@ -301,15 +244,7 @@ public class InterpreterTest {
                 "main", mainSource,
                 "dep", depSource));
         final ParsedModule module = ParsedModule.parse("main", loc);
-        final Collection<ParsedModule> modules = module.flatten();
-        final Collection<String> errors = new ArrayList<>();
-        final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
-        final Program program = Emitter.emit(ps, modules);
-        final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
-        System.out.println(Instructions.print(program.instructions()));
-        assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
+        final Map<String, Object> globals = run(module.flatten());
         assertThat(globals.get("mainX")).isEqualTo(123);
         assertThat(globals.get("depY")).isEqualTo(234);
         assertThat(globals.get("depYCopy")).isEqualTo(234);
@@ -328,6 +263,7 @@ public class InterpreterTest {
                 """;
         final String dep1Source = """
                 module dep1 uses dep2
+                let x1: int = 444
                 struct Dep1Type {
                     f: int
                 }
@@ -336,22 +272,159 @@ public class InterpreterTest {
                 struct Dep2Type {
                     f: int
                 }
+                let x2: int = 555
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
                 "main", mainSource,
                 "dep1", dep1Source,
                 "dep2", dep2Source));
         final ParsedModule module = ParsedModule.parse("main", loc);
-        final Collection<ParsedModule> modules = module.flatten();
+        final Map<String, Object> globals = run(module.flatten());
+        assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 123));
+        assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 234));
+    }
+
+    @Test
+    public void voidFunctionCall() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var x: int
+                fn func() {
+                    x = 123
+                }
+                fn main() {
+                    func()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("x")).isEqualTo(123);
+    }
+
+    @Test
+    public void functionCallWithReturnValue() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var x: int
+                fn func() -> int {
+                    return 123
+                }
+                fn main() {
+                    x = func()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("x")).isEqualTo(123);
+    }
+
+    @Test
+    public void functionCallWithArguments() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var x: float
+                fn add(a: float, b: int) -> float {
+                    return a + (float) b
+                }
+                fn main() {
+                    x = add(12.0, 13)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("x")).isEqualTo(25.0);
+    }
+
+    @Test
+    public void nestedFunctionCalls() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var a: int
+                var b: int
+                var c: int
+                var r: int
+                fn do_a(x: int) -> int {
+                    a = x
+                    return do_b(x + 1)
+                }
+                fn do_b(x: int) -> int {
+                    b = x
+                    return do_c(x + 1)
+                }
+                fn do_c(x: int) -> int {
+                    c = x
+                    return x
+                }
+                fn main() {
+                    r = do_a(1)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("a")).isEqualTo(1);
+        assertThat(globals.get("b")).isEqualTo(2);
+        assertThat(globals.get("c")).isEqualTo(3);
+        assertThat(globals.get("r")).isEqualTo(3);
+    }
+
+    @Test
+    @Ignore("implement when control flow is done")
+    public void recursiveFunctionCalls() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var a: int
+                fn recurse(x: int) -> int {
+                    return recurse(x + 1)
+                }
+                fn main() {
+                    a = recurse(1)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("a")).isEqualTo(1);
+    }
+
+    @Test
+    public void voidMethodCall() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct MyStruct {
+                    x: int
+                }
+                fn MyStruct::func() {
+                    self.x = 123
+                }
+                let r: MyStruct = new MyStruct{}
+                fn main() {
+                    r.func()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("r")).isEqualTo(Map.of(
+                "x", 123));
+    }
+
+    @Test
+    public void methodCallWithReturnValue() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct MyStruct {
+                    x: int
+                }
+                fn MyStruct::func() -> float {
+                    return (float) self.x + 1.0
+                }
+                let r: MyStruct = new MyStruct{
+                    x: 123
+                }
+                fn main() {
+                    r.x = (int) r.func()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("r")).isEqualTo(Map.of(
+                "x", 124));
+    }
+
+    private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
         final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        assertThat(zl.isDirect()).isTrue();
+        assertThat(zl.capacity()).isGreaterThan(defaultHeapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
-        final Map<String, Object> globals = Interpreter.run(zl, program);
-        assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 123));
-        assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 234));
+        return Interpreter.run(zl, program);
     }
 }

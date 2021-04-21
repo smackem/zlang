@@ -1,6 +1,7 @@
 package net.smackem.zlang.emit.ir;
 
 import com.google.common.base.CharMatcher;
+import com.google.common.base.Function;
 import net.smackem.zlang.lang.ZLangParser;
 import net.smackem.zlang.symbols.*;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -214,11 +215,31 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     public Value visitReturnStmt(ZLangParser.ReturnStmtContext ctx) {
         final Value value = ctx.expr().accept(this);
         if (Types.isAssignable(this.currentFunction.type(), value.type()) == false) {
-            return logLocalError(ctx, "incompatible return type");
+            return logLocalError(ctx, "incompatible return type. expecting %s, got %s".formatted(
+                    this.currentFunction.type(), value.type()));
         }
         emit(OpCode.Mov, Register.R000, value.register);
         freeRegister(value.register);
-        return super.visitReturnStmt(ctx);
+        return null;
+    }
+
+    @Override
+    public Value visitInvocationStmt(ZLangParser.InvocationStmtContext ctx) {
+        final Value retVal = super.visitInvocationStmt(ctx);
+        if (retVal != null) {
+            freeRegister(retVal.register); // discard return value
+        }
+        return null;
+    }
+
+    @Override
+    public Value visitMethodInvocation(ZLangParser.MethodInvocationContext ctx) {
+        final Value primary = ctx.primary().accept(this);
+        final Value retVal = emitMethodInvocation(primary, ctx.methodInvocationPostfix());
+        if (retVal != null) {
+            freeRegister(retVal.register); // discard return value
+        }
+        return null;
     }
 
     @Override
@@ -428,7 +449,73 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             return value(target, field.type());
         }
 
+        if (ctx.methodInvocationPostfix() != null) {
+            return emitMethodInvocation(primary, ctx.methodInvocationPostfix());
+        }
+
         throw new UnsupportedOperationException("unsupported postFixedPrimary");
+    }
+
+    private Value emitMethodInvocation(Value primary, ZLangParser.MethodInvocationPostfixContext ctx) {
+        if (primary.type instanceof AggregateType == false) {
+            return logLocalError(ctx, "method invocation target is not an aggregate");
+        }
+        final MemberScope memberScope = (MemberScope) primary.type;
+        final Symbol symbol = memberScope.resolveMember(ctx.Ident().getText());
+        if (symbol instanceof MethodSymbol == false) {
+            return logLocalError(ctx, "symbol is not a method: " + ctx.Ident().getText());
+        }
+        final Register selfRegister = allocFreedRegister();
+        emit(OpCode.Mov, selfRegister, primary.register);
+        return emitFunctionCall(ctx, ctx.arguments(), (MethodSymbol) symbol, selfRegister);
+    }
+
+    @Override
+    public Value visitUserFunctionInvocation(ZLangParser.UserFunctionInvocationContext ctx) {
+        final Symbol symbol = currentScope().resolve(ctx.Ident().getText());
+        if (symbol instanceof FunctionSymbol == false) {
+            return logLocalError(ctx, "undefined function '" + ctx.Ident().getText() + "'");
+        }
+
+        return emitFunctionCall(ctx, ctx.arguments(), (FunctionSymbol) symbol, null);
+    }
+
+    private Value emitFunctionCall(ParserRuleContext ctx,
+                                   ZLangParser.ArgumentsContext arguments,
+                                   FunctionSymbol function,
+                                   Register selfRegister) {
+        final Register retValRegister = function.type() != null ? allocFreedRegister() : Register.R000;
+        final List<ZLangParser.ExprContext> args = arguments != null ? arguments.expr() : List.of();
+        final int argCount = selfRegister != null ? args.size() + 1 : args.size(); // +1 for self
+        if (function.symbols().size() != argCount) {
+            return logLocalError(ctx,"function expects %d parameters, but %d arguments given".formatted(
+                    function.symbols().size(), argCount));
+        }
+
+        List<Register> argRegisters = new ArrayList<>();
+        if (selfRegister != null) {
+            argRegisters.add(selfRegister);
+        }
+        int index = 0;
+        for (final Symbol param : function.symbols()) {
+            if (param instanceof VariableSymbol v && v.isSelf()) {
+                continue;
+            }
+            final var arg = args.get(index).accept(this);
+            if (Types.isAssignable(param.type(), arg.type) == false) {
+                return logLocalError(ctx, "incompatible argument type for parameter '%s'. left='%s', right='%s'"
+                        .formatted(param.name(), param.type(), arg.type));
+            }
+            argRegisters.add(arg.register);
+            index++;
+        }
+
+        emit(OpCode.Call, retValRegister, argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0), function);
+        freeRegister(retValRegister); // this does nothing if it's R0
+        freeRegister(argRegisters.toArray(new Register[0]));
+        return function.type() != null
+                ? value(retValRegister, function.type())
+                : null;
     }
 
     @Override
@@ -644,8 +731,15 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         this.currentInstructions.add(instr);
     }
 
-    public record Value(Register register, Type type) {
+    private void emit(OpCode opCode, Register register1, Register register2, Symbol symbol) {
+        final Instruction instr = new Instruction(opCode);
+        instr.setRegisterArg(0, register1);
+        instr.setRegisterArg(1, register2);
+        instr.setSymbolArg(symbol);
+        this.currentInstructions.add(instr);
     }
+
+    public record Value(Register register, Type type) { }
 
     private Value logLocalError(ParserRuleContext ctx, String message) {
         logSemanticError(ctx, message);

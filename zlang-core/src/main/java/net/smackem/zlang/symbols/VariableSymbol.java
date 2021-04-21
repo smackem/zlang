@@ -20,4 +20,8 @@ public class VariableSymbol extends Symbol {
     public final boolean isGlobal() {
         return this.global;
     }
+
+    public boolean isSelf() {
+        return false;
+    }
 }

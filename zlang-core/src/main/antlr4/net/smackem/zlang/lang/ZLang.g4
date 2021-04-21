@@ -111,7 +111,11 @@ assignStmt
 
 invocationStmt
     : functionInvocation
-    | primary methodInvocationPostfix
+    | methodInvocation
+    ;
+
+methodInvocation
+    : primary methodInvocationPostfix
     ;
 
 ifStmt

@@ -6,6 +6,7 @@ import net.smackem.zlang.symbols.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
@@ -56,7 +57,9 @@ class ConstSegmentWriter extends NativeValueWriter {
             writeAddr(0);
         }
         for (final Symbol field : symbol.symbols()) {
-            writeByte((byte) field.type().primitive().id());
+            if (field instanceof FieldSymbol) {
+                writeByte((byte) field.type().primitive().id());
+            }
         }
         writeByte((byte) 0); // zero-terminated
     }
@@ -83,7 +86,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         symbol.setAddress(bytesWritten());
         writeAddr(0); // pc - fixup later
         writeInt32(symbol.localCount());
-        writeInt32(symbol.symbols().size());
+        writeInt32(symbol instanceof MethodSymbol ? symbol.symbols().size() + 1 : symbol.symbols().size()); // + 1 for self
         writeByte(symbol.type() != null ? (byte) symbol.type().primitive().id() : 0);
         writeString(symbol.name());
     }

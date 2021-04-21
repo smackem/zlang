@@ -56,7 +56,7 @@ class SymbolWalker extends ScopeWalker<Void> {
             }
             paramRegisterNumber = 2;
             functionSymbol = new MethodSymbol(name, returnType, (MemberScope) currentScope());
-            final Symbol self = new ConstantSymbol("self", (Type) declType, false);
+            final Symbol self = new SelfSymbol((Type) declType);
             self.setAddress(1);
             defineSymbol(ctx, functionSymbol, self);
             defineSymbol(ctx, (MemberScope) declType, functionSymbol);

@@ -30,11 +30,10 @@ public class ByteCodeReader {
 
     private static void readObject(ByteBuffer buf, int offset, int heapOffset, Collection<? extends Symbol> symbols, Map<String, Object> out) {
         for (final Symbol symbol : symbols) {
-            if (symbol instanceof VariableSymbol == false) {
-                log.warn("symbol '" + symbol.name() + "' is not a variable");
+            if (symbol instanceof VariableSymbol) {
+                final Object value = readValue(buf, offset, heapOffset, symbol);
+                out.put(symbol.name(), value);
             }
-            final Object value = readValue(buf, offset, heapOffset, symbol);
-            out.put(symbol.name(), value);
         }
     }
 
