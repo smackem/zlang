@@ -95,7 +95,7 @@ public class SymbolExtractorTest {
                             > null: BlockScope
                                 - v: ConstantSymbol{float}@3
                     > method: MethodSymbol
-                        - self: ConstantSymbol{StructType}@1
+                        - self: SelfSymbol{StructType}@1
                         > null: BlockScope
                     > UnionType: UnionSymbol
                         - integer: FieldSymbol{int}@0
@@ -136,7 +136,7 @@ public class SymbolExtractorTest {
                         - address: FieldSymbol{string}@0
                         - read: MethodSymbol{int}@0
                     > read: MethodSymbol
-                        - self: ConstantSymbol{Socket}@1
+                        - self: SelfSymbol{Socket}@1
                         - buf: ConstantSymbol{Array<byte>}@2
                         > null: BlockScope
                 """);
@@ -245,7 +245,7 @@ public class SymbolExtractorTest {
                         - field: FieldSymbol{int}@0
                         - oneParamNestedMethod: MethodSymbol{null}@0
                     > oneParamNestedMethod: MethodSymbol
-                        - self: ConstantSymbol{X}@1
+                        - self: SelfSymbol{X}@1
                         - p1: ConstantSymbol{byte}@2
                         > null: BlockScope
                             - a: VariableSymbol{int}@3

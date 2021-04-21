@@ -491,6 +491,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         List<Register> argRegisters = new ArrayList<>();
+        // TODO: find highest register in use, start args there
         if (methodTarget != null) {
             final Register selfRegister = allocFreedRegister();
             emit(OpCode.Mov, selfRegister, methodTarget.register);

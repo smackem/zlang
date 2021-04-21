@@ -437,6 +437,79 @@ public class InterpreterTest {
         assertThat(globals.get("ret")).isEqualTo(20);
     }
 
+    @Test
+    public void nestedMethodCalls() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct MyStruct {
+                    a: int
+                    b: int
+                    c: int
+                }
+                fn MyStruct::do_a(x: int) -> int {
+                    self.a = x
+                    return self.do_b(x + 1)
+                }
+                fn MyStruct::do_b(x: int) -> int {
+                    self.b = x
+                    return self.do_c(x + 1)
+                }
+                fn MyStruct::do_c(x: int) -> int {
+                    self.c = x
+                    return x + 1
+                }
+                let r: MyStruct = new MyStruct{}
+                var ret: int
+                fn main() {
+                    ret = r.do_a(1)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("r")).isEqualTo(Map.of(
+                "a", 1,
+                "b", 2,
+                "c", 3));
+        assertThat(globals.get("ret")).isEqualTo(4);
+    }
+
+    @Test
+    public void nestedMethodCallsMultipleTypes() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct StructA {
+                    a: int
+                }
+                struct StructB {
+                    b: int
+                }
+                struct StructC {
+                    c: int
+                }
+                fn StructA::doIt(x: int, b: StructB, c: StructC) -> int {
+                    self.a = x
+                    return b.doIt(x + 1, c)
+                }
+                fn StructB::doIt(x: int, c: StructC) -> int {
+                    self.b = x
+                    return c.doIt(x + 1)
+                }
+                fn StructC::doIt(x: int) -> int {
+                    self.c = x
+                    return x + 1
+                }
+                let sa: StructA = new StructA{}
+                let sb: StructB = new StructB{}
+                let sc: StructC = new StructC{}
+                var ret: int
+                fn main() {
+                    ret = sa.doIt(1, sb, sc)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("sa")).isEqualTo(Map.of("a", 1));
+        assertThat(globals.get("sb")).isEqualTo(Map.of("b", 2));
+        assertThat(globals.get("sc")).isEqualTo(Map.of("c", 3));
+        assertThat(globals.get("ret")).isEqualTo(4);
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
