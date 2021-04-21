@@ -465,9 +465,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         if (symbol instanceof MethodSymbol == false) {
             return logLocalError(ctx, "symbol is not a method: " + ctx.Ident().getText());
         }
-        final Register selfRegister = allocFreedRegister();
-        emit(OpCode.Mov, selfRegister, primary.register);
-        return emitFunctionCall(ctx, ctx.arguments(), (MethodSymbol) symbol, selfRegister);
+        return emitFunctionCall(ctx, ctx.arguments(), (MethodSymbol) symbol, primary);
     }
 
     @Override
@@ -483,17 +481,19 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private Value emitFunctionCall(ParserRuleContext ctx,
                                    ZLangParser.ArgumentsContext arguments,
                                    FunctionSymbol function,
-                                   Register selfRegister) {
+                                   Value methodTarget) {
         final Register retValRegister = function.type() != null ? allocFreedRegister() : Register.R000;
         final List<ZLangParser.ExprContext> args = arguments != null ? arguments.expr() : List.of();
-        final int argCount = selfRegister != null ? args.size() + 1 : args.size(); // +1 for self
+        final int argCount = methodTarget != null ? args.size() + 1 : args.size(); // +1 for self
         if (function.symbols().size() != argCount) {
             return logLocalError(ctx,"function expects %d parameters, but %d arguments given".formatted(
                     function.symbols().size(), argCount));
         }
 
         List<Register> argRegisters = new ArrayList<>();
-        if (selfRegister != null) {
+        if (methodTarget != null) {
+            final Register selfRegister = allocFreedRegister();
+            emit(OpCode.Mov, selfRegister, methodTarget.register);
             argRegisters.add(selfRegister);
         }
         int index = 0;

@@ -35,7 +35,7 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
             (uint32_t)sizeof(ZLHeader) + non_memory_size + header->const_segment_size + header->global_segment_size,
             memory.total_size);
     const RuntimeConfig config = {
-            .register_count = 8,
+            .register_count = 16,
             .max_stack_depth = 16,
             .debug_callback = dump_cpu,
     };

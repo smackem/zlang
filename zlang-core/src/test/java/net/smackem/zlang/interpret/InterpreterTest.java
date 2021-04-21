@@ -317,16 +317,16 @@ public class InterpreterTest {
     @Test
     public void functionCallWithArguments() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
-                var x: float
-                fn add(a: float, b: int) -> float {
-                    return a + (float) b
+                var x: float = 1.0
+                fn addAll(a: float, b: int, c: byte, d: float, e: int, f: byte) -> float {
+                    return x + a + (float) b + (float) c + d + (float) e + (float) f
                 }
                 fn main() {
-                    x = add(12.0, 13)
+                    x = addAll(1.5, 2, (byte) 3, 3.5, 4, (byte) 5)
                 }
                 """);
         final Map<String, Object> globals = run(modules);
-        assertThat(globals.get("x")).isEqualTo(25.0);
+        assertThat(globals.get("x")).isEqualTo(20.0);
     }
 
     @Test
@@ -413,6 +413,28 @@ public class InterpreterTest {
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("r")).isEqualTo(Map.of(
                 "x", 124));
+    }
+
+    @Test
+    public void methodCallWithArguments() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct MyStruct {
+                    x: float
+                }
+                fn MyStruct::addAll(a: float, b: int, c: byte, d: float, e: int, f: byte) -> float {
+                    return self.x + a + (float) b + (float) c + d + (float) e + (float) f
+                }
+                let r: MyStruct = new MyStruct{
+                    x: 1.0
+                }
+                var ret: int
+                fn main() {
+                    r.x = r.addAll(1.5, 2, (byte) 3, 3.5, 4, (byte) 5)
+                    ret = (int) r.x
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("ret")).isEqualTo(20);
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
