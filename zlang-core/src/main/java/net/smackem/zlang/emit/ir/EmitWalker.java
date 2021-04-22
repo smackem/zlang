@@ -1,7 +1,6 @@
 package net.smackem.zlang.emit.ir;
 
 import com.google.common.base.CharMatcher;
-import com.google.common.base.Function;
 import net.smackem.zlang.lang.ZLangParser;
 import net.smackem.zlang.symbols.*;
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -17,7 +16,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final List<Instruction> instructions = new ArrayList<>();
     private final Map<FunctionSymbol, Instruction> codeMap = new HashMap<>();
     private final FunctionSymbol initFunction;
-    private final Set<Register> allocatedRegisters = new HashSet<>();
+    private final Set<Register> allocatedRegisters = EnumSet.noneOf(Register.class);
     private final List<Instruction> initInstructions = new ArrayList<>();
     private final List<Label> labels = new ArrayList<>();
     private List<Instruction> currentInstructions = instructions;
@@ -243,6 +242,38 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitWhileStmt(ZLangParser.WhileStmtContext ctx) {
+        final int conditionIndex = this.currentInstructions.size();
+        final Label loopLabel = addLabel();
+        final Label exitLabel = addLabel();
+        final Value condition = ctx.expr().accept(this);
+        if (condition.type != BuiltInTypeSymbol.BOOL) {
+            return logLocalError(ctx, "while condition is not of type bool, but " + condition.type);
+        }
+        loopLabel.setTarget(this.currentInstructions.get(conditionIndex));
+        emitBranch(condition.register, exitLabel);
+        freeRegister(condition.register);
+        ctx.block().accept(this);
+        emitBranch(loopLabel);
+        exitLabel.setTarget(emitNop());
+        return null;
+    }
+
+    @Override
+    public Value visitIfStmt(ZLangParser.IfStmtContext ctx) {
+        final Label exitLabel = addLabel();
+        final Value condition = ctx.expr().accept(this);
+        if (condition.type != BuiltInTypeSymbol.BOOL) {
+            return logLocalError(ctx, "if condition is not of type bool, but " + condition.type);
+        }
+        emitBranch(condition.register, exitLabel);
+        freeRegister(condition.register);
+        ctx.block().accept(this);
+        exitLabel.setTarget(emitNop());
+        return null;
+    }
+
+    @Override
     public Value visitConditionalOrExpr(ZLangParser.ConditionalOrExprContext ctx) {
         if (ctx.Or() == null) {
             return super.visitConditionalOrExpr(ctx);
@@ -308,7 +339,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             return logLocalError(ctx, "unsupported type for relational operator " + left.type);
         }
         emit(opc, target, left.register, right.register);
-        return value(target, left.type);
+        return value(target, BuiltInTypeSymbol.BOOL);
     }
 
     @Override
@@ -490,25 +521,26 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                     function.symbols().size(), argCount));
         }
 
-        List<Register> argRegisters = new ArrayList<>();
-        // TODO: find highest register in use, start args there
+        List<Register> argRegisters = allocRegisterRange(argCount);
+        int registerIndex = 0;
         if (methodTarget != null) {
-            final Register selfRegister = allocFreedRegister();
-            emit(OpCode.Mov, selfRegister, methodTarget.register);
-            argRegisters.add(selfRegister);
+            registerIndex = 1;
+            emit(OpCode.Mov, argRegisters.get(0), methodTarget.register);
         }
-        int index = 0;
+        int argIndex = 0;
         for (final Symbol param : function.symbols()) {
             if (param instanceof VariableSymbol v && v.isSelf()) {
                 continue;
             }
-            final var arg = args.get(index).accept(this);
-            if (Types.isAssignable(param.type(), arg.type) == false) {
+            final var value = args.get(argIndex).accept(this);
+            if (Types.isAssignable(param.type(), value.type) == false) {
                 return logLocalError(ctx, "incompatible argument type for parameter '%s'. left='%s', right='%s'"
-                        .formatted(param.name(), param.type(), arg.type));
+                        .formatted(param.name(), param.type(), value.type));
             }
-            argRegisters.add(arg.register);
-            index++;
+            emit(OpCode.Mov, argRegisters.get(registerIndex), value.register);
+            freeRegister(value.register);
+            argIndex++;
+            registerIndex++;
         }
 
         emit(OpCode.Call, retValRegister, argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0), function);
@@ -528,6 +560,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             }
             return value(Register.fromNumber(self.address()), self.type());
         }
+
         if (ctx.Ident() != null) {
             final Symbol symbol = currentScope().resolve(ctx.Ident().getText());
             if (symbol == null) {
@@ -542,6 +575,10 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return value(target, symbol.type());
             }
             return value(Register.fromNumber(symbol.address()), symbol.type());
+        }
+
+        if (ctx.expr() != null) {
+            return ctx.expr().accept(this);
         }
 
         return super.visitPrimary(ctx);
@@ -642,6 +679,28 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         return r;
     }
 
+    private List<Register> allocRegisterRange(int count) {
+        final List<Register> registers = new ArrayList<>();
+        Register r = getHighestAllocatedRegister().next();
+        for (int i = 0; i < count; i++) {
+            this.allocatedRegisters.add(r);
+            registers.add(r);
+            r = r.next();
+        }
+        log.info("allocated registers: {}", this.allocatedRegisters);
+        return registers;
+    }
+
+    private Register getHighestAllocatedRegister() {
+        Register highest = Register.R000;
+        for (final Register r : this.allocatedRegisters) {
+            if (r.number() > highest.number()) {
+                highest = r;
+            }
+        }
+        return highest;
+    }
+
     private static Value value(Register register, Type type) {
         return new Value(register, type);
     }
@@ -669,6 +728,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         int top = this.currentFunction.symbols().size() + this.currentFunction.localCount() + 1;
         this.firstVolatileRegister = Register.fromNumber(top);
         this.allocatedRegisters.clear();
+    }
+
+    private Instruction emitNop() {
+        final Instruction instr = new Instruction(OpCode.Nop);
+        this.currentInstructions.add(instr);
+        return instr;
     }
 
     private void emit(OpCode opCode) {
@@ -738,6 +803,27 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         instr.setRegisterArg(1, register2);
         instr.setSymbolArg(symbol);
         this.currentInstructions.add(instr);
+    }
+
+    private void emitBranch(Register register, Label label) {
+        final Instruction instr = new Instruction(OpCode.Br_zero);
+        instr.setRegisterArg(0, register);
+        instr.setLabelArg(label);
+        label.addSource(instr);
+        this.currentInstructions.add(instr);
+    }
+
+    private void emitBranch(Label label) {
+        final Instruction instr = new Instruction(OpCode.Br);
+        instr.setLabelArg(label);
+        label.addSource(instr);
+        this.currentInstructions.add(instr);
+    }
+
+    private Label addLabel() {
+        final Label label = new Label();
+        this.labels.add(label);
+        return label;
     }
 
     public record Value(Register register, Type type) { }

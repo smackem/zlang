@@ -37,6 +37,36 @@ public class InterpreterTest {
     }
 
     @Test
+    public void expressions() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var x1: int
+                var x2: float
+                var x3: byte
+                var x4: bool
+                var x5: bool
+                var x6: bool
+                var x7: bool
+                fn main() {
+                    x1 = 2 * 10 / 2 - 5 + 1
+                    x2 = 100.0 * 5.0 / (2.0 + 8.0 - 5.0)
+                    x3 = (byte) 1 + (byte) 2
+                    x4 = 2 > 1 and 1 < 2 and 3 >= 3 and 3 <= 3 and 4 != 5 and 10 == 10
+                    x5 = 2 > 1 and 1 < 2 and 3 >= 3 and 3 <= 3 and 4 != 5 and 10 == 11
+                    x6 = 2 > 2 or 1 < 2 and 0 < 1
+                    x7 = 2 == 2 and (1 < 1 + 2 or 1 > 1 - 1)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("x1")).isEqualTo(2 * 10 / 2 - 5 + 1);
+        assertThat(globals.get("x2")).isEqualTo(100.0 * 5.0 / (2.0 + 8.0 - 5.0));
+        assertThat(globals.get("x3")).isEqualTo((byte) 3);
+        assertThat(globals.get("x4")).isEqualTo(true);
+        assertThat(globals.get("x5")).isEqualTo(false);
+        assertThat(globals.get("x6")).isEqualTo(true);
+        assertThat(globals.get("x7")).isEqualTo(true);
+    }
+
+    @Test
     public void initGlobals() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 let f1: float = 12.5
@@ -322,7 +352,10 @@ public class InterpreterTest {
                     return x + a + (float) b + (float) c + d + (float) e + (float) f
                 }
                 fn main() {
-                    x = addAll(1.5, 2, (byte) 3, 3.5, 4, (byte) 5)
+                    let five: byte = (byte) 5
+                    let four: int = 4
+                    let threePointFive: float = 3.5
+                    x = addAll(1.5, 2, (byte) 3, threePointFive, four, five)
                 }
                 """);
         final Map<String, Object> globals = run(modules);
@@ -508,6 +541,83 @@ public class InterpreterTest {
         assertThat(globals.get("sb")).isEqualTo(Map.of("b", 2));
         assertThat(globals.get("sc")).isEqualTo(Map.of("c", 3));
         assertThat(globals.get("ret")).isEqualTo(4);
+    }
+
+    @Test
+    public void multiModuleMethods() throws Exception {
+        final String mainSource = """
+                module main uses dep1
+                var dep1: Dep1Type = new Dep1Type {}
+                var dep2: Dep2Type = new Dep2Type {}
+                var r: int
+                fn main() {
+                    r = dep2.func(dep1.func(1))
+                }
+                """;
+        final String dep1Source = """
+                module dep1 uses dep2
+                struct Dep1Type {
+                    f: int
+                }
+                fn Dep1Type::func(x: int) -> int {
+                    self.f = x
+                    return x + 1
+                }
+                """;
+        final String dep2Source = """
+                struct Dep2Type {
+                    f: int
+                }
+                fn Dep2Type::func(x: int) -> int {
+                    self.f = x
+                    return x + 1
+                }
+                """;
+        final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
+                "main", mainSource,
+                "dep1", dep1Source,
+                "dep2", dep2Source));
+        final ParsedModule module = ParsedModule.parse("main", loc);
+        final Map<String, Object> globals = run(module.flatten());
+        assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 1));
+        assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 2));
+        assertThat(globals.get("r")).isEqualTo(3);
+    }
+
+    @Test
+    public void simpleWhileLoop() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var number: int
+                fn main() {
+                    var x: int = 0
+                    let delta: int = 1
+                    while x <= 10 {
+                        number = number + x
+                        x = x + delta
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("number")).isEqualTo(1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10);
+    }
+
+    @Test
+    public void simpleIf() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var number: int
+                fn main() {
+                    var x: int = 0
+                    let delta: int = 1
+                    if delta > 0 {
+                        number = 123
+                    }
+                    if delta < 0 {
+                        number = 666
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("number")).isEqualTo(123);
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {

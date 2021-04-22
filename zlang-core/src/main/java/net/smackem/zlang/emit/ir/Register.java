@@ -64,8 +64,7 @@ public enum Register {
     R060(60),
     R061(61),
     R062(62),
-    R063(63),
-    R064(64);
+    R063(63);
 
     private final int number;
 

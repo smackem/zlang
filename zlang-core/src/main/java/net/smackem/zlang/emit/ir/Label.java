@@ -4,15 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Label {
     private Instruction target;
     private final List<Instruction> sources = new ArrayList<>();
 
-    Label(Instruction target, Instruction source) {
-        this.target = target;
-        this.sources.add(source);
-    }
+    Label() { }
 
     public Collection<Instruction> sources() {
         return Collections.unmodifiableCollection(this.sources);
@@ -28,5 +26,13 @@ public class Label {
 
     void setTarget(Instruction target) {
         this.target = target;
+    }
+
+    @Override
+    public String toString() {
+        return "Label{" +
+                "target=" + (target != null ? target.opCode() : "(null)") +
+                ", sources=" + (sources.stream().map(Instruction::opCode).map(Object::toString).collect(Collectors.joining(", "))) +
+                '}';
     }
 }
