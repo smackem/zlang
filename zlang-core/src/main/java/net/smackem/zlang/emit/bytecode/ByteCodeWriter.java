@@ -16,6 +16,22 @@ import java.util.Collection;
 
 public class ByteCodeWriter implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(ByteCodeWriter.class);
+    private static final int[] bufferSizes;
+
+    static {
+        final int K = 1024;
+        final int M = K * K;
+        bufferSizes = new int[] {
+                16 * K,
+                32 * K,
+                64 * K,
+                256 * K,
+                M,
+                4 * M,
+                16 * M,
+                64 * M
+        };
+    }
 
     private final ConstSegmentWriter constSegment = new ConstSegmentWriter();
 
@@ -27,34 +43,55 @@ public class ByteCodeWriter implements AutoCloseable {
      * 4) global segment (zeroed memory, length @header)
      * 5) heap memory (zeroed memory, all remaining bytes)
      */
-    public ByteBuffer writeProgram(Program program, int heapSize) throws Exception {
+    public ByteBuffer writeProgram(Program program, int heapSize, int maxStackDepth) throws Exception {
         // render const segment to memory
         renderTypes(program.types());
         renderFunctions(program.codeMap().keySet());
         // render code segment to memory
-        final byte[] codeSegment = renderCode(program.instructions(), program.labels());
+        final RenderedCode code = renderCode(program.instructions(), program.labels());
         final byte[] constSegment = this.constSegment.fixup(program.codeMap());
         final int headerSize = ByteCode.HEADER_SIZE;
         final int globalSegmentSize = program.globalSegmentSize();
-        final int size = headerSize + codeSegment.length + constSegment.length + globalSegmentSize + heapSize;
+        // approximate minimum buffer size
+        final int approximateSize = headerSize
+                + code.segment.length
+                + constSegment.length
+                + globalSegmentSize
+                + code.registerCount * maxStackDepth * 8 // registers: assume each register has 8 bytes
+                + maxStackDepth * 32 // approximate stack frame size
+                + heapSize;
+        final int size = getBufferSize(approximateSize);
+        log.info("approximate required size: {} -> allocate buffer of size {}", approximateSize, size);
         final ByteBuffer buf = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         // 1) header
-        writeHeaderBytes(buf, codeSegment.length, constSegment.length, globalSegmentSize, program.entryPoint());
+        writeHeaderBytes(buf, code.segment.length, constSegment.length, globalSegmentSize, program.entryPoint(), code.registerCount, maxStackDepth);
         // 2) code segment
-        buf.put(headerSize, codeSegment);
+        buf.put(headerSize, code.segment);
         // 3) const segment
-        buf.put(headerSize + codeSegment.length, constSegment);
+        buf.put(headerSize + code.segment.length, constSegment);
         // 4) global segment - just reserve space
+        // 5) register segment - just reserve space
+        // 6) stack frame segment - just reserve space
         // 5) heap segment - just reserve space
-        log.info("heap offset: {}", headerSize + codeSegment.length + constSegment.length + globalSegmentSize);
         return buf;
+    }
+
+    private static int getBufferSize(int approximateSize) {
+        for (final int size : bufferSizes) {
+            if (approximateSize < size) {
+                return size;
+            }
+        }
+        throw new IllegalArgumentException("approximateSize %d exceeds maximum buffer size".formatted(approximateSize));
     }
 
     private void writeHeaderBytes(ByteBuffer buf,
                                   int codeSegmentSize,
                                   int constSegmentSize,
                                   int globalSegmentSize,
-                                  FunctionSymbol entryPoint) throws IOException {
+                                  FunctionSymbol entryPoint,
+                                  int registerCount,
+                                  int maxStackDepth) throws IOException {
         log.info("ZL header: codeSize={} constSize={} globalSize={} entryPoint={}",
                 codeSegmentSize, constSegmentSize, globalSegmentSize, entryPoint.address());
         buf.put(0, (byte) 'Z');
@@ -65,8 +102,8 @@ public class ByteCodeWriter implements AutoCloseable {
         buf.putInt(8, constSegmentSize);
         buf.putInt(12, globalSegmentSize);
         buf.putInt(16, entryPoint.address());
-        // max register count
-        // max stack depth
+        buf.putInt(20, registerCount);
+        buf.putInt(24, maxStackDepth);
     }
 
     private void renderTypes(Collection<Type> types) throws IOException {
@@ -90,7 +127,9 @@ public class ByteCodeWriter implements AutoCloseable {
         }
     }
 
-    private byte[] renderCode(Collection<Instruction> instructions, Collection<Label> labels) throws Exception {
+    private static record RenderedCode(byte[] segment, int registerCount) { }
+
+    private RenderedCode renderCode(Collection<Instruction> instructions, Collection<Label> labels) throws Exception {
         // write instructions
         int highestRegister = -1;
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -118,7 +157,7 @@ public class ByteCodeWriter implements AutoCloseable {
                 }
             }
         }
-        return bytes;
+        return new RenderedCode(bytes, highestRegister + 1);
     }
 
     private static int getHighestRegister(Instruction instr) {

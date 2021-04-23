@@ -47,7 +47,30 @@ typedef struct memory_layout {
 
     /// the data_size of the global segment. the heap base is base + const_segment_size + global_segment_size
     addr_t global_segment_size;
+
+    /// size of the register segment. must be large enough to hold register_count * max_stack_depth * sizeof(Register) bytes.
+    /// (see ::RuntimeConfig and ::Register)
+    addr_t register_segment_size;
+
+    /// size of the stack frames segment. must be large enough to hold max_stack_septh * sizeof(StackFrame) bytes.
+    /// (see ::RuntimeConfig and ::StackFrame)
+    addr_t stack_frame_segment_size;
 } MemoryLayout;
+
+/**
+ * @return the address of the const segment.
+ */
+const byte_t *const_segment_addr(const MemoryLayout *memory);
+
+/**
+ * @return the address of the global segment.
+ */
+const byte_t *global_segment_addr(const MemoryLayout *memory);
+
+/**
+ * @return the address of the heap segment.
+ */
+const byte_t *heap_segment_addr(const MemoryLayout *memory);
 
 /**
  * Can be called by the cpu for each instruction.

@@ -15,12 +15,11 @@ public class ByteCodeReader {
 
     private ByteCodeReader() { }
 
-    public static Map<String, Object> readGlobals(ByteBuffer zl, Program program) {
+    public static Map<String, Object> readGlobals(ByteBuffer zl, int heapOffset, Program program) {
         final int codeSize = zl.getInt(4);
         final int constSize = zl.getInt(8);
         final int globalOffset = ByteCode.HEADER_SIZE + codeSize + constSize;
         final int globalSize = zl.getInt(12);
-        final int heapOffset = globalOffset + globalSize;
         log.info("ZL: codeSize={} constSize={} globalSize={} heapOffset={}",
                 codeSize, constSize, globalSize, heapOffset);
         final Map<String, Object> globals = new HashMap<>();

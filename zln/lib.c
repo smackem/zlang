@@ -11,40 +11,44 @@ typedef struct zl_header {
     uint32_t const_segment_size;
     uint32_t global_segment_size;
     uint32_t entry_point_address;
+    int32_t register_count;
+    int32_t max_stack_depth;
+    uint32_t reserved[3];
 } ZLHeader;
 
 JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEnv *env_ptr, jclass cls, jobject buf) {
-    assert_equal(sizeof(ZLHeader), 20, "header size");
     JNIEnv env = *env_ptr;
     jlong buf_size = env->GetDirectBufferCapacity(env_ptr, buf);
     byte_t *bytes = env->GetDirectBufferAddress(env_ptr, buf);
     const ZLHeader *header = (ZLHeader *) bytes;
     const byte_t *code_segment = &bytes[sizeof(ZLHeader)];
     uint32_t non_memory_size = sizeof(ZLHeader) + header->code_segment_size;
+    const RuntimeConfig config = {
+            .register_count = header->register_count,
+            .max_stack_depth = header->max_stack_depth,
+            .debug_callback = dump_cpu,
+    };
     const MemoryLayout memory = {
             .base = &bytes[non_memory_size],
             .const_segment_size = header->const_segment_size,
             .global_segment_size = header->global_segment_size,
+            .register_segment_size = config.register_count * config.max_stack_depth * sizeof(Register),
+            .stack_frame_segment_size = config.max_stack_depth * sizeof(StackFrame),
             .total_size = buf_size - non_memory_size,
     };
-    fprintf(stdout, "code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: %u\nheap_offset: %u\ntotal_memory: %u\n",
-            header->code_segment_size,
-            header->const_segment_size,
-            header->global_segment_size,
-            header->entry_point_address,
-            (uint32_t)sizeof(ZLHeader) + non_memory_size + header->const_segment_size + header->global_segment_size,
-            memory.total_size);
-    const RuntimeConfig config = {
-            .register_count = 16,
-            .max_stack_depth = 16,
-            .debug_callback = dump_cpu,
-    };
+    trace("code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: %u\nheap_offset: %u\ntotal_memory: %u\n",
+          header->code_segment_size,
+          header->const_segment_size,
+          header->global_segment_size,
+          header->entry_point_address,
+          (uint32_t) (heap_segment_addr(&memory) - bytes),
+          memory.total_size);
 #ifndef NDEBUG
     print_code(stdout, code_segment, header->code_segment_size);
 #endif
     const FunctionMeta *entry_point = (FunctionMeta *) &memory.base[header->entry_point_address];
     execute(code_segment, entry_point, &memory, &config);
-    printf("FINISH\n");
+    trace("FINISH\n");
     fflush(stdout);
-    return 0;
+    return (jint) (heap_segment_addr(&memory) - bytes);
 }

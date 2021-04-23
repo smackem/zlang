@@ -3,6 +3,7 @@
 //
 
 #include <memory.h>
+#include <stdio.h>
 #include "cpu.h"
 
 typedef struct cpu {
@@ -22,27 +23,42 @@ void exec_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, const FunctionMeta *f
 void exec_return(Cpu *cpu, addr_t *pc_ptr);
 
 static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *config, const FunctionMeta *entry_point) {
+    byte_t *const_segment = memory->base;
+    byte_t *global_segment = const_segment + memory->const_segment_size;
+    byte_t *register_segment = global_segment + memory->global_segment_size;
+    byte_t *stack_frame_segment = register_segment + memory->register_segment_size;
+    byte_t *heap_segment = stack_frame_segment + memory->stack_frame_segment_size;
+    byte_t *memory_end = memory->base + memory->total_size;
+    assert(memory->stack_frame_segment_size >= config->max_stack_depth * sizeof(StackFrame));
+    assert(memory->register_segment_size >= config->register_count * config->max_stack_depth * sizeof(Register));
+    assert(heap_segment < memory_end);
+    cpu->const_segment = const_segment;
+    cpu->global_segment = global_segment;
     init_call_stack(&cpu->call_stack,
-                    calloc(config->register_count * config->max_stack_depth, sizeof(Register)),
-                    calloc(config->max_stack_depth, sizeof(StackFrame)),
+                    (Register *) register_segment,
+                    (StackFrame *) stack_frame_segment,
                     config->max_stack_depth,
                     config->register_count,
                     entry_point);
-    cpu->const_segment = memory->base;
-    cpu->global_segment = memory->base + memory->const_segment_size;
     init_heap(&cpu->heap,
-              cpu->global_segment + memory->global_segment_size,
-              memory->total_size - memory->const_segment_size - memory->global_segment_size,
+              heap_segment,
+              memory_end - heap_segment,
               cpu->const_segment);
+    trace("const_segment @ %08x\n"
+          "global_segment @ %08x\n"
+          "register_segment @ %08x\n"
+          "stack_frame_segment @ %08x\n"
+          "heap_segment @ %08x\n"
+          "heap_size: %08x\n",
+          (addr_t) (const_segment - memory->base),
+          (addr_t) (global_segment - memory->base),
+          (addr_t) (register_segment - memory->base),
+          (addr_t) (stack_frame_segment - memory->base),
+          (addr_t) (heap_segment - memory->base),
+          (addr_t) cpu->heap.size);
 }
 
 static void free_cpu(Cpu *cpu) {
-    if (cpu->call_stack.register_buf != NULL) {
-        free(cpu->call_stack.register_buf);
-    }
-    if (cpu->call_stack.stack_frame_buf != NULL) {
-        free(cpu->call_stack.stack_frame_buf);
-    }
     zero_memory(cpu, sizeof(Cpu));
 }
 
@@ -53,8 +69,25 @@ static void base_assertions() {
     assert_equal(sizeof(HeapEntry), HEAP_ENTRY_MIN_SIZE, "heap_entry data_size mismatch");
 }
 
-static inline Register *reg(Cpu *cpu) {
-    return cpu->call_stack.top->registers;
+static inline Register *reg(Cpu *cpu, int r) {
+    assert(r >= 0 && r < cpu->call_stack.register_count);
+    return &cpu->call_stack.top->registers[r];
+}
+
+const byte_t *const_segment_addr(const MemoryLayout *memory) {
+    return memory->base;
+}
+
+const byte_t *global_segment_addr(const MemoryLayout *memory) {
+    const byte_t *const_segment = const_segment_addr(memory);
+    return const_segment + memory->const_segment_size;
+}
+
+const byte_t *heap_segment_addr(const MemoryLayout *memory) {
+    const byte_t *global_segment = global_segment_addr(memory);
+    const byte_t *register_segment = global_segment + memory->global_segment_size;
+    const byte_t *stack_frame_segment = register_segment + memory->register_segment_size;
+    return stack_frame_segment + memory->stack_frame_segment_size;
 }
 
 void execute(const byte_t *code,
@@ -80,7 +113,7 @@ void execute(const byte_t *code,
 
         if (config->debug_callback != NULL) {
             uint32_t stack_depth = current_stack_depth(&cpu.call_stack);
-            config->debug_callback(pc, instr, stack_depth, cpu.call_stack.top, reg(&cpu), config->register_count);
+            config->debug_callback(pc, instr, stack_depth, cpu.call_stack.top, reg(&cpu, 0), config->register_count);
         }
 
         switch (instr->opc) {
@@ -94,25 +127,25 @@ void execute(const byte_t *code,
             //
             case OPC_Ldc_zero:
                 r_target = get_byte(instr->args, 0);
-                reg(&cpu)[r_target].ptr = 0;
+                reg(&cpu, r_target)->ptr = 0;
                 size = 1 + 1;
                 break;
             case OPC_Ldc_i32:
                 r_target = get_byte(instr->args, 0);
                 value = get_int(instr->args, 1);
-                reg(&cpu)[r_target].i32 = value;
+                reg(&cpu, r_target)->i32 = value;
                 size = 1 + 5;
                 break;
             case OPC_Ldc_ref:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].ref = addr;
+                reg(&cpu, r_target)->ref = addr;
                 size = 1 + 5;
                 break;
             case OPC_Ldc_f64:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].f64 = get_float(cpu.const_segment, addr);
+                reg(&cpu, r_target)->f64 = get_float(cpu.const_segment, addr);
                 size = 1 + 5;
                 break;
 
@@ -121,31 +154,31 @@ void execute(const byte_t *code,
             case OPC_LdGlb_i32:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].i32 = get_int(cpu.global_segment, addr);
+                reg(&cpu, r_target)->i32 = get_int(cpu.global_segment, addr);
                 size = 1 + 5;
                 break;
             case OPC_LdGlb_f64:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].f64 = get_float(cpu.global_segment, addr);
+                reg(&cpu, r_target)->f64 = get_float(cpu.global_segment, addr);
                 size = 1 + 5;
                 break;
             case OPC_LdGlb_u8:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].i32 = get_byte(cpu.global_segment, addr);
+                reg(&cpu, r_target)->i32 = get_byte(cpu.global_segment, addr);
                 size = 1 + 5;
                 break;
             case OPC_LdGlb_ref:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].ref = get_addr(cpu.global_segment, addr);
+                reg(&cpu, r_target)->ref = get_addr(cpu.global_segment, addr);
                 size = 1 + 5;
                 break;
             case OPC_LdGlb_ptr:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].ptr = get_ptr(cpu.global_segment, addr);
+                reg(&cpu, r_target)->ptr = get_ptr(cpu.global_segment, addr);
                 size = 1 + 5;
                 break;
 
@@ -155,35 +188,35 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                reg(&cpu)[r_target].i32 = get_int(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
+                reg(&cpu, r_target)->i32 = get_int(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_f64:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                reg(&cpu)[r_target].f64 = get_float(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
+                reg(&cpu, r_target)->f64 = get_float(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_u8:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                reg(&cpu)[r_target].i32 = get_byte(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
+                reg(&cpu, r_target)->i32 = get_byte(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_ref:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                reg(&cpu)[r_target].ref = get_addr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
+                reg(&cpu, r_target)->ref = get_addr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr));
                 size = 1 + 6;
                 break;
             case OPC_LdFld_ptr:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                reg(&cpu)[r_target].ptr = get_ptr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr));
+                reg(&cpu, r_target)->ptr = get_ptr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr));
                 size = 1 + 6;
                 break;
 
@@ -193,40 +226,40 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].ref = get_int(cpu.heap.memory,
-                  get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(int32_t)));
+                reg(&cpu, r_target)->ref = get_int(cpu.heap.memory,
+                  get_field_addr(&cpu.heap, reg(&cpu, r_left)->ref, reg(&cpu, r_addr)->ref * sizeof(int32_t)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].f64 = get_float(cpu.heap.memory,
-                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(double)));
+                reg(&cpu, r_target)->f64 = get_float(cpu.heap.memory,
+                      get_field_addr(&cpu.heap, reg(&cpu, r_left)->ref, reg(&cpu, r_addr)->ref * sizeof(double)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = get_byte(cpu.heap.memory,
-                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(byte_t)));
+                reg(&cpu, r_target)->i32 = get_byte(cpu.heap.memory,
+                      get_field_addr(&cpu.heap, reg(&cpu, r_left)->ref, reg(&cpu, r_addr)->ref * sizeof(byte_t)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_ref:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].ref = get_addr(cpu.heap.memory,
-                      get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(addr_t)));
+                reg(&cpu, r_target)->ref = get_addr(cpu.heap.memory,
+                      get_field_addr(&cpu.heap, reg(&cpu, r_left)->ref, reg(&cpu, r_addr)->ref * sizeof(addr_t)));
                 size = 1 + 3;
                 break;
             case OPC_LdElem_ptr:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].ptr = get_ptr(cpu.heap.memory,
-                       get_field_addr(&cpu.heap, reg(&cpu)[r_left].ref, reg(&cpu)[r_addr].ref * sizeof(intptr_t)));
+                reg(&cpu, r_target)->ptr = get_ptr(cpu.heap.memory,
+                       get_field_addr(&cpu.heap, reg(&cpu, r_left)->ref, reg(&cpu, r_addr)->ref * sizeof(intptr_t)));
                 size = 1 + 3;
                 break;
 
@@ -235,31 +268,31 @@ void execute(const byte_t *code,
             case OPC_StGlb_i32:
                 r_left = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                set_int(cpu.global_segment, addr, reg(&cpu)[r_left].i32);
+                set_int(cpu.global_segment, addr, reg(&cpu, r_left)->i32);
                 size = 1 + 5;
                 break;
             case OPC_StGlb_f64:
                 r_left = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                set_float(cpu.global_segment, addr, reg(&cpu)[r_left].f64);
+                set_float(cpu.global_segment, addr, reg(&cpu, r_left)->f64);
                 size = 1 + 5;
                 break;
             case OPC_StGlb_u8:
                 r_left = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                set_byte(cpu.global_segment, addr, (byte_t) (reg(&cpu)[r_left].i32 & 0xff));
+                set_byte(cpu.global_segment, addr, (byte_t) (reg(&cpu, r_left)->i32 & 0xff));
                 size = 1 + 5;
                 break;
             case OPC_StGlb_ref:
                 r_left = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                set_addr(cpu.global_segment, addr, reg(&cpu)[r_left].ref);
+                set_addr(cpu.global_segment, addr, reg(&cpu, r_left)->ref);
                 size = 1 + 5;
                 break;
             case OPC_StGlb_ptr:
                 r_left = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                set_ptr(cpu.global_segment, addr, reg(&cpu)[r_left].ptr);
+                set_ptr(cpu.global_segment, addr, reg(&cpu, r_left)->ptr);
                 size = 1 + 5;
                 break;
 
@@ -269,35 +302,35 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_int(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), reg(&cpu)[r_left].i32);
+                set_int(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr), reg(&cpu, r_left)->i32);
                 size = 1 + 6;
                 break;
             case OPC_StFld_f64:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_float(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), reg(&cpu)[r_left].f64);
+                set_float(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr), reg(&cpu, r_left)->f64);
                 size = 1 + 6;
                 break;
             case OPC_StFld_u8:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_byte(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), (byte_t) (reg(&cpu)[r_left].i32 & 0xff));
+                set_byte(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr), (byte_t) (reg(&cpu, r_left)->i32 & 0xff));
                 size = 1 + 6;
                 break;
             case OPC_StFld_ref:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_addr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), reg(&cpu)[r_left].ref);
+                set_addr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr), reg(&cpu, r_left)->ref);
                 size = 1 + 6;
                 break;
             case OPC_StFld_ptr:
                 r_left = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                set_ptr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu)[r_addr].ref, addr), reg(&cpu)[r_left].ptr);
+                set_ptr(cpu.heap.memory, get_field_addr(&cpu.heap, reg(&cpu, r_addr)->ref, addr), reg(&cpu, r_left)->ptr);
                 size = 1 + 6;
                 break;
 
@@ -308,8 +341,8 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_int(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(int32_t)),
-                        reg(&cpu)[r_left].i32);
+                        get_field_addr(&cpu.heap, reg(&cpu, r_right)->ref, reg(&cpu, r_addr)->ref * sizeof(int32_t)),
+                        reg(&cpu, r_left)->i32);
                 size = 1 + 3;
                 break;
             case OPC_StElem_f64:
@@ -317,8 +350,8 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_float(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(double)),
-                        reg(&cpu)[r_left].f64);
+                        get_field_addr(&cpu.heap, reg(&cpu, r_right)->ref, reg(&cpu, r_addr)->ref * sizeof(double)),
+                        reg(&cpu, r_left)->f64);
                 size = 1 + 3;
                 break;
             case OPC_StElem_u8:
@@ -326,8 +359,8 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_byte(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(byte_t)),
-                        reg(&cpu)[r_left].i32);
+                        get_field_addr(&cpu.heap, reg(&cpu, r_right)->ref, reg(&cpu, r_addr)->ref * sizeof(byte_t)),
+                        reg(&cpu, r_left)->i32);
                 size = 1 + 3;
                 break;
             case OPC_StElem_ref:
@@ -335,8 +368,8 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_addr(cpu.heap.memory,
-                         get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(addr_t)),
-                         reg(&cpu)[r_left].ref);
+                         get_field_addr(&cpu.heap, reg(&cpu, r_right)->ref, reg(&cpu, r_addr)->ref * sizeof(addr_t)),
+                         reg(&cpu, r_left)->ref);
                 size = 1 + 3;
                 break;
             case OPC_StElem_ptr:
@@ -344,8 +377,8 @@ void execute(const byte_t *code,
                 r_right = get_byte(instr->args, 1);
                 r_addr = get_byte(instr->args, 2);
                 set_ptr(cpu.heap.memory,
-                        get_field_addr(&cpu.heap, reg(&cpu)[r_right].ref, reg(&cpu)[r_addr].ref * sizeof(intptr_t)),
-                        reg(&cpu)[r_left].ptr);
+                        get_field_addr(&cpu.heap, reg(&cpu, r_right)->ref, reg(&cpu, r_addr)->ref * sizeof(intptr_t)),
+                        reg(&cpu, r_left)->ptr);
                 size = 1 + 3;
                 break;
 
@@ -355,21 +388,21 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 + reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 + reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Add_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].f64 = reg(&cpu)[r_left].f64 + reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->f64 = reg(&cpu, r_left)->f64 + reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
             case OPC_Add_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = (byte_t) ((reg(&cpu)[r_left].i32 + reg(&cpu)[r_right].i32) & 0xff);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 + reg(&cpu, r_right)->i32) & 0xff);
                 size = 1 + 3;
                 break;
 
@@ -379,21 +412,21 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 - reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 - reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Sub_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].f64 = reg(&cpu)[r_left].f64 - reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->f64 = reg(&cpu, r_left)->f64 - reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
             case OPC_Sub_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = (byte_t) ((reg(&cpu)[r_left].i32 - reg(&cpu)[r_right].i32) & 0xff);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 - reg(&cpu, r_right)->i32) & 0xff);
                 size = 1 + 3;
                 break;
 
@@ -403,21 +436,21 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 * reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 * reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Mul_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].f64 = reg(&cpu)[r_left].f64 * reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->f64 = reg(&cpu, r_left)->f64 * reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
             case OPC_Mul_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = (byte_t) ((reg(&cpu)[r_left].i32 * reg(&cpu)[r_right].i32) & 0xff);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 * reg(&cpu, r_right)->i32) & 0xff);
                 size = 1 + 3;
                 break;
 
@@ -427,21 +460,21 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 / reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 / reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Div_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].f64 = reg(&cpu)[r_left].f64 / reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->f64 = reg(&cpu, r_left)->f64 / reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
             case OPC_Div_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = (byte_t) ((reg(&cpu)[r_left].i32 / reg(&cpu)[r_right].i32) & 0xff);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 / reg(&cpu, r_right)->i32) & 0xff);
                 size = 1 + 3;
                 break;
 
@@ -452,28 +485,28 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 == reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 == reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Eq_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].f64 == reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 == reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
             case OPC_Eq_ref:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ref == reg(&cpu)[r_right].ref;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ref == reg(&cpu, r_right)->ref;
                 size = 1 + 3;
                 break;
             case OPC_Eq_ptr:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ptr == reg(&cpu)[r_right].ptr;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ptr == reg(&cpu, r_right)->ptr;
                 size = 1 + 3;
                 break;
 
@@ -484,28 +517,28 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 != reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 != reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Ne_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].f64 != reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 != reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
             case OPC_Ne_ref:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ref != reg(&cpu)[r_right].ref;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ref != reg(&cpu, r_right)->ref;
                 size = 1 + 3;
                 break;
             case OPC_Ne_ptr:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].ptr != reg(&cpu)[r_right].ptr;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ptr != reg(&cpu, r_right)->ptr;
                 size = 1 + 3;
                 break;
 
@@ -516,14 +549,14 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 > reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 > reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Gt_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].f64 > reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 > reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
 
@@ -534,14 +567,14 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 >= reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 >= reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Ge_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].f64 >= reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 >= reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
 
@@ -552,14 +585,14 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 < reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 < reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Lt_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].f64 < reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 < reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
 
@@ -570,14 +603,14 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 <= reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 <= reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Le_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].f64 <= reg(&cpu)[r_right].f64;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 <= reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
 
@@ -587,14 +620,14 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 && reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 && reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
             case OPC_Or:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
-                reg(&cpu)[r_target].i32 = reg(&cpu)[r_left].i32 || reg(&cpu)[r_right].i32;
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 || reg(&cpu, r_right)->i32;
                 size = 1 + 3;
                 break;
 
@@ -603,7 +636,7 @@ void execute(const byte_t *code,
             case OPC_Mov:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
-                reg(&cpu)[r_target] = reg(&cpu)[r_left];
+                *reg(&cpu, r_target) = *reg(&cpu, r_left);
                 size = 1 + 2;
                 break;
 
@@ -611,7 +644,7 @@ void execute(const byte_t *code,
             //
             case OPC_Br_zero:
                 r_target = get_byte(instr->args, 0);
-                if (reg(&cpu)[r_target].i32 == false) {
+                if (reg(&cpu, r_target)->i32 == false) {
                     pc = get_addr(instr->args, 1);
                 } else {
                     size = 1 + 5;
@@ -642,35 +675,35 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 type = get_int(instr->args, 2);
-                conv_i32(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
+                conv_i32(reg(&cpu, r_target), type, reg(&cpu, r_left));
                 size = 1 + 6;
                 break;
             case OPC_Conv_f64:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 type = get_int(instr->args, 2);
-                conv_f64(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
+                conv_f64(reg(&cpu, r_target), type, reg(&cpu, r_left));
                 size = 1 + 6;
                 break;
             case OPC_Conv_u8:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 type = get_int(instr->args, 2);
-                conv_u8(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
+                conv_u8(reg(&cpu, r_target), type, reg(&cpu, r_left));
                 size = 1 + 6;
                 break;
             case OPC_Conv_ref:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 type = get_int(instr->args, 2);
-                conv_ref(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
+                conv_ref(reg(&cpu, r_target), type, reg(&cpu, r_left));
                 size = 1 + 6;
                 break;
             case OPC_Conv_ptr:
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 type = get_int(instr->args, 2);
-                conv_ptr(&reg(&cpu)[r_target], type, &reg(&cpu)[r_left]);
+                conv_ptr(reg(&cpu, r_target), type, reg(&cpu, r_left));
                 size = 1 + 6;
                 break;
 
@@ -679,7 +712,7 @@ void execute(const byte_t *code,
             case OPC_NewObj:
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu)[r_target].ref = alloc_obj(&cpu.heap, addr);
+                reg(&cpu, r_target)->ref = alloc_obj(&cpu.heap, addr);
                 size = 1 + 5;
                 break;
 
@@ -688,31 +721,31 @@ void execute(const byte_t *code,
             case OPC_NewArr_i32:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
-                reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_Int32, reg(&cpu)[r_addr].i32);
+                reg(&cpu, r_target)->ref = alloc_array(&cpu.heap, TYPE_Int32, reg(&cpu, r_addr)->i32);
                 size = 1 + 2;
                 break;
             case OPC_NewArr_f64:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
-                reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_Float64, reg(&cpu)[r_addr].i32);
+                reg(&cpu, r_target)->ref = alloc_array(&cpu.heap, TYPE_Float64, reg(&cpu, r_addr)->i32);
                 size = 1 + 2;
                 break;
             case OPC_NewArr_u8:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
-                reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_Unsigned8, reg(&cpu)[r_addr].i32);
+                reg(&cpu, r_target)->ref = alloc_array(&cpu.heap, TYPE_Unsigned8, reg(&cpu, r_addr)->i32);
                 size = 1 + 2;
                 break;
             case OPC_NewArr_ref:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
-                reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_Ref, reg(&cpu)[r_addr].i32);
+                reg(&cpu, r_target)->ref = alloc_array(&cpu.heap, TYPE_Ref, reg(&cpu, r_addr)->i32);
                 size = 1 + 2;
                 break;
             case OPC_NewArr_ptr:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
-                reg(&cpu)[r_target].ref = alloc_array(&cpu.heap, TYPE_NativePtr, reg(&cpu)[r_addr].i32);
+                reg(&cpu, r_target)->ref = alloc_array(&cpu.heap, TYPE_NativePtr, reg(&cpu, r_addr)->i32);
                 size = 1 + 2;
                 break;
 

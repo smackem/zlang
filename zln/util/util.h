@@ -12,8 +12,12 @@
 
 #ifdef NDEBUG
 #define INLINE inline
+#define trace (void)
+#define ftrace (void)
 #else
 #define INLINE
+#define trace printf
+#define ftrace fprintf
 #endif
 
 #define zero_memory(b, len) memset(b, 0, len)

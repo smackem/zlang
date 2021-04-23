@@ -79,7 +79,7 @@ addr_t alloc_obj(Heap *heap, addr_t type_meta_const_addr) {
     return alloc_chunk(heap, sizeof_instance(type_meta), type_meta_const_addr | HEAP_ENTRY_TYPE_META_FLAG);
 }
 
-INLINE addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
+addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
     const HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     assert_that(entry_addr !=0, "null reference error");
     assert_that(offset < heap_entry_data_size(heap, entry), "field address out of bounds");

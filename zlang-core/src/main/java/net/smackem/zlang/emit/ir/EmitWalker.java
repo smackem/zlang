@@ -79,10 +79,20 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         enterFunction(function, this.instructions);
         this.functions.add(this.currentFunction);
         super.visitFunctionDecl(ctx);
-        emit(function.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
+        if (currentFunctionEndsWithReturn() == false) {
+            emit(function.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
+        }
         popScope();
         this.currentFunction = null;
         return null;
+    }
+
+    private boolean currentFunctionEndsWithReturn() {
+        if (this.currentInstructions.isEmpty()) {
+            return false;
+        }
+        final Instruction instr = this.currentInstructions.get(this.currentInstructions.size() - 1);
+        return instr.opCode() == OpCode.Ret || instr.opCode() == OpCode.Halt;
     }
 
     @Override
@@ -218,6 +228,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                     this.currentFunction.type(), value.type()));
         }
         emit(OpCode.Mov, Register.R000, value.register);
+        emit(this.currentFunction.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
         freeRegister(value.register);
         return null;
     }

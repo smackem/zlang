@@ -26,7 +26,6 @@ void test01(byte_t *code, MemoryLayout *memory) {
     // globals
     const addr_t glb_i0 = 0;
     const addr_t glb_i1 = 4;
-    memory->global_segment_size = 8;
 
     // code
     byte_t *code_ptr = code;
@@ -41,7 +40,7 @@ void test01(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i0), 300, "i0");
     assert_equal(get_int(global_segment, glb_i1), 200, "i1");
 }
@@ -57,12 +56,10 @@ void test02(byte_t *code, MemoryLayout *memory) {
     const addr_t const_f2 = 8;
     set_float(memory->base, const_f1, 1000.125);
     set_float(memory->base, const_f2, 123.5);
-    memory->const_segment_size = 16;
 
     // globals
     const addr_t glb_f1 = 0;
     const addr_t glb_f2 = 8;
-    memory->global_segment_size = 16;
 
     // code
     byte_t *code_ptr = code;
@@ -76,7 +73,7 @@ void test02(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
     assert_equal(get_float(global_segment, glb_f2), 123.5, "f2");
 }
@@ -92,7 +89,6 @@ void test03(byte_t *code, MemoryLayout *memory) {
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
     const addr_t glb_i3 = 8;
-    memory->global_segment_size = 12;
 
     // code
     byte_t *code_ptr = code;
@@ -114,7 +110,7 @@ void test03(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 70, "i1");
     assert_equal(get_int(global_segment, glb_i2), 3000, "i2");
     assert_equal(get_int(global_segment, glb_i3), 3, "i3");
@@ -128,7 +124,6 @@ void test03(byte_t *code, MemoryLayout *memory) {
 void test04(byte_t *code, MemoryLayout *memory) {
     // globals
     const addr_t glb_i1 = 0;
-    memory->global_segment_size = 4;
 
     // code
     byte_t *code_ptr = code;
@@ -150,7 +145,7 @@ void test04(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 100, "i1");
 }
 
@@ -164,7 +159,6 @@ void test05(byte_t *code, MemoryLayout *memory) {
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
     const addr_t glb_i3 = 8;
-    memory->global_segment_size = 12;
 
     // code
     byte_t *code_ptr = code;
@@ -190,7 +184,7 @@ void test05(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), false, "i1");
     assert_equal(get_int(global_segment, glb_i2), true, "i2");
     assert_equal(get_int(global_segment, glb_i3), true, "i3");
@@ -205,14 +199,12 @@ void test06(byte_t *code, MemoryLayout *memory) {
     // constants
     const addr_t const_f1 = 0;
     set_float(memory->base, const_f1, 1000.125);
-    memory->const_segment_size = 8;
 
     // globals
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
     const addr_t glb_i3 = 8;
     const addr_t glb_f1 = 12;
-    memory->global_segment_size = 20;
 
     // code
     byte_t *code_ptr = code;
@@ -239,7 +231,7 @@ void test06(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 0xab, "i1");
     assert_equal(get_float(global_segment, glb_f1), 123.0, "f1");
     assert_equal(get_int(global_segment, glb_i2), 1000, "i2");
@@ -256,7 +248,6 @@ void test07(byte_t *code, MemoryLayout *memory) {
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
     const addr_t glb_i3 = 8;
-    memory->global_segment_size = 12;
 
     // code
     byte_t *code_ptr = code;
@@ -282,8 +273,8 @@ void test07(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
-    const byte_t *heap_segment = global_segment + memory->global_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
+    const byte_t *heap_segment = heap_segment_addr(memory);
     const HeapEntry *entry1 = (HeapEntry *) (heap_segment + get_int(global_segment, glb_i1));
     assert_equal(entry1->header, TYPE_Int32, "heap_entry_1.header");
     assert_equal(entry1->data_size, 40, "heap_entry_1.data_size");
@@ -323,7 +314,6 @@ void test08(byte_t *code, MemoryLayout *memory) {
 #pragma clang diagnostic ignored "-Warray-bounds"
     test08_meta->field_types[4] = 0;
 #pragma clang diagnostic pop
-    memory->const_segment_size = sizeof(TypeMeta) + 1 + 8; // const_f1 + type_meta with one excess field
 
     // globals
     const addr_t glb_i1 = 0;
@@ -331,7 +321,6 @@ void test08(byte_t *code, MemoryLayout *memory) {
     const addr_t glb_f1 = 8;
     const addr_t glb_b1 = 16;
     const addr_t glb_ts1 = 17;
-    memory->global_segment_size = 21;
 
     // code
     byte_t *code_ptr = code;
@@ -370,8 +359,8 @@ void test08(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
-    const byte_t *heap_segment = global_segment + memory->global_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
+    const byte_t *heap_segment = heap_segment_addr(memory);
     const struct test08_struct expected_struct = {
             .i = 123,
             .ref = 234,
@@ -396,7 +385,6 @@ void test08(byte_t *code, MemoryLayout *memory) {
 void test09(byte_t *code, MemoryLayout *memory) {
     // globals
     const addr_t glb_i1 = 0;
-    memory->global_segment_size = 4;
 
     // code
     byte_t *code_ptr = code;
@@ -432,7 +420,7 @@ void test09(byte_t *code, MemoryLayout *memory) {
     execute(code, &entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 100, "i1");
 }
 
@@ -447,12 +435,10 @@ void test10(byte_t *code, MemoryLayout *memory) {
     FunctionMeta *func_meta = (FunctionMeta *) memory->base;
     zero_memory(func_meta, sizeof(FunctionMeta));
     strcpy(func_meta->name, "func1");
-    memory->const_segment_size = sizeof(FunctionMeta);
 
     // globals
     const addr_t glb_i1 = 0;
     const addr_t glb_i2 = 4;
-    memory->global_segment_size = 8;
 
     // code
     byte_t *code_ptr = code;
@@ -476,7 +462,7 @@ void test10(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 0x123, "i1");
     assert_equal(get_int(global_segment, glb_i2), 0x234, "i2");
 }
@@ -494,11 +480,9 @@ void test11(byte_t *code, MemoryLayout *memory) {
     zero_memory(func_meta, sizeof(FunctionMeta));
     func_meta->ret_type = TYPE_Int32;
     strcpy(func_meta->name, "func1");
-    memory->const_segment_size = sizeof(FunctionMeta);
 
     // globals
     const addr_t glb_i1 = 0;
-    memory->global_segment_size = 4;
 
     // code
     byte_t *code_ptr = code;
@@ -518,7 +502,7 @@ void test11(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 0x123, "i1");
 }
 
@@ -537,12 +521,10 @@ void test12(byte_t *code, MemoryLayout *memory) {
     func_meta->ret_type = TYPE_Ref;
     func_meta->arg_count = 2;
     strcpy(func_meta->name, "func1");
-    memory->const_segment_size = 8 + sizeof(FunctionMeta);
 
     // globals
     const addr_t glb_i1 = 0;
     const addr_t glb_f1 = 4;
-    memory->global_segment_size = 12;
 
     // code
     byte_t *code_ptr = code;
@@ -566,7 +548,7 @@ void test12(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 0x123 * 2, "i1");
     assert_equal(get_float(global_segment, glb_f1), 1000.125, "f1");
 }
@@ -597,7 +579,6 @@ void test13(byte_t *code, MemoryLayout *memory) {
     func2_meta->ret_type = TYPE_Int32;
     func2_meta->arg_count = 1;
     strcpy(func2_meta->name, "func2");
-    memory->const_segment_size = 8 + sizeof(FunctionMeta) * 2;
 
     /*
      * main() {
@@ -615,7 +596,6 @@ void test13(byte_t *code, MemoryLayout *memory) {
 
     // globals
     const addr_t glb_i1 = 0;
-    memory->global_segment_size = 4;
 
     // code
     byte_t *code_ptr = code;
@@ -651,7 +631,7 @@ void test13(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 0x46 + 1000, "i1");
 }
 
@@ -668,7 +648,6 @@ void test14(byte_t *code, MemoryLayout *memory) {
     func_meta->ret_type = TYPE_Int32;
     func_meta->arg_count = 1;
     strcpy(func_meta->name, "func1");
-    memory->const_segment_size = 8 + sizeof(FunctionMeta);
 
     /*
      * main() {
@@ -685,7 +664,6 @@ void test14(byte_t *code, MemoryLayout *memory) {
 
     // globals
     const addr_t glb_i1 = 0;
-    memory->global_segment_size = 4;
 
     // code
     byte_t *code_ptr = code;
@@ -714,7 +692,7 @@ void test14(byte_t *code, MemoryLayout *memory) {
     execute(code, &default_entry_point, memory, &config);
 
     // assert
-    const byte_t *global_segment = memory->base + memory->const_segment_size;
+    const byte_t *global_segment = global_segment_addr(memory);
     assert_equal(get_int(global_segment, glb_i1), 10, "i1");
 }
 
@@ -761,11 +739,11 @@ static const struct test {
         { .proc = NULL },
 };
 
-static byte_t heap_memory[1024];
-static byte_t code_memory[1024];
+static byte_t memory_segment[64 * 1024];
+static byte_t code_segment[1024];
 
 int main() {
-    MemoryLayout heap;
+    MemoryLayout memory;
     fprintf(stdout, "zln_test v%d.%d\n", zln_VERSION_MAJOR, zln_VERSION_MINOR);
     fprintf(stdout, "RemoveRef=%d\n", OPC_RemoveRef);
     fprintf(stdout, ">>> running tests...\n");
@@ -773,12 +751,16 @@ int main() {
 
     for (const struct test *test_ptr = tests; test_ptr->proc != NULL; test_ptr++, n++) {
         fprintf(stdout, "%d) %s\n", n, test_ptr->name);
-        zero_memory(heap_memory, sizeof(heap_memory));
-        zero_memory(code_memory, sizeof(code_memory));
-        zero_memory(&heap, sizeof(heap));
-        heap.base = heap_memory;
-        heap.total_size = sizeof(heap_memory);
-        test_ptr->proc(code_memory, &heap);
+        zero_memory(memory_segment, sizeof(memory_segment));
+        zero_memory(code_segment, sizeof(code_segment));
+        zero_memory(&memory, sizeof(memory));
+        memory.base = memory_segment;
+        memory.total_size = sizeof(memory_segment);
+        memory.const_segment_size = 1024;
+        memory.global_segment_size = 1024;
+        memory.register_segment_size = config.register_count * config.max_stack_depth * sizeof(Register);
+        memory.stack_frame_segment_size = config.max_stack_depth * sizeof(StackFrame);
+        test_ptr->proc(code_segment, &memory);
         config.debug_callback = NULL;
     }
 

@@ -20,7 +20,8 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class InterpreterTest {
-    private static final int defaultHeapSize = 1024;
+    private static final int heapSize = 1024;
+    private static final int maxStackDepth = 16;
 
     @Test
     public void minimal() throws Exception {
@@ -393,19 +394,23 @@ public class InterpreterTest {
     }
 
     @Test
-    @Ignore("implement when control flow is done")
     public void recursiveFunctionCalls() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var a: int
+
                 fn recurse(x: int) -> int {
-                    return recurse(x + 1)
+                    if x >= 10 {
+                        return 10
+                    }
+                    return x + recurse(x + 1)
                 }
+
                 fn main() {
                     a = recurse(1)
                 }
                 """);
         final Map<String, Object> globals = run(modules);
-        assertThat(globals.get("a")).isEqualTo(1);
+        assertThat(globals.get("a")).isEqualTo(55);
     }
 
     @Test
@@ -625,9 +630,9 @@ public class InterpreterTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, defaultHeapSize);
+        final ByteBuffer zl = writer.writeProgram(program, heapSize, maxStackDepth);
         assertThat(zl.isDirect()).isTrue();
-        assertThat(zl.capacity()).isGreaterThan(defaultHeapSize);
+        assertThat(zl.capacity()).isGreaterThan(heapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
         return Interpreter.run(zl, program);
