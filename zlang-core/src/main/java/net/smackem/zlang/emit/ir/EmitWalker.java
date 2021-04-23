@@ -80,6 +80,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         this.functions.add(this.currentFunction);
         super.visitFunctionDecl(ctx);
         if (currentFunctionEndsWithReturn() == false) {
+            if (this.currentFunction.type() != null) {
+                return logLocalError(ctx, "function must return a value");
+            }
             emit(function.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
         }
         popScope();
@@ -282,6 +285,35 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         ctx.block().accept(this);
         exitLabel.setTarget(emitNop());
         return null;
+    }
+
+    @Override
+    public Value visitExpr(ZLangParser.ExprContext ctx) {
+        if (ctx.If() != null) {
+            Label elseLabel = addLabel();
+            Label exitLabel = addLabel();
+            final Value condition = ctx.conditionalOrExpr(1).accept(this);
+            if (condition.type != BuiltInTypeSymbol.BOOL) {
+                return logLocalError(ctx, "if condition is not of type bool, but " + condition.type);
+            }
+            emitBranch(condition.register, elseLabel);
+            final Register target = allocFreedRegister(condition.register);
+            final Value result = ctx.conditionalOrExpr(0).accept(this);
+            emit(OpCode.Mov, target, result.register);
+            freeRegister(result.register);
+            emitBranch(exitLabel);
+            final int alternativeIndex = this.currentInstructions.size();
+            final Value alternative = ctx.expr().accept(this);
+            if (Objects.equals(result.type, alternative.type) == false) {
+                return logLocalError(ctx, "incompatible types in ternary expression");
+            }
+            emit(OpCode.Mov, target, alternative.register);
+            freeRegister(alternative.register);
+            elseLabel.setTarget(this.currentInstructions.get(alternativeIndex));
+            exitLabel.setTarget(emitNop());
+            return value(target, result.type);
+        }
+        return ctx.conditionalOrExpr(0).accept(this);
     }
 
     @Override
@@ -837,7 +869,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         return label;
     }
 
-    public record Value(Register register, Type type) { }
+    static record Value(Register register, Type type) { }
 
     private Value logLocalError(ParserRuleContext ctx, String message) {
         logSemanticError(ctx, message);

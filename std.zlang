@@ -28,6 +28,8 @@ fn Int32::value() -> int {
     return self.value
 }
 
+fn Int32::value() -> int is self.value
+
 fn Int32::equals(other: object) -> bool {
     let x: Int32 = (Int32) other
     return x.value == self.value if x != nil else false

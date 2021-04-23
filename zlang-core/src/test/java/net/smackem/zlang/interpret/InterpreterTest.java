@@ -625,6 +625,42 @@ public class InterpreterTest {
         assertThat(globals.get("number")).isEqualTo(123);
     }
 
+    @Test
+    public void ternaryExpr() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var numberA: int
+                var numberB: int
+                fn main() {
+                    let one: int = 1
+                    let two: int = 2
+                    let zero: int = 0
+                    let val1: int = 123
+                    numberA = val1 if one < two else zero
+                    numberB = zero if one > two else 321
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("numberA")).isEqualTo(123);
+        assertThat(globals.get("numberB")).isEqualTo(321);
+    }
+
+    @Test
+    public void recursiveFunctionCallWithTernary() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var a: int
+
+                fn recurse(x: int) -> int {
+                    return 10 if x >= 10 else x + recurse(x + 1)
+                }
+
+                fn main() {
+                    a = recurse(1)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("a")).isEqualTo(55);
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
