@@ -626,6 +626,69 @@ public class InterpreterTest {
     }
 
     @Test
+    public void ifElse() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var numberA: int
+                var numberB: int
+                fn main() {
+                    let delta: int = 1
+                    if delta > 0 {
+                        numberA = 123
+                    } else {
+                        numberB = 666
+                    }
+                    if delta < 0 {
+                        numberB = 666
+                    } else {
+                        numberB = 234
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("numberA")).isEqualTo(123);
+        assertThat(globals.get("numberB")).isEqualTo(234);
+    }
+
+    @Test
+    public void ifElseIf() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var numberA: int
+                var numberB: int
+                var numberC: int
+                fn main() {
+                    var delta: int
+                    if delta == 0 {
+                        numberA = 123
+                    } else if delta == 1 {
+                        numberA = 0
+                    } else {
+                        numberA = -1
+                    }
+                    delta = 1
+                    if delta == 0 {
+                        numberB = 0
+                    } else if delta == 1 {
+                        numberB = 234
+                    } else {
+                        numberB = -1
+                    }
+                    delta = 2
+                    if delta == 0 {
+                        numberC = 0
+                    } else if delta == 1 {
+                        numberC = 0
+                    } else {
+                        numberC = 345
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("numberA")).isEqualTo(123);
+        assertThat(globals.get("numberB")).isEqualTo(234);
+        assertThat(globals.get("numberC")).isEqualTo(345);
+    }
+
+    @Test
     public void ternaryExpr() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var numberA: int

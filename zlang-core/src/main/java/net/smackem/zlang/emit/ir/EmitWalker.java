@@ -276,15 +276,29 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     @Override
     public Value visitIfStmt(ZLangParser.IfStmtContext ctx) {
         final Label exitLabel = addLabel();
-        final Value condition = ctx.expr().accept(this);
-        if (condition.type != BuiltInTypeSymbol.BOOL) {
-            return logLocalError(ctx, "if condition is not of type bool, but " + condition.type);
+        emitIfBranch(ctx.expr(), ctx.block(), exitLabel);
+        for (final var elseIf : ctx.elseIfClause()) {
+            emitIfBranch(elseIf.expr(), elseIf.block(), exitLabel);
         }
-        emitBranch(condition.register, exitLabel);
-        freeRegister(condition.register);
-        ctx.block().accept(this);
+        if (ctx.elseClause() != null) {
+            ctx.elseClause().block().accept(this);
+        }
         exitLabel.setTarget(emitNop());
         return null;
+    }
+
+    private void emitIfBranch(ZLangParser.ExprContext expr, ZLangParser.BlockContext block, Label exitLabel) {
+        final Label skipLabel = addLabel();
+        final Value condition = expr.accept(this);
+        if (condition.type != BuiltInTypeSymbol.BOOL) {
+            logLocalError(expr, "if condition is not of type bool, but " + condition.type);
+            return;
+        }
+        emitBranch(condition.register, skipLabel);
+        freeRegister(condition.register);
+        block.accept(this);
+        emitBranch(exitLabel);
+        skipLabel.setTarget(emitNop());
     }
 
     @Override
@@ -313,6 +327,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             exitLabel.setTarget(emitNop());
             return value(target, result.type);
         }
+
         return ctx.conditionalOrExpr(0).accept(this);
     }
 
