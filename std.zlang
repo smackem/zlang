@@ -40,11 +40,16 @@ fn Int32::compareTo(other: object) -> int {
     return self.value - x.value if x != nil else panic("other is not integer")
 }
 
-fn box_int(value: int) -> Int32 {
+struct IntMethods {}
+let Ints: IntMethods = new IntMethods{}
+
+fn IntMethods::box(value: int) -> Int32 {
     return new Int32 {
         value: value
     }
 }
+
+let i: Int = Ints.box(21)
 
 struct Float64 {
     value: float
@@ -58,3 +63,9 @@ fn Float64::equals(other: object) {
     let x: Float64 = (Float64) other
     return x.value == self.value if x != nil else false
 }
+
+let integerList: int<> = new int<> { 1, 2, 3 }
+let floatSet: set<float> = set<float>(new float[] { 1.0, 2.0, 3.0, 1.0 })
+let dictionary: map<string, int> = map<string, int>()
+
+new list<int>

@@ -602,7 +602,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         emit(OpCode.Call, retValRegister, argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0), function);
-        freeRegister(retValRegister); // this does nothing if it's R0
         freeRegister(argRegisters.toArray(new Register[0]));
         return function.type() != null
                 ? value(retValRegister, function.type())

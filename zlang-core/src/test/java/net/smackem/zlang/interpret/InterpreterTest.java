@@ -11,7 +11,6 @@ import net.smackem.zlang.modules.SourceFileLocations;
 import net.smackem.zlang.symbols.GlobalScope;
 import net.smackem.zlang.symbols.ProgramStructure;
 import net.smackem.zlang.symbols.SymbolExtractor;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -712,12 +711,12 @@ public class InterpreterTest {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var a: int
 
-                fn recurse(x: int) -> int {
-                    return 10 if x >= 10 else x + recurse(x + 1)
+                fn fib(x: int) -> int {
+                    return 0 if x <= 0 else 1 if x <= 2 else fib(x - 2) + fib(x - 1)
                 }
 
                 fn main() {
-                    a = recurse(1)
+                    a = fib(10)
                 }
                 """);
         final Map<String, Object> globals = run(modules);
