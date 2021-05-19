@@ -148,24 +148,24 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         return null;
     }
 
-    private void emitIdentAssign(ParserRuleContext ctx, String ident, Value rvalue, boolean init) {
+    private VariableSymbol emitIdentAssign(ParserRuleContext ctx, String ident, Value rvalue, boolean init) {
         final Symbol symbol = currentScope().resolve(ident);
         if (symbol == null) {
             logLocalError(ctx, "'" + ident + "' is not defined in this context");
-            return;
+            return null;
         }
         if (symbol instanceof VariableSymbol == false) {
             logLocalError(ctx, "'" + ident + "' is not a variable");
-            return;
+            return null;
         }
         final VariableSymbol variable = (VariableSymbol) symbol;
         if (init == false && variable.isAssignable() == false) {
             logLocalError(ctx, "'" + ident + "' is not assignable");
-            return;
+            return null;
         }
         if (Types.isAssignable(variable.type(), rvalue.type) == false) {
             logLocalError(ctx, "incompatible types in assignment");
-            return;
+            return null;
         }
         if (variable.isGlobal()) {
             emit(OpCode.stGlb(symbol.type()), rvalue.register, symbol.address());
@@ -173,6 +173,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             emit(OpCode.Mov, Register.fromNumber(symbol.address()), rvalue.register);
         }
         freeRegister(rvalue.register);
+        return variable;
     }
 
     public void emitPostFixedPrimaryAssign(ZLangParser.PostFixedPrimaryContext ctx, Value rvalue) {
@@ -299,6 +300,47 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         block.accept(this);
         emitBranch(exitLabel);
         skipLabel.setTarget(emitNop());
+    }
+
+    @Override
+    public Value visitForRangeStmt(ZLangParser.ForRangeStmtContext ctx) {
+        final List<ZLangParser.ExprContext> rangeExpr = ctx.range().expr();
+        final Value from = rangeExpr.get(0).accept(this);
+        final Value to;
+        final Value step;
+        if (rangeExpr.size() >= 3) {
+            to = rangeExpr.get(2).accept(this);
+            step = rangeExpr.get(1).accept(this);
+        } else {
+            to = rangeExpr.get(1).accept(this);
+            final Register r = allocFreedRegister();
+            emit(OpCode.Ldc_i32, r, 1);
+            step = value(r, BuiltInTypeSymbol.INT);
+        }
+        if (from.type != BuiltInTypeSymbol.INT) {
+            return logLocalError(ctx, "lower bound in for statement must be of type int");
+        }
+        if (to.type != BuiltInTypeSymbol.INT) {
+            return logLocalError(ctx, "upper bound in for statement must be of type int");
+        }
+        if (step.type != BuiltInTypeSymbol.INT) {
+            return logLocalError(ctx, "step in for statement must be of type int");
+        }
+        final VariableSymbol index = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), from, true);
+        assert index != null && index.isGlobal() == false;
+        final Register indexRegister = Register.fromNumber(index.address());
+        final Label loopLabel = addLabel();
+        final Label exitLabel = addLabel();
+        final Register condRegister = allocFreedRegister();
+        emit(OpCode.Lt_i32, condRegister, indexRegister, to.register);
+        loopLabel.setTarget(this.currentInstructions.get(this.currentInstructions.size() - 1));
+        emitBranch(condRegister, exitLabel);
+        ctx.block().accept(this);
+        emit(OpCode.Add_i32, indexRegister, indexRegister, step.register);
+        emitBranch(loopLabel);
+        exitLabel.setTarget(emitNop());
+        freeRegister(from.register, to.register, step.register);
+        return null;
     }
 
     @Override

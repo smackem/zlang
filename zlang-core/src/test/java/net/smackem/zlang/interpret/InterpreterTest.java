@@ -723,6 +723,22 @@ public class InterpreterTest {
         assertThat(globals.get("a")).isEqualTo(55);
     }
 
+    @Test
+    public void forRangeStmt() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var a: int
+                fn main() {
+                    var n: int
+                    for i: int in 0 .. 10 {
+                        n = n + i
+                    }
+                    a = n
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("a")).isEqualTo(45);
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
