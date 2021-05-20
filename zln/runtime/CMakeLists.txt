@@ -1,5 +1,0 @@
-add_library(runtime runtime.c)
-
-include_directories(
-        "${PROJECT_SOURCE_DIR}/util"
-)

@@ -689,7 +689,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Type elementType = resolveType(ctx.type());
         final Register target = allocFreedRegister(size.register);
         emit(OpCode.newArr(elementType), target, size.register);
-        return new Value(target, new ArrayType(elementType));
+        return new Value(target, new ArrayType(globalScope(), elementType));
     }
 
     @Override

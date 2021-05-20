@@ -299,6 +299,13 @@ enum op_code {
      *      decrement reference count for object at r_heap_addr
      */
     OPC_RemoveRef,
+
+    /**
+     * invoke(REG r_target, REG r_first_arg, INT internal_func_id):
+     *      invoke built-in function at internal_func_id, passing arguments starting at r_first_arg
+     *      store result in r_target
+     */
+    OPC_Invoke,
 };
 
 typedef byte_t OpCode;

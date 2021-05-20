@@ -4,14 +4,7 @@
 
 #include <memory.h>
 #include <stdio.h>
-#include "cpu.h"
-
-typedef struct cpu {
-    CallStack call_stack;
-    const byte_t *const_segment;
-    byte_t *global_segment;
-    Heap heap;
-} Cpu;
+#include "runtime.h"
 
 void conv_i32(Register *target, Type target_type, const Register *source);
 void conv_f64(Register *target, Type target_type, const Register *source);
@@ -664,6 +657,13 @@ void execute(const byte_t *code,
                 break;
             case OPC_Ret:
                 exec_return(&cpu, &pc);
+                break;
+            case OPC_Invoke:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                value = get_addr(instr->args, 2);
+                invoke(value, &cpu, reg(&cpu, r_target), reg(&cpu, r_left));
+                size = 1 + 6;
                 break;
             case OPC_Halt:
                 free_cpu(&cpu);

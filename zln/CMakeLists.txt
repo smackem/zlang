@@ -10,14 +10,12 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_VERBOSE_MAKEFILE on)
 
 # child projects
-add_subdirectory(runtime)
 add_subdirectory(util)
 add_subdirectory(vm)
 
 # reference libraries common to all targets
 link_libraries(
         util
-        runtime
         vm
 )
 
@@ -25,7 +23,6 @@ link_libraries(
 include_directories(
         "${PROJECT_BINARY_DIR}"
         "${PROJECT_SOURCE_DIR}/util"
-        "${PROJECT_SOURCE_DIR}/runtime"
         "${PROJECT_SOURCE_DIR}/vm"
 )
 

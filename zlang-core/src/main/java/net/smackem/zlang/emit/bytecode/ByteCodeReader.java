@@ -58,15 +58,6 @@ public class ByteCodeReader {
             final int value = buf.getInt(index);
             return value == 0 ? null : value; // usually, only nil has the base type OBJECT
         }
-        if (type instanceof Scope scope) {
-            final int ref = buf.getInt(index);
-            if (ref == 0) {
-                return null;
-            }
-            final Map<String, Object> obj = new HashMap<>();
-            readObject(buf, heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE, heapOffset, scope.symbols(), obj);
-            return obj;
-        }
         if (type instanceof ArrayType) {
             final int ref = buf.getInt(index);
             if (ref == 0) {
@@ -78,6 +69,15 @@ public class ByteCodeReader {
             final int count = dataSize / elementType.byteSize();
             final int arrayOffset = heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE;
             return readArray(buf, arrayOffset, elementType, count);
+        }
+        if (type instanceof Scope scope) {
+            final int ref = buf.getInt(index);
+            if (ref == 0) {
+                return null;
+            }
+            final Map<String, Object> obj = new HashMap<>();
+            readObject(buf, heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE, heapOffset, scope.symbols(), obj);
+            return obj;
         }
         throw new UnsupportedOperationException("unsupported type '" + type + "'");
     }

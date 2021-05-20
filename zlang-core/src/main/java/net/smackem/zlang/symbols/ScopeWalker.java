@@ -9,15 +9,21 @@ import java.util.Map;
 
 public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
     private final Map<ParserRuleContext, Scope> scopes;
+    private final GlobalScope globalScope;
     private Scope currentScope;
 
     protected ScopeWalker(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
+        this.globalScope = globalScope;
         this.currentScope = globalScope;
         this.scopes = scopes;
     }
 
-    protected Scope currentScope() {
+    protected final Scope currentScope() {
         return this.currentScope;
+    }
+
+    protected final GlobalScope globalScope() {
+        return this.globalScope;
     }
 
     protected void enterScope(ParserRuleContext ctx) {
@@ -63,7 +69,7 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
             return null;
         }
         for (final var ignored : ctx.LBracket()) {
-            type = new ArrayType(type);
+            type = new ArrayType(this.globalScope, type);
         }
         return type;
     }

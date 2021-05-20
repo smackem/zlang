@@ -1,12 +1,16 @@
 package net.smackem.zlang.symbols;
 
+import net.smackem.zlang.lang.CompilationErrorException;
+
 import java.util.Objects;
 
-public class ArrayType implements Type {
+public class ArrayType extends AggregateTypeSymbol {
     private final Type elementType;
 
-    public ArrayType(Type elementType) {
+    public ArrayType(GlobalScope enclosingScope, Type elementType) {
+        super(computeTypeName(elementType), enclosingScope);
         this.elementType = Objects.requireNonNull(elementType);
+        defineBuiltInMethods();
     }
 
     public Type elementType() {
@@ -15,7 +19,7 @@ public class ArrayType implements Type {
 
     @Override
     public String typeName() {
-        return "Array<" + this.elementType.typeName() + ">";
+        return computeTypeName(this.elementType);
     }
 
     @Override
@@ -46,5 +50,23 @@ public class ArrayType implements Type {
     @Override
     public BuiltInTypeSymbol primitive() {
         return BuiltInTypeSymbol.OBJECT;
+    }
+
+    @Override
+    public void define(String name, Symbol symbol) throws CompilationErrorException {
+        throw new UnsupportedOperationException("arrays cannot define new members");
+    }
+
+    private void defineBuiltInMethods() {
+        try {
+            defineBuiltInMethod(BuiltInTypeSymbol.INT, BuiltInFunction.ARRAY_LENGTH);
+            defineBuiltInMethod(this, BuiltInFunction.ARRAY_COPY, BuiltInTypeSymbol.INT, BuiltInTypeSymbol.INT);
+        } catch (CompilationErrorException e) {
+            throw new RuntimeException(e); // duplicate identifier -> programming error
+        }
+    }
+
+    private static String computeTypeName(Type elementType) {
+        return "Array<" + elementType.typeName() + ">";
     }
 }

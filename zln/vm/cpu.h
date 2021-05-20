@@ -97,6 +97,16 @@ typedef struct runtime_config {
 } RuntimeConfig;
 
 /**
+ * Internal type to hold the state of a virtual cpu
+ */
+typedef struct cpu {
+    CallStack call_stack;
+    const byte_t *const_segment;
+    byte_t *global_segment;
+    Heap heap;
+} Cpu;
+
+/**
  * Executes the given program.
  *
  * @param code
