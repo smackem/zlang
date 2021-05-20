@@ -7,6 +7,11 @@
 
 #include "cpu.h"
 
-void invoke(int32_t function_id, Cpu *cpu, Register *result, const Register *first_arg);
+typedef enum built_in_function {
+    BIF_ArrayLength = 1,
+    BIF_ArrayCopy,
+} BuiltInFunction;
+
+void invoke(BuiltInFunction function_id, Cpu *cpu, Register *result, const Register *first_arg);
 
 #endif //ZLN_RUNTIME_H

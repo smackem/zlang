@@ -24,7 +24,7 @@ static invocation_t invocations[] = {
         array_copy,
 };
 
-void invoke(int32_t function_id, Cpu *cpu, Register *result, const Register *first_arg) {
+void invoke(BuiltInFunction function_id, Cpu *cpu, Register *result, const Register *first_arg) {
     assert(function_id > 0);
     assert(function_id < sizeof(invocations) / sizeof(invocations[0]));
     invocations[function_id](cpu, result, first_arg);
