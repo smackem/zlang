@@ -39,7 +39,7 @@ typedef struct heap_entry {
     /// number of references to this entry. if 0, the entry can be cleared.
     uint32_t ref_count;
 
-    /// the data data_size in bytes
+    /// the data size in bytes
     uint32_t data_size;
 
     /// first data byte. actual number of bytes can be deducted from header.
@@ -130,6 +130,19 @@ addr_t alloc_obj(Heap *heap, addr_t type_meta_const_addr);
  * @return The heap address of the specified field or array cell.
  */
 addr_t get_field_addr(const Heap *heap, addr_t heap_addr, addr_t offset);
+
+/**
+ * Gets the heap entry at the specified address.
+ *
+ * @param heap
+ *      This heap.
+ *
+ * @param heap_addr
+ *      The address of the heap entry (array or object) to test.
+ *
+ * @return The heap entry at the specified address;
+ */
+HeapEntry *get_heap_entry(const Heap *heap, addr_t heap_addr);
 
 /**
  * Increments the reference count of an object stored on the heap.

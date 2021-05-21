@@ -744,14 +744,27 @@ public class InterpreterTest {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var a: int
                 var b: int
+                var t1: int[]
+                var t2: int[]
+                var c: int
                 fn main() {
-                    a = new byte[3].length()
+                    let source: int[] = new int[3]
+                    source[0] = 1
+                    source[1] = 2
+                    source[2] = 3
+                    a = source.length()
                     b = new float[0].length()
+                    t1 = source.copy(1, 2)
+                    t2 = source.copy(2, 10)
+                    c = t2.length()
                 }
                 """);
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("a")).isEqualTo(3);
         assertThat(globals.get("b")).isEqualTo(0);
+        assertThat(globals.get("c")).isEqualTo(10);
+        assertThat(globals.get("t1")).isEqualTo(new int[] { 2, 3 });
+        assertThat(globals.get("t2")).isEqualTo(new int[] { 3, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {

@@ -86,6 +86,10 @@ addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
     return entry_addr + offset + HEAP_ENTRY_HEADER_SIZE;
 }
 
+HeapEntry *get_heap_entry(const Heap *heap, addr_t heap_addr) {
+    return (HeapEntry *) &heap->memory[heap_addr];
+}
+
 uint32_t add_ref(Heap *heap, addr_t heap_addr) {
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
     return ++(entry->ref_count);
