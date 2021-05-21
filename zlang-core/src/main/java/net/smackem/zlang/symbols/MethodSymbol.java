@@ -12,9 +12,9 @@ public class MethodSymbol extends FunctionSymbol {
     public String toString() {
         return "MethodSymbol{" +
                "name=" + name() +
-               "returnType=" + type() +
-               "declaringType=" + enclosingScope() +
-               "parameters=" + symbols().stream()
+               ", returnType=" + type() +
+               ", declaringType=" + enclosingScope() +
+               ", parameters=" + symbols().stream()
                        .map(s -> s.name() + ':' + s.type().typeName())
                        .collect(Collectors.joining(", ")) +
                '}';

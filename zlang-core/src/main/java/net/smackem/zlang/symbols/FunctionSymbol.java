@@ -57,6 +57,10 @@ public class FunctionSymbol extends Symbol implements Scope {
                && symbols().isEmpty();
     }
 
+    public boolean isBuiltIn() {
+        return false;
+    }
+
     @Override
     public String toString() {
         return "FunctionSymbol{" +

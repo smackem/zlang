@@ -296,7 +296,14 @@ public enum OpCode {
      * remove_reference(REG r_heap_addr):
      *      decrement reference count for object at r_heap_addr
      */
-    RemoveRef(98);
+    RemoveRef(98),
+
+    /**
+     * invoke(REG r_target, REG r_first_arg, INT internal_func_id):
+     *      invoke built-in function at internal_func_id, passing arguments starting at r_first_arg
+     *      store result in r_target
+     */
+    Invoke(99);
 
     private final int code;
 

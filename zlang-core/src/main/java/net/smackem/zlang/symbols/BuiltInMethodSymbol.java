@@ -1,20 +1,13 @@
 package net.smackem.zlang.symbols;
 
-import java.util.Arrays;
-
 public class BuiltInMethodSymbol extends MethodSymbol {
-    BuiltInMethodSymbol(String name, Type type, MemberScope enclosingScope, int address) {
-        super(name, type, enclosingScope);
-        setAddress(address);
+    BuiltInMethodSymbol(BuiltInFunction bif, Type type, MemberScope definingTypeScope) {
+        super(bif.name(), type, definingTypeScope);
+        setAddress(bif.address());
     }
 
     @Override
-    public void setAddress(int address) {
-        // check that address is one of the known addresses for built-in functions
-        Arrays.stream(BuiltInFunction.values())
-                .filter(v -> v.address() == address)
-                .findFirst()
-                .orElseThrow();
-        super.setAddress(address);
+    public boolean isBuiltIn() {
+        return true;
     }
 }

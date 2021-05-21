@@ -78,6 +78,13 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
     }
 
     protected void defineBuiltInMethod(Type returnType, BuiltInFunction bif, Type... parameterTypes) throws CompilationErrorException {
-        this.symbolTable.define(bif.ident(), new BuiltInMethodSymbol(bif.ident(), returnType, this, bif.address()));
+        final BuiltInMethodSymbol method = new BuiltInMethodSymbol(bif, returnType, this);
+        int parameterIndex = 0;
+        method.define(SelfSymbol.IDENT, new SelfSymbol(this));
+        for (final Type parameterType : parameterTypes) {
+            final String parameterName = "p" + parameterIndex++;
+            method.define(parameterName, new ConstantSymbol(parameterName, parameterType, false));
+        }
+        this.symbolTable.define(bif.ident(), method);
     }
 }

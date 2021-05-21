@@ -105,6 +105,7 @@ static const char *const opcode_names[] = {
     "NewArr_ptr",
     "AddRef",
     "RemoveRef",
+    "Invoke",
 };
 
 static const char *const type_names[] = {
@@ -240,6 +241,7 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
                     get_int(instr->args, 0));
             return 1 + 4;
         case OPC_Call:
+        case OPC_Invoke:
             fprintf(f, "%12s r%d r%d %08x",
                     opcode_name(instr->opc),
                     get_byte(instr->args, 0),

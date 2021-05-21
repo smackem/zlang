@@ -1,8 +1,10 @@
 package net.smackem.zlang.symbols;
 
 public class SelfSymbol extends ConstantSymbol {
+    public static String IDENT = "self";
+
     SelfSymbol(Type type) {
-        super("self", type, false);
+        super(IDENT, type, false);
     }
 
     @Override

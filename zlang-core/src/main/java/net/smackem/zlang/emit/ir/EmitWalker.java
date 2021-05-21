@@ -643,7 +643,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             registerIndex++;
         }
 
-        emit(OpCode.Call, retValRegister, argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0), function);
+        emit(function.isBuiltIn() ? OpCode.Invoke : OpCode.Call, retValRegister,
+                argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0),
+                function);
         freeRegister(argRegisters.toArray(new Register[0]));
         return function.type() != null
                 ? value(retValRegister, function.type())
@@ -653,7 +655,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     @Override
     public Value visitPrimary(ZLangParser.PrimaryContext ctx) {
         if (ctx.Self() != null) {
-            final Symbol self = currentScope().resolve("self");
+            final Symbol self = currentScope().resolve(SelfSymbol.IDENT);
             if (self == null) {
                 return logLocalError(ctx, "self is not defined in this context");
             }

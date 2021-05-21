@@ -739,6 +739,21 @@ public class InterpreterTest {
         assertThat(globals.get("a")).isEqualTo(45);
     }
 
+    @Test
+    public void builtInArrayMethods() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var a: int
+                var b: int
+                fn main() {
+                    a = new byte[3].length()
+                    b = new float[0].length()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("a")).isEqualTo(3);
+        assertThat(globals.get("b")).isEqualTo(0);
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
