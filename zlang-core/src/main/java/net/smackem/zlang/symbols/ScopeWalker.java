@@ -68,8 +68,44 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
         if (type == null) {
             return null;
         }
-        for (final var ignored : ctx.LBracket()) {
-            type = new ArrayType(this.globalScope, type);
+        for (final var postfix : ctx.typePostfix()) {
+            if (postfix.LBracket() != null) {
+                type = defineArrayType(type);
+            } else if (postfix.List() != null) {
+                type = defineListType(type);
+            } else {
+                throw new UnsupportedOperationException("unknown type postfix");
+            }
+        }
+        return type;
+    }
+
+    protected ArrayType defineArrayType(Type elementType) {
+        final String arrayTypeName = ArrayType.typeName(elementType);
+        final Symbol resolvedListType = currentScope().resolve(arrayTypeName);
+        if (resolvedListType != null) {
+            return (ArrayType) resolvedListType;
+        }
+        final ArrayType type = new ArrayType(this.globalScope, elementType);
+        try {
+            globalScope().define(arrayTypeName, type);
+        } catch (CompilationErrorException e) {
+            throw new RuntimeException(e); // must not happen
+        }
+        return type;
+    }
+
+    protected ListType defineListType(Type elementType) {
+        final String listTypeName = ListType.typeName(elementType);
+        final Symbol resolvedListType = currentScope().resolve(listTypeName);
+        if (resolvedListType != null) {
+            return (ListType) resolvedListType;
+        }
+        final ListType type = new ListType(this.globalScope, defineArrayType(elementType));
+        try {
+            globalScope().define(listTypeName, type);
+        } catch (CompilationErrorException e) {
+            throw new RuntimeException(e); // must not happen
         }
         return type;
     }

@@ -98,7 +98,7 @@ class SymbolWalker extends ScopeWalker<Void> {
                 logSemanticError(p, "reference to undefined type " + symbol.type());
                 return null;
             }
-            fieldAddr += symbol.type().byteSize();
+            fieldAddr += symbol.type().primitive().byteSize();
         }
         assert fieldAddr == ((Type) currentScope()).byteSize();
         super.visitStructDecl(ctx);

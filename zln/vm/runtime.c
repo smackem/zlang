@@ -7,7 +7,7 @@
 
 typedef void (*invocation_t)(Cpu *cpu, Register *result, const Register *first_arg);
 
-static void array_length(Cpu *cpu, Register *result, const Register *first_arg) {
+static void array_size(Cpu *cpu, Register *result, const Register *first_arg) {
     const HeapEntry *entry = get_heap_entry(&cpu->heap, first_arg->ref);
     uint32_t element_size = sizeof_type(entry->header);
     result->i32 = (int32_t) (entry->data_size / element_size);
@@ -29,7 +29,7 @@ static void array_copy(Cpu *cpu, Register *result, const Register *first_arg) {
 
 static invocation_t invocations[] = {
         NULL,
-        array_length,
+        array_size,
         array_copy,
 };
 

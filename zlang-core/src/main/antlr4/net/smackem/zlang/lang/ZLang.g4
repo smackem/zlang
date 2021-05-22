@@ -40,7 +40,12 @@ returnType
     ;
 
 type
-    : Mutable? simpleType (LBracket RBracket)*
+    : Mutable? simpleType typePostfix*
+    ;
+
+typePostfix
+    : LBracket RBracket
+    | List
     ;
 
 simpleType
@@ -296,6 +301,7 @@ runtimeFunctionInvocation
 instanceCreation
     : structOrUnionInstanceCreation
     | arrayInstanceCreation
+    | listInstanceCreation
     ;
 
 structOrUnionInstanceCreation
@@ -308,6 +314,10 @@ fieldInitializer
 
 arrayInstanceCreation
     : New type LBracket expr RBracket
+    ;
+
+listInstanceCreation
+    : New type List LBrace arguments? RBrace
     ;
 
 literal
@@ -391,6 +401,7 @@ Union       : 'union';
 Mutable     : 'mutable';
 Runtime     : 'runtime';
 Interface   : 'interface';
+List        : 'list';
 
 number
     : (Plus | Minus)? (IntegerNumber | RealNumber)

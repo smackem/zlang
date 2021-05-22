@@ -15,12 +15,6 @@ public class StructSymbol extends AggregateTypeSymbol {
 
     @Override
     public int byteSize() {
-        int size = 0;
-        for (final Symbol symbol : symbols()) {
-            if (symbol instanceof FieldSymbol) {
-                size += symbol.type().byteSize();
-            }
-        }
-        return size;
+        return sumFieldSizes();
     }
 }

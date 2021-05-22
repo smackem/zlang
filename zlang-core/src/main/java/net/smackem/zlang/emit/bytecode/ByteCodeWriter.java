@@ -1,10 +1,7 @@
 package net.smackem.zlang.emit.bytecode;
 
 import net.smackem.zlang.emit.ir.*;
-import net.smackem.zlang.symbols.FunctionSymbol;
-import net.smackem.zlang.symbols.InterfaceSymbol;
-import net.smackem.zlang.symbols.StructSymbol;
-import net.smackem.zlang.symbols.Type;
+import net.smackem.zlang.symbols.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -113,10 +110,10 @@ public class ByteCodeWriter implements AutoCloseable {
                 this.constSegment.writeType(ifs);
             }
         }
-        // ... then structs
+        // ... then structs and lists
         for (final Type type : types) {
-            if (type instanceof StructSymbol struct) {
-                this.constSegment.writeType(struct);
+            if (type instanceof StructSymbol || type instanceof ListType) {
+                this.constSegment.writeType((AggregateTypeSymbol) type);
             }
         }
     }

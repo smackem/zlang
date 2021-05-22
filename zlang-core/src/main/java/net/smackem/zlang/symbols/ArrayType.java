@@ -7,8 +7,8 @@ import java.util.Objects;
 public class ArrayType extends AggregateTypeSymbol {
     private final Type elementType;
 
-    public ArrayType(GlobalScope enclosingScope, Type elementType) {
-        super(computeTypeName(elementType), enclosingScope);
+    public ArrayType(Scope enclosingScope, Type elementType) {
+        super(typeName(elementType), enclosingScope);
         this.elementType = Objects.requireNonNull(elementType);
         defineBuiltInMethods();
     }
@@ -17,9 +17,8 @@ public class ArrayType extends AggregateTypeSymbol {
         return this.elementType;
     }
 
-    @Override
-    public String typeName() {
-        return computeTypeName(this.elementType);
+    public static String typeName(Type elementType) {
+        return "Array<" + elementType.typeName() + ">";
     }
 
     @Override
@@ -43,30 +42,21 @@ public class ArrayType extends AggregateTypeSymbol {
     }
 
     @Override
-    public int byteSize() {
-        return BuiltInTypeSymbol.OBJECT.byteSize();
-    }
-
-    @Override
-    public BuiltInTypeSymbol primitive() {
-        return BuiltInTypeSymbol.OBJECT;
-    }
-
-    @Override
     public void define(String name, Symbol symbol) throws CompilationErrorException {
         throw new UnsupportedOperationException("arrays cannot define new members");
     }
 
+    @Override
+    public int byteSize() {
+        return BuiltInTypeSymbol.OBJECT.byteSize(); // dummy - array sizes are calculated inline on creation
+    }
+
     private void defineBuiltInMethods() {
         try {
-            defineBuiltInMethod(BuiltInTypeSymbol.INT, BuiltInFunction.ARRAY_LENGTH);
+            defineBuiltInMethod(BuiltInTypeSymbol.INT, BuiltInFunction.ARRAY_SIZE);
             defineBuiltInMethod(this, BuiltInFunction.ARRAY_COPY, BuiltInTypeSymbol.INT, BuiltInTypeSymbol.INT);
         } catch (CompilationErrorException e) {
             throw new RuntimeException(e); // duplicate identifier -> programming error
         }
-    }
-
-    private static String computeTypeName(Type elementType) {
-        return "Array<" + elementType.typeName() + ">";
     }
 }

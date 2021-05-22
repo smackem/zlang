@@ -4,11 +4,13 @@ module sample uses std, file, image
 
 struct File {
     handle: runtime_ptr
+    items: int list
 }
 
 fn file_open(path: string, mode: string) -> File {
     return new File {
         handle: runtime::fopen(path, mode)
+        items: new int list {}
     }
 }
 

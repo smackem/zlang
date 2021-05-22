@@ -691,7 +691,39 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Type elementType = resolveType(ctx.type());
         final Register target = allocFreedRegister(size.register);
         emit(OpCode.newArr(elementType), target, size.register);
-        return new Value(target, new ArrayType(globalScope(), elementType));
+        final Type arrayType = defineArrayType(elementType);
+        return new Value(target, arrayType);
+    }
+
+    @Override
+    public Value visitListInstanceCreation(ZLangParser.ListInstanceCreationContext ctx) {
+        final Type elementType = resolveType(ctx.type());
+        final Register target = allocFreedRegister();
+        final List<Register> registers = allocRegisterRange(2);
+        final Register sizeRegister = registers.get(0);
+        final Register arrayRegister = registers.get(1);
+        final ListType listType = defineListType(elementType);
+        emit(OpCode.NewObj, target, listType);
+        emit(OpCode.Ldc_i32, sizeRegister, 0);
+        emit(OpCode.stFld(elementType), sizeRegister, target, listType.sizeField().address());
+        emit(OpCode.Ldc_i32, sizeRegister, 16);
+        emit(OpCode.newArr(elementType), arrayRegister, sizeRegister);
+        emit(OpCode.stFld(listType.arrayType()), arrayRegister, target, listType.arrayField().address());
+        if (ctx.arguments() != null) {
+            final Symbol addFunction = listType.resolveMember(BuiltInFunction.LIST_ADD.ident());
+            emit(OpCode.Mov, registers.get(0), target);
+            assert addFunction != null;
+            for (final var expr : ctx.arguments().expr()) {
+                final Value value = expr.accept(this);
+                if (Types.isAssignable(elementType, value.type) == false) {
+                    return logLocalError(expr, "incompatible types in list element assignment");
+                }
+                emit(OpCode.Mov, registers.get(1), value.register);
+                emit(OpCode.Invoke, Register.R000, registers.get(0), addFunction);
+            }
+        }
+        freeRegisters(registers);
+        return new Value(target, listType);
     }
 
     @Override
@@ -763,6 +795,13 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     private void freeRegister(Register... registersToFree) {
+        for (final Register register : registersToFree) {
+            this.allocatedRegisters.remove(register);
+        }
+        log.info("allocated registers: {}", this.allocatedRegisters);
+    }
+
+    private void freeRegisters(List<Register> registersToFree) {
         for (final Register register : registersToFree) {
             this.allocatedRegisters.remove(register);
         }

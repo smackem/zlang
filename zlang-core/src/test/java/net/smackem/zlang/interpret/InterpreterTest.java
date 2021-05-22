@@ -752,11 +752,11 @@ public class InterpreterTest {
                     source[0] = 1
                     source[1] = 2
                     source[2] = 3
-                    a = source.length()
-                    b = new float[0].length()
+                    a = source.size()
+                    b = new float[0].size()
                     t1 = source.copy(1, 2)
                     t2 = source.copy(2, 10)
-                    c = t2.length()
+                    c = t2.size()
                 }
                 """);
         final Map<String, Object> globals = run(modules);
@@ -765,6 +765,25 @@ public class InterpreterTest {
         assertThat(globals.get("c")).isEqualTo(10);
         assertThat(globals.get("t1")).isEqualTo(new int[] { 2, 3 });
         assertThat(globals.get("t2")).isEqualTo(new int[] { 3, 0, 0, 0, 0, 0, 0, 0, 0, 0 });
+    }
+
+    @Test
+    public void lists() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var a: int
+                var b: int
+                var c: int
+                fn main() {
+                    let l: int list = new int list { 1, 2, 3 }
+                    a = l.get(0)
+                    b = l.get(1)
+                    c = l.get(2)
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("a")).isEqualTo(1);
+        assertThat(globals.get("b")).isEqualTo(2);
+        assertThat(globals.get("c")).isEqualTo(3);
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {

@@ -77,7 +77,7 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
         return BuiltInTypeSymbol.OBJECT;
     }
 
-    protected void defineBuiltInMethod(Type returnType, BuiltInFunction bif, Type... parameterTypes) throws CompilationErrorException {
+    void defineBuiltInMethod(Type returnType, BuiltInFunction bif, Type... parameterTypes) throws CompilationErrorException {
         final BuiltInMethodSymbol method = new BuiltInMethodSymbol(bif, returnType, this);
         int parameterIndex = 0;
         method.define(SelfSymbol.IDENT, new SelfSymbol(this));
@@ -86,5 +86,26 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
             method.define(parameterName, new ConstantSymbol(parameterName, parameterType, false));
         }
         this.symbolTable.define(bif.ident(), method);
+    }
+
+    void defineBuiltInFields(FieldSymbol... fields) throws CompilationErrorException {
+        int address = 0;
+        for (final FieldSymbol field : fields) {
+            assert field.name().startsWith("@");
+            assert field.declaringType() == this;
+            define(field.name(), field);
+            field.setAddress(address);
+            address += field.type().primitive().byteSize();
+        }
+    }
+
+    int sumFieldSizes() {
+        int size = 0;
+        for (final Symbol symbol : symbols()) {
+            if (symbol instanceof FieldSymbol) {
+                size += symbol.type().primitive().byteSize();
+            }
+        }
+        return size;
     }
 }

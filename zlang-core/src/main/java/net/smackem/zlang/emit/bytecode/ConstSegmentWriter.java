@@ -45,7 +45,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         // no fields to write...
     }
 
-    public void writeType(StructSymbol symbol) throws IOException {
+    public void writeType(AggregateTypeSymbol symbol) throws IOException {
         symbol.setAddress(bytesWritten());
         writeString(symbol.name(), typeNameByteLength);
         final int implCount = symbol.implementedInterfaces().size();
