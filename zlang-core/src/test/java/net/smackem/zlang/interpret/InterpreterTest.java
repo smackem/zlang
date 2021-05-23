@@ -768,13 +768,17 @@ public class InterpreterTest {
     }
 
     @Test
-    public void lists() throws Exception {
+    public void listCreateAndGet() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var a: int
                 var b: int
                 var c: int
+                var size: int
+                var capacity: int
                 fn main() {
                     let l: int list = new int list { 1, 2, 3 }
+                    size = l.size()
+                    capacity = l.capacity()
                     a = l.get(0)
                     b = l.get(1)
                     c = l.get(2)
@@ -784,6 +788,31 @@ public class InterpreterTest {
         assertThat(globals.get("a")).isEqualTo(1);
         assertThat(globals.get("b")).isEqualTo(2);
         assertThat(globals.get("c")).isEqualTo(3);
+        assertThat(globals.get("capacity")).isEqualTo(16);
+        assertThat(globals.get("size")).isEqualTo(3);
+    }
+
+    @Test
+    public void listAddAndSet() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                let l: int list = new int list{}
+                var capacity: int
+                var size: int
+                fn main() {
+                    for i: int in 0 .. 100 {
+                        l.add(i)
+                    }
+                    l.set(4, 666)
+                    capacity = l.capacity()
+                    size = l.size()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        //noinspection unchecked
+        final Map<String, Object> list = (Map<String, Object>) globals.get("l");
+        assertThat((int[]) list.get("@array")).startsWith(0, 1, 2, 3, 666, 5);
+        assertThat(globals.get("capacity")).isEqualTo(112);
+        assertThat(globals.get("size")).isEqualTo(100);
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {

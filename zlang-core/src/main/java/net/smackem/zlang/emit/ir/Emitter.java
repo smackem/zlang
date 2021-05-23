@@ -20,7 +20,7 @@ public final class Emitter {
     }
 
     private static Program buildProgram(Collection<EmittedModule> emittedModules, ProgramStructure ps) {
-        final Program program = Program.emit(emittedModules, ps.globals());
+        final Program program = Program.emit(emittedModules, ps.globals(), ps.emittedTypes());
         fixupEntryPoint(program);
         return program.freeze();
     }

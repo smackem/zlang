@@ -27,21 +27,21 @@ typedef byte_t Type;
  */
 uint32_t sizeof_type(Type type);
 
-#define get_byte(ptr, offset) *((ptr) + offset)
-#define set_byte(ptr, offset, b) (*((ptr) + offset) = b)
+#define get_byte(ptr, offset) *((ptr) + (offset))
+#define set_byte(ptr, offset, b) (*((ptr) + (offset)) = (b))
 
-#define get_int(ptr, offset) (*(int32_t *) ((ptr) + offset))
-#define set_int(ptr, offset, i) (*(int32_t *) ((ptr) + offset) = i)
+#define get_int(ptr, offset) (*(int32_t *) ((ptr) + (offset)))
+#define set_int(ptr, offset, i) (*(int32_t *) ((ptr) + (offset)) = (i))
 
-#define get_addr(ptr, offset) (*(addr_t *) ((ptr) + offset))
-#define set_addr(ptr, offset, a) (*(addr_t *) ((ptr) + offset) = a)
+#define get_addr(ptr, offset) (*(addr_t *) ((ptr) + (offset)))
+#define set_addr(ptr, offset, a) (*(addr_t *) ((ptr) + (offset)) = (a))
 
-#define get_float(ptr, offset) (*(double *) ((ptr) + offset))
-#define set_float(ptr, offset, f) (*(double *) ((ptr) + offset) = f)
+#define get_float(ptr, offset) (*(double *) ((ptr) + (offset)))
+#define set_float(ptr, offset, f) (*(double *) ((ptr) + (offset)) = (f))
 
-#define get_type(ptr, offset)  (*(Type *) ((ptr) + offset))
+#define get_type(ptr, offset)  (*(Type *) ((ptr) + (offset)))
 
-#define get_ptr(ptr, offset) (*(intptr_t *) ((ptr) + offset))
-#define set_ptr(ptr, offset, p) (*(intptr_t *) ((ptr) + offset) = p)
+#define get_ptr(ptr, offset) (*(intptr_t *) ((ptr) + (offset)))
+#define set_ptr(ptr, offset, p) (*(intptr_t *) ((ptr) + (offset)) = (p))
 
 #endif //ZLN_TYPES_H

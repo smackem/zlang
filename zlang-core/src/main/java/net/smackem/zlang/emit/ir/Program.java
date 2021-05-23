@@ -6,33 +6,40 @@ import net.smackem.zlang.symbols.VariableSymbol;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class Program {
     private final List<Instruction> instructions;
     private final Collection<EmittedModule> modules;
     private final Collection<VariableSymbol> globals;
+    private final Collection<Type> emittedTypes;
     private Map<FunctionSymbol, FunctionCode> cachedCodeMap;
 
     private Program(List<Instruction> instructions,
                     Collection<EmittedModule> modules,
-                    Collection<VariableSymbol> globals) {
+                    Collection<VariableSymbol> globals,
+                    Collection<Type> emittedTypes) {
         this.instructions = instructions;
         this.modules = modules;
         this.globals = globals;
+        this.emittedTypes = emittedTypes;
     }
 
-    static Program emit(Collection<EmittedModule> modules, Collection<VariableSymbol> globals) {
+    static Program emit(Collection<EmittedModule> modules,
+                        Collection<VariableSymbol> globals,
+                        Collection<Type> emittedTypes) {
         final List<Instruction> instructions = new ArrayList<>();
         for (final EmittedModule em : modules) {
             instructions.addAll(em.instructions());
         }
-        return new Program(instructions, modules, globals);
+        return new Program(instructions, modules, globals, emittedTypes);
     }
 
     Program freeze() {
         return new Program(Collections.unmodifiableList(this.instructions),
                 Collections.unmodifiableCollection(this.modules),
-                Collections.unmodifiableCollection(this.globals));
+                Collections.unmodifiableCollection(this.globals),
+                Collections.unmodifiableCollection(this.emittedTypes));
     }
 
     public List<Instruction> instructions() {
@@ -40,8 +47,8 @@ public final class Program {
     }
 
     public Collection<Type> types() {
-        return this.modules.stream()
-                .flatMap(m -> m.types().stream())
+        return Stream.concat(this.modules.stream().flatMap(m -> m.types().stream()),
+                this.emittedTypes.stream())
                 .toList();
     }
 

@@ -720,6 +720,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 }
                 emit(OpCode.Mov, registers.get(1), value.register);
                 emit(OpCode.Invoke, Register.R000, registers.get(0), addFunction);
+                freeRegister(value.register);
             }
         }
         freeRegisters(registers);
