@@ -3,6 +3,7 @@ package net.smackem.zlang.symbols;
 import net.smackem.zlang.lang.CompilationErrorException;
 
 public class StringType extends ArrayType implements RegisterType {
+
     StringType() {
         super(null, BuiltInType.BYTE.type(), "string");
         defineBuiltInMethods();

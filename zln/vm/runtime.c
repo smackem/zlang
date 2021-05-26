@@ -192,3 +192,11 @@ void invoke(BuiltInFunction function_id, Cpu *cpu, Register *result, const Regis
     assert(first_arg != NULL);
     invocations[function_id](cpu, result, first_arg);
 }
+
+int compare_strings(const Cpu *cpu, addr_t a, addr_t b) {
+    const HeapEntry *entry_a = get_heap_entry(&cpu->heap, a);
+    const HeapEntry *entry_b = get_heap_entry(&cpu->heap, b);
+    assert(entry_a->header == TYPE_Unsigned8);
+    assert(entry_b->header == TYPE_Unsigned8);
+    return strcmp((const char *) entry_a->data, (const char *) entry_b->data);
+}

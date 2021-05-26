@@ -23,4 +23,23 @@ public final class Types {
         }
         return false;
     }
+
+    public static boolean isComparable(Type left, Type right) {
+        if (Objects.equals(left, right)) {
+            return true;
+        }
+        if (left.registerType() == BuiltInType.OBJECT.type() && right == NilType.INSTANCE) {
+            return true;
+        }
+        if (right.registerType() == BuiltInType.OBJECT.type() && left == NilType.INSTANCE) {
+            return true;
+        }
+        if (left.registerType() == BuiltInType.STRING.type() && right == NilType.INSTANCE) {
+            return true;
+        }
+        if (right.registerType() == BuiltInType.STRING.type() && left == NilType.INSTANCE) {
+            return true;
+        }
+        return false;
+    }
 }

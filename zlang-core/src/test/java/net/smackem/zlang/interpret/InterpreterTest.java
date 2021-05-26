@@ -795,7 +795,7 @@ public class InterpreterTest {
     @Test
     public void listAddAndSet() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
-                let l: int list = new int list{}
+                let l: int list = new int list {}
                 var capacity: int
                 var size: int
                 fn main() {
@@ -862,6 +862,30 @@ public class InterpreterTest {
         assertThat(globals.get("char2")).isEqualTo((byte) 'c');
         assertThat(globals.get("char3")).isEqualTo((byte) 0);
         assertThat(globals.get("result")).isEqualTo("Zbc");
+    }
+
+    @Test
+    public void stringCompare() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                let result: bool[] = new bool[5]
+                fn main() {
+                    let s1: string = "abc"
+                    let s2: string = "def"
+                    result[0] = s1 == "abc"
+                    result[1] = s1 != s1
+                    result[2] = s1 != nil
+                    result[3] = s1 == s2
+                    result[4] = s2 == "def"
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo(new boolean[] {
+                true,
+                false,
+                true,
+                false,
+                true,
+        });
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {

@@ -414,7 +414,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value left = ctx.additiveExpr(0).accept(this);
         final Value right = ctx.additiveExpr(1).accept(this);
         final Register target = allocFreedRegister(left.register, right.register);
-        if (left.type != right.type) {
+        if (Types.isComparable(left.type, right.type) == false) {
             return logLocalError(ctx, "incompatible operand types in relational expression");
         }
 
