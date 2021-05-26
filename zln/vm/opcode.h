@@ -84,12 +84,12 @@ enum op_code {
      *      r_target <- value
      */
     OPC_Ldc_i32,
-    OPC_Ldc_ref,
     /**
      * load_constant(REG r_target, INT const_addr):
      *      r_target <- *const_addr
      * const_addr is relative to const base
      */
+    OPC_Ldc_str,
     OPC_Ldc_f64,
     /**
      * load_constant_zero(REG r_target):

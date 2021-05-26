@@ -39,22 +39,22 @@ public class ByteCodeReader {
     private static Object readValue(ByteBuffer buf, int offset, int heapOffset, Symbol symbol) {
         final Type type = symbol.type();
         final int index = offset + symbol.address();
-        if (type == BuiltInTypeSymbol.INT) {
+        if (type == BuiltInType.INT.type()) {
             return buf.getInt(index);
         }
-        if (type == BuiltInTypeSymbol.BOOL) {
+        if (type == BuiltInType.BOOL.type()) {
             return buf.getInt(index) != 0;
         }
-        if (type == BuiltInTypeSymbol.BYTE) {
+        if (type == BuiltInType.BYTE.type()) {
             return buf.get(index);
         }
-        if (type == BuiltInTypeSymbol.FLOAT) {
+        if (type == BuiltInType.FLOAT.type()) {
             return buf.getDouble(index);
         }
-        if (type == BuiltInTypeSymbol.RUNTIME_PTR) {
+        if (type == BuiltInType.RUNTIME_PTR.type()) {
             return buf.getLong(index);
         }
-        if (type == BuiltInTypeSymbol.OBJECT) {
+        if (type == BuiltInType.OBJECT.type()) {
             final int value = buf.getInt(index);
             return value == 0 ? null : value; // usually, only nil has the base type OBJECT
         }
@@ -64,7 +64,7 @@ public class ByteCodeReader {
                 return null;
             }
             final int elementTypeId = buf.getInt(heapOffset + ref);
-            final BuiltInTypeSymbol elementType = BuiltInTypeSymbol.fromId(elementTypeId);
+            final RegisterType elementType = BuiltInType.fromId(elementTypeId);
             final int dataSize = buf.getInt(heapOffset + ref + 8);
             final int count = dataSize / elementType.byteSize();
             final int arrayOffset = heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE;
@@ -82,27 +82,27 @@ public class ByteCodeReader {
         throw new UnsupportedOperationException("unsupported type '" + type + "'");
     }
 
-    private static Object readArray(ByteBuffer buf, int offset, BuiltInTypeSymbol elementType, int count) {
-        if (elementType == BuiltInTypeSymbol.INT
-                || elementType == BuiltInTypeSymbol.OBJECT
-                || elementType == BuiltInTypeSymbol.BOOL) {
+    private static Object readArray(ByteBuffer buf, int offset, RegisterType elementType, int count) {
+        if (elementType == BuiltInType.INT.type()
+                || elementType == BuiltInType.OBJECT.type()
+                || elementType == BuiltInType.BOOL.type()) {
             final IntBuffer intBuf = buf.slice(offset, count * elementType.byteSize()).order(ByteOrder.nativeOrder()).asIntBuffer();
             final int[] data = new int[count];
             intBuf.get(0, data);
             return data;
         }
-        if (elementType == BuiltInTypeSymbol.BYTE) {
+        if (elementType == BuiltInType.BYTE.type()) {
             final byte[] data = new byte[count];
             buf.get(offset, data);
             return data;
         }
-        if (elementType == BuiltInTypeSymbol.FLOAT) {
+        if (elementType == BuiltInType.FLOAT.type()) {
             final DoubleBuffer floatBuf = buf.slice(offset, count * elementType.byteSize()).order(ByteOrder.nativeOrder()).asDoubleBuffer();
             final double[] data = new double[count];
             floatBuf.get(0, data);
             return data;
         }
-        if (elementType == BuiltInTypeSymbol.RUNTIME_PTR) {
+        if (elementType == BuiltInType.RUNTIME_PTR.type()) {
             final LongBuffer longBuf = buf.slice(offset, count * elementType.byteSize()).order(ByteOrder.nativeOrder()).asLongBuffer();
             final long[] data = new long[count];
             longBuf.get(0, data);

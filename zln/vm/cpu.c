@@ -129,10 +129,10 @@ void execute(const byte_t *code,
                 reg(&cpu, r_target)->i32 = value;
                 size = 1 + 5;
                 break;
-            case OPC_Ldc_ref:
+            case OPC_Ldc_str: // alloc new array
                 r_target = get_byte(instr->args, 0);
                 addr = get_addr(instr->args, 1);
-                reg(&cpu, r_target)->ref = addr;
+                reg(&cpu, r_target)->ref = alloc_str(&cpu.heap, addr);
                 size = 1 + 5;
                 break;
             case OPC_Ldc_f64:
@@ -731,6 +731,7 @@ void execute(const byte_t *code,
                 size = 1 + 2;
                 break;
             case OPC_NewArr_u8:
+            case OPC_NewStr:
                 r_target = get_byte(instr->args, 0);
                 r_addr = get_byte(instr->args, 1);
                 reg(&cpu, r_target)->ref = alloc_array(&cpu.heap, TYPE_Unsigned8, reg(&cpu, r_addr)->i32);

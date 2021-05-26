@@ -141,6 +141,15 @@ static void list_get(Cpu *cpu, Register *result, const Register *first_arg) {
     load(cpu->heap.memory, elem_addr, result, array->header);
 }
 
+static void print(Cpu *cpu, Register *result, const Register *first_arg) {
+}
+
+static void string_length(Cpu *cpu, Register *result, const Register *first_arg) {
+    const HeapEntry *self = get_heap_entry(&cpu->heap, first_arg->ref);
+    assert(self->header == TYPE_Unsigned8);
+    result->i32 = (int32_t) (self->data_size - 1); // - 1 for terminating zero
+}
+
 static invocation_t invocations[] = {
         NULL,
         array_size,     //BIF_ArrayLength     = 1,
@@ -158,6 +167,21 @@ static invocation_t invocations[] = {
         list_remove,    //BIF_ListRemove      = 13,
         list_set,       //BIF_ListSet         = 14,
         list_get,       //BIF_ListGet         = 15,
+        NULL,           // 16
+        NULL,           // 17
+        NULL,           // 18
+        NULL,           // 19
+        print,          //BIF_Print           = 20,
+        NULL,           // 21
+        NULL,           // 22
+        NULL,           // 23
+        NULL,           // 24
+        NULL,           // 25
+        NULL,           // 26
+        NULL,           // 27
+        NULL,           // 28
+        NULL,           // 29
+        string_length,  //BIF_StringLength    = 30,
 };
 
 void invoke(BuiltInFunction function_id, Cpu *cpu, Register *result, const Register *first_arg) {

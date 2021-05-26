@@ -187,7 +187,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return;
             }
             final Value index = ctx.arrayAccessPostfix().expr().accept(this);
-            if (index.type != BuiltInTypeSymbol.INT) {
+            if (index.type != BuiltInType.INT.type()) {
                 logLocalError(ctx, "index is not of type int");
                 return;
             }
@@ -262,7 +262,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Label loopLabel = addLabel();
         final Label exitLabel = addLabel();
         final Value condition = ctx.expr().accept(this);
-        if (condition.type != BuiltInTypeSymbol.BOOL) {
+        if (condition.type != BuiltInType.BOOL.type()) {
             return logLocalError(ctx, "while condition is not of type bool, but " + condition.type);
         }
         loopLabel.setTarget(this.currentInstructions.get(conditionIndex));
@@ -291,7 +291,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private void emitIfBranch(ZLangParser.ExprContext expr, ZLangParser.BlockContext block, Label exitLabel) {
         final Label skipLabel = addLabel();
         final Value condition = expr.accept(this);
-        if (condition.type != BuiltInTypeSymbol.BOOL) {
+        if (condition.type != BuiltInType.BOOL.type()) {
             logLocalError(expr, "if condition is not of type bool, but " + condition.type);
             return;
         }
@@ -315,15 +315,15 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             to = rangeExpr.get(1).accept(this);
             final Register r = allocFreedRegister();
             emit(OpCode.Ldc_i32, r, 1);
-            step = value(r, BuiltInTypeSymbol.INT);
+            step = value(r, BuiltInType.INT.type());
         }
-        if (from.type != BuiltInTypeSymbol.INT) {
+        if (from.type != BuiltInType.INT.type()) {
             return logLocalError(ctx, "lower bound in for statement must be of type int");
         }
-        if (to.type != BuiltInTypeSymbol.INT) {
+        if (to.type != BuiltInType.INT.type()) {
             return logLocalError(ctx, "upper bound in for statement must be of type int");
         }
-        if (step.type != BuiltInTypeSymbol.INT) {
+        if (step.type != BuiltInType.INT.type()) {
             return logLocalError(ctx, "step in for statement must be of type int");
         }
         final VariableSymbol index = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), from, true);
@@ -349,7 +349,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             Label elseLabel = addLabel();
             Label exitLabel = addLabel();
             final Value condition = ctx.conditionalOrExpr(1).accept(this);
-            if (condition.type != BuiltInTypeSymbol.BOOL) {
+            if (condition.type != BuiltInType.BOOL.type()) {
                 return logLocalError(ctx, "if condition is not of type bool, but " + condition.type);
             }
             emitBranch(condition.register, elseLabel);
@@ -381,12 +381,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value left = ctx.conditionalAndExpr().accept(this);
         final Value right = ctx.conditionalOrExpr().accept(this);
         final Register target = allocFreedRegister(left.register, right.register);
-        if (left.type != BuiltInTypeSymbol.BOOL || right.type != BuiltInTypeSymbol.BOOL) {
+        if (left.type != BuiltInType.BOOL.type() || right.type != BuiltInType.BOOL.type()) {
             return logLocalError(ctx, "non-boolean operand in OR expression");
         }
 
         emit(OpCode.Or, target, left.register, right.register);
-        return value(target, BuiltInTypeSymbol.BOOL);
+        return value(target, BuiltInType.BOOL.type());
     }
 
     @Override
@@ -397,12 +397,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value left = ctx.relationalExpr().accept(this);
         final Value right = ctx.conditionalAndExpr().accept(this);
         final Register target = allocFreedRegister(left.register, right.register);
-        if (left.type != BuiltInTypeSymbol.BOOL || right.type != BuiltInTypeSymbol.BOOL) {
+        if (left.type != BuiltInType.BOOL.type() || right.type != BuiltInType.BOOL.type()) {
             return logLocalError(ctx, "non-boolean operand in AND expression");
         }
 
         emit(OpCode.And, target, left.register, right.register);
-        return value(target, BuiltInTypeSymbol.BOOL);
+        return value(target, BuiltInType.BOOL.type());
     }
 
     @Override
@@ -439,7 +439,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             return logLocalError(ctx, "unsupported type for relational operator " + left.type);
         }
         emit(opc, target, left.register, right.register);
-        return value(target, BuiltInTypeSymbol.BOOL);
+        return value(target, BuiltInType.BOOL.type());
     }
 
     @Override
@@ -540,7 +540,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Type type = resolveType(ctx.type());
         final Value value = ctx.unaryExpr().accept(this);
         final Register target = allocFreedRegister(value.register);
-        emit(OpCode.conv(value.type), target, value.register, type.primitive().id());
+        emit(OpCode.conv(value.type), target, value.register, type.registerType().id().number());
         return value(target, type);
     }
 
@@ -558,7 +558,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             }
             final Type elementType = ((ArrayType) primary.type).elementType();
             final Value index = ctx.arrayAccessPostfix().expr().accept(this);
-            if (index.type != BuiltInTypeSymbol.INT) {
+            if (index.type != BuiltInType.INT.type()) {
                 return logLocalError(ctx, "index is not of type int");
             }
             final Register target = allocFreedRegister(primary.register, index.register);
@@ -758,12 +758,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         if (ctx.True() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_i32, target, 1);
-            return value(target, BuiltInTypeSymbol.BOOL);
+            return value(target, BuiltInType.BOOL.type());
         }
         if (ctx.False() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_zero, target);
-            return value(target, BuiltInTypeSymbol.BOOL);
+            return value(target, BuiltInType.BOOL.type());
         }
         if (ctx.Nil() != null) {
             final Register target = allocFreedRegister();
@@ -773,7 +773,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         if (ctx.NullPtr() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_zero, target);
-            return value(target, BuiltInTypeSymbol.RUNTIME_PTR);
+            return value(target, BuiltInType.RUNTIME_PTR.type());
+        }
+        if(ctx.StringLiteral() != null) {
+            final Register target = allocFreedRegister();
+            emit(OpCode.Ldc_str, target, CharMatcher.is('"').trimFrom(ctx.StringLiteral().getText()));
+            return value(target, BuiltInType.STRING.type());
         }
         if (ctx.number() != null) {
             return ctx.number().accept(this);
@@ -786,11 +791,11 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Register target = allocFreedRegister();
         if (ctx.IntegerNumber() != null) {
             emit(OpCode.Ldc_i32, target, parseInteger(ctx.IntegerNumber().getText()));
-            return value(target, BuiltInTypeSymbol.INT);
+            return value(target, BuiltInType.INT.type());
         }
         if (ctx.RealNumber() != null) {
             emit(OpCode.Ldc_f64, target, parseFloat(ctx.RealNumber().getText()));
-            return value(target, BuiltInTypeSymbol.FLOAT);
+            return value(target, BuiltInType.FLOAT.type());
         }
         throw new UnsupportedOperationException("unsupported number type");
     }

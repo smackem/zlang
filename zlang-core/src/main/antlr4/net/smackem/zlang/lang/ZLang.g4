@@ -279,7 +279,6 @@ primary
     : literal
     | Self
     | Ident
-    | list
     | functionInvocation
     | instanceCreation
     | LParen expr RParen
@@ -327,10 +326,6 @@ literal
     | False
     | Nil
     | NullPtr
-    ;
-
-list
-    : LBracket arguments? Comma? RBracket
     ;
 
 Plus        : '+';

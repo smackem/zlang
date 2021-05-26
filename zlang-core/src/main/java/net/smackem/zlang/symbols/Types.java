@@ -9,14 +9,17 @@ public final class Types {
         if (Objects.equals(lvalue, rvalue)) {
             return true;
         }
-        if (lvalue.primitive() == BuiltInTypeSymbol.OBJECT && rvalue == NilType.INSTANCE) {
+        if (lvalue.registerType() == BuiltInType.OBJECT.type() && rvalue == NilType.INSTANCE) {
             return true;
         }
-        if (lvalue == BuiltInTypeSymbol.OBJECT && rvalue.primitive() == BuiltInTypeSymbol.OBJECT) {
+        if (lvalue.registerType() == BuiltInType.STRING.type() && rvalue == NilType.INSTANCE) {
             return true;
         }
-        if (lvalue == BuiltInTypeSymbol.INT) {
-            return rvalue == BuiltInTypeSymbol.BOOL || rvalue == BuiltInTypeSymbol.BYTE;
+        if (lvalue == BuiltInType.OBJECT.type() && rvalue.registerType() == BuiltInType.OBJECT.type()) {
+            return true;
+        }
+        if (lvalue == BuiltInType.INT.type()) {
+            return rvalue == BuiltInType.BOOL.type() || rvalue == BuiltInType.BYTE.type();
         }
         return false;
     }

@@ -64,7 +64,7 @@ public class InterfaceSymbol extends Symbol implements Type, MemberScope {
     }
 
     @Override
-    public BuiltInTypeSymbol primitive() {
-        return BuiltInTypeSymbol.OBJECT;
+    public RegisterType registerType() {
+        return BuiltInType.OBJECT.type();
     }
 }

@@ -10,11 +10,11 @@ public enum NilType implements Type {
 
     @Override
     public int byteSize() {
-        return primitive().byteSize();
+        return registerType().byteSize();
     }
 
     @Override
-    public BuiltInTypeSymbol primitive() {
-        return BuiltInTypeSymbol.OBJECT;
+    public RegisterType registerType() {
+        return BuiltInType.OBJECT.type();
     }
 }

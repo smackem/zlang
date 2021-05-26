@@ -88,7 +88,7 @@ public class ByteCodeWriter implements AutoCloseable {
                                   int globalSegmentSize,
                                   FunctionSymbol entryPoint,
                                   int registerCount,
-                                  int maxStackDepth) throws IOException {
+                                  int maxStackDepth) {
         log.info("ZL header: codeSize={} constSize={} globalSize={} entryPoint={}",
                 codeSegmentSize, constSegmentSize, globalSegmentSize, entryPoint.address());
         buf.put(0, (byte) 'Z');
@@ -178,7 +178,7 @@ public class ByteCodeWriter implements AutoCloseable {
             case Nop, Ret, Halt -> { }
             case LdGlb_i32, LdGlb_f64, LdGlb_u8, LdGlb_ref, LdGlb_ptr,
                     StGlb_i32, StGlb_f64, StGlb_u8, StGlb_ref, StGlb_ptr,
-                    Ldc_i32, Ldc_ref -> {
+                    Ldc_i32 -> {
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeAddr(instr.intArg());
             }
@@ -208,6 +208,12 @@ public class ByteCodeWriter implements AutoCloseable {
             case Ldc_f64 -> {
                 final int addr = this.constSegment.bytesWritten();
                 this.constSegment.writeFloat64(instr.floatArg());
+                writer.writeByte(instr.registerArg(0).number());
+                writer.writeAddr(addr);
+            }
+            case Ldc_str -> {
+                final int addr = this.constSegment.bytesWritten();
+                this.constSegment.writeString(instr.strArg());
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeAddr(addr);
             }

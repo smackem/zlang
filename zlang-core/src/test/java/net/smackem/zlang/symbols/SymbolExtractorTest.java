@@ -30,7 +30,7 @@ public class SymbolExtractorTest {
         assertThat(ps.scopes()).hasSize(1);
         assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("main");
         assertThat(ps.scopes().values()).allMatch(scope -> scope instanceof ModuleSymbol);
-        assertThat(globalScope.symbols()).hasSize(BuiltInTypeSymbol.builtInTypes().size() + 1);
+        assertThat(globalScope.symbols()).hasSize(BuiltInType.builtInTypes().size() + 1);
         // one error is expected: no main method
         assertThat(errors).hasSize(1);
         assertThat(errors).allMatch(s -> s.contains("main"));
@@ -289,13 +289,13 @@ public class SymbolExtractorTest {
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
                 > null: GlobalScope
-                    - int: BuiltInTypeSymbol{null}@0
-                    - float: BuiltInTypeSymbol{null}@0
-                    - byte: BuiltInTypeSymbol{null}@0
-                    - object: BuiltInTypeSymbol{null}@0
-                    - runtime_ptr: BuiltInTypeSymbol{null}@0
-                    - string: BuiltInTypeSymbol{null}@0
-                    - bool: BuiltInTypeSymbol{null}@0
+                    - int: PrimitiveTypeSymbol{null}@0
+                    - float: PrimitiveTypeSymbol{null}@0
+                    - byte: PrimitiveTypeSymbol{null}@0
+                    - object: PrimitiveTypeSymbol{null}@0
+                    - runtime_ptr: PrimitiveTypeSymbol{null}@0
+                    - string: StringType{null}@0
+                    - bool: PrimitiveTypeSymbol{null}@0
                     - dep: ModuleSymbol{null}@0
                     - main: ModuleSymbol{null}@0
                     > dep: ModuleSymbol

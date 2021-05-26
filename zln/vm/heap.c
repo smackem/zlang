@@ -18,7 +18,7 @@ static inline addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) 
     addr_t entry_addr = heap->tail;
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
-    entry->ref_count = 1;
+    entry->ref_count = 0;
     entry->data_size = data_size;
     zero_memory(entry->data, data_size);
     heap->tail += entry_size;
@@ -77,6 +77,16 @@ addr_t alloc_obj(Heap *heap, addr_t type_meta_const_addr) {
     assert(heap != NULL);
     const TypeMeta *type_meta = (TypeMeta *) &heap->const_segment[type_meta_const_addr];
     return alloc_chunk(heap, sizeof_instance(type_meta), type_meta_const_addr | HEAP_ENTRY_TYPE_META_FLAG);
+}
+
+addr_t alloc_str(Heap *heap, addr_t const_addr) {
+    assert(heap != NULL);
+    const char *source = (const char *) &heap->const_segment[const_addr];
+    uint32_t length = strlen(source);
+    addr_t entry_addr = alloc_chunk(heap, length + 1, TYPE_Unsigned8);
+    HeapEntry *entry = get_heap_entry(heap, entry_addr);
+    memcpy(entry->data, source, length + 1);
+    return entry_addr;
 }
 
 addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {

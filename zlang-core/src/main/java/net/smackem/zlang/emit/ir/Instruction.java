@@ -17,7 +17,7 @@ public class Instruction {
     private int address;
 
     Instruction(OpCode opCode) {
-        this.opCode = opCode;
+        this.opCode = Objects.requireNonNull(opCode);
     }
 
     public OpCode opCode() {

@@ -86,7 +86,7 @@ typedef struct heap {
 void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_segment);
 
 /**
- * Allocates a new array on the heap with an initial reference count of 1.
+ * Allocates a new array on the heap with an initial reference count of 0.
  *
  * @param heap
  *      This heap.
@@ -102,7 +102,7 @@ void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_se
 addr_t alloc_array(Heap *heap, Type element_type, uint32_t size);
 
 /**
- * Allocates a new object on the heap with an initial reference count of 1.
+ * Allocates a new object on the heap with an initial reference count of 0.
  *
  * @param heap
  *      This heap.
@@ -114,6 +114,19 @@ addr_t alloc_array(Heap *heap, Type element_type, uint32_t size);
  * @return The heap address of the new entry or 0 if out of memory.
  */
 addr_t alloc_obj(Heap *heap, addr_t type_meta_const_addr);
+
+/**
+ * Allocates a new string on the heap (array of element type u8) with an initial reference count of 0.
+ *
+ * @param heap
+ *      This heap.
+ *
+ * @param const_addr
+ *      The const address of the raw zero-terminated string in the constant segment.
+ *
+ * @return The heap address of the new entry or 0 if out of memory.
+ */
+addr_t alloc_str(Heap *heap, addr_t const_addr);
 
 /**
  * Gets the address of a field/cell relative to the entry at the specified heap address.

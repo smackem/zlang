@@ -1,15 +1,12 @@
 package net.smackem.zlang.emit.bytecode;
 
 import net.smackem.zlang.emit.ir.FunctionCode;
-import net.smackem.zlang.emit.ir.Label;
 import net.smackem.zlang.symbols.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Collection;
 import java.util.Map;
 
 class ConstSegmentWriter extends NativeValueWriter {
@@ -58,7 +55,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         }
         for (final Symbol field : symbol.symbols()) {
             if (field instanceof FieldSymbol) {
-                writeByte((byte) field.type().primitive().id());
+                writeByte((byte) field.type().registerType().id().number());
             }
         }
         writeByte((byte) 0); // zero-terminated
@@ -87,7 +84,7 @@ class ConstSegmentWriter extends NativeValueWriter {
         writeAddr(0); // pc - fixup later
         writeInt32(symbol.localCount());
         writeInt32(symbol instanceof MethodSymbol ? symbol.symbols().size() + 1 : symbol.symbols().size()); // + 1 for self
-        writeByte(symbol.type() != null ? (byte) symbol.type().primitive().id() : 0);
+        writeByte(symbol.type() != null ? (byte) symbol.type().registerType().id().number() : 0);
         writeString(symbol.name());
     }
 

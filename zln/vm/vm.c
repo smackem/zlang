@@ -138,7 +138,7 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
                     get_byte(instr->args, 0));
             return 1 + 1;
         case OPC_Ldc_i32:
-        case OPC_Ldc_ref:
+        case OPC_Ldc_str:
         case OPC_Ldc_f64:
         case OPC_LdGlb_i32:
         case OPC_LdGlb_f64:

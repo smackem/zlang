@@ -1,6 +1,7 @@
 package net.smackem.zlang.emit.bytecode;
 
-import net.smackem.zlang.symbols.BuiltInTypeSymbol;
+import net.smackem.zlang.symbols.BuiltInType;
+import net.smackem.zlang.symbols.PrimitiveTypeSymbol;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,7 +43,7 @@ class NativeValueWriter implements AutoCloseable {
     }
 
     public void writeInt32(int value) throws IOException {
-        if (this.buf.remaining() < BuiltInTypeSymbol.INT.byteSize()) {
+        if (this.buf.remaining() < BuiltInType.INT.type().byteSize()) {
             flush();
         }
         this.buf.putInt(value);
@@ -56,14 +57,14 @@ class NativeValueWriter implements AutoCloseable {
     }
 
     public void writeAddr(long value) throws IOException {
-        if (this.buf.remaining() < BuiltInTypeSymbol.OBJECT.byteSize()) {
+        if (this.buf.remaining() < BuiltInType.OBJECT.type().byteSize()) {
             flush();
         }
         this.buf.putInt((int) value);
     }
 
     public void writeFloat64(double value) throws IOException {
-        if (this.buf.remaining() < BuiltInTypeSymbol.FLOAT.byteSize()) {
+        if (this.buf.remaining() < BuiltInType.FLOAT.type().byteSize()) {
             flush();
         }
         this.buf.putDouble(value);

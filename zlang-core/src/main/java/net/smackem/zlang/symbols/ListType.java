@@ -58,14 +58,14 @@ public class ListType extends AggregateTypeSymbol {
         final Type elementType = this.arrayType.elementType();
         try {
             defineBuiltInFields(
-                    /* 0 */ new FieldSymbol("@size", BuiltInTypeSymbol.INT, this),
+                    /* 0 */ new FieldSymbol("@size", BuiltInType.INT.type(), this),
                     /* 4 */ new FieldSymbol("@array", this.arrayType, this));
-            defineBuiltInMethod(BuiltInTypeSymbol.INT, BuiltInFunction.LIST_SIZE);
-            defineBuiltInMethod(BuiltInTypeSymbol.INT, BuiltInFunction.LIST_CAPACITY);
+            defineBuiltInMethod(BuiltInType.INT.type(), BuiltInFunction.LIST_SIZE);
+            defineBuiltInMethod(BuiltInType.INT.type(), BuiltInFunction.LIST_CAPACITY);
             defineBuiltInMethod(null, BuiltInFunction.LIST_ADD, elementType);
-            defineBuiltInMethod(null, BuiltInFunction.LIST_REMOVE, BuiltInTypeSymbol.INT);
-            defineBuiltInMethod(null, BuiltInFunction.LIST_SET, BuiltInTypeSymbol.INT, elementType);
-            defineBuiltInMethod(elementType, BuiltInFunction.LIST_GET, BuiltInTypeSymbol.INT);
+            defineBuiltInMethod(null, BuiltInFunction.LIST_REMOVE, BuiltInType.INT.type());
+            defineBuiltInMethod(null, BuiltInFunction.LIST_SET, BuiltInType.INT.type(), elementType);
+            defineBuiltInMethod(elementType, BuiltInFunction.LIST_GET, BuiltInType.INT.type());
         } catch (CompilationErrorException e) {
             throw new RuntimeException(e); // duplicate identifier -> programming error
         }

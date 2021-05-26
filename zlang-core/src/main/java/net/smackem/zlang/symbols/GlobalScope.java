@@ -52,8 +52,9 @@ public class GlobalScope implements Scope {
 
     private void initTypeSystem() {
         try {
-            for (final Symbol typeSymbol : BuiltInTypeSymbol.builtInTypes()) {
-                define(typeSymbol.name(), typeSymbol);
+            for (final Type t : BuiltInType.builtInTypes()) {
+                final Symbol symbol = (Symbol) t;
+                define(symbol.name(), symbol);
             }
         } catch (CompilationErrorException ignored) {
             // cannot happen for built-in types

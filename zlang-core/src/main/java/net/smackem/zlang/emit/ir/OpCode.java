@@ -1,9 +1,9 @@
 package net.smackem.zlang.emit.ir;
 
-import net.smackem.zlang.symbols.BuiltInTypeSymbol;
-import net.smackem.zlang.symbols.Type;
+import net.smackem.zlang.symbols.*;
 
 import java.util.Map;
+import java.util.Objects;
 
 public enum OpCode {
     /**
@@ -82,12 +82,12 @@ public enum OpCode {
      *      r_target <- value
      */
     Ldc_i32(31),
-    Ldc_ref(32),
     /**
      * load_constant(REG r_target, INT const_addr):
      *      r_target <- *const_addr
      * const_addr is relative to const base
      */
+    Ldc_str(32),
     Ldc_f64(33),
     /**
      * load_constant_zero(REG r_target):
@@ -315,202 +315,202 @@ public enum OpCode {
         return this.code;
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> ldGlb = Map.of(
-            BuiltInTypeSymbol.INT, LdGlb_i32,
-            BuiltInTypeSymbol.FLOAT, LdGlb_f64,
-            BuiltInTypeSymbol.BYTE, LdGlb_u8,
-            BuiltInTypeSymbol.OBJECT, LdGlb_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, LdGlb_ptr);
+    private static final Map<RegisterTypeId, OpCode> ldGlb = Map.of(
+            RegisterTypeId.Int32, LdGlb_i32,
+            RegisterTypeId.Float64, LdGlb_f64,
+            RegisterTypeId.Unsigned8, LdGlb_u8,
+            RegisterTypeId.Ref, LdGlb_ref,
+            RegisterTypeId.NativePtr, LdGlb_ptr);
 
     public static OpCode ldGlb(Type type) {
-        return ldGlb.get(type.primitive());
+        return assertOpCode(ldGlb, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> ldFld = Map.of(
-            BuiltInTypeSymbol.INT, LdFld_i32,
-            BuiltInTypeSymbol.FLOAT, LdFld_f64,
-            BuiltInTypeSymbol.BYTE, LdFld_u8,
-            BuiltInTypeSymbol.OBJECT, LdFld_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, LdFld_ptr);
+    private static final Map<RegisterTypeId, OpCode> ldFld = Map.of(
+            RegisterTypeId.Int32, LdFld_i32,
+            RegisterTypeId.Float64, LdFld_f64,
+            RegisterTypeId.Unsigned8, LdFld_u8,
+            RegisterTypeId.Ref, LdFld_ref,
+            RegisterTypeId.NativePtr, LdFld_ptr);
 
     public static OpCode ldFld(Type type) {
-        return ldFld.get(type.primitive());
+        return assertOpCode(ldFld, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> ldElem = Map.of(
-            BuiltInTypeSymbol.INT, LdElem_i32,
-            BuiltInTypeSymbol.FLOAT, LdElem_f64,
-            BuiltInTypeSymbol.BYTE, LdElem_u8,
-            BuiltInTypeSymbol.OBJECT, LdElem_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, LdElem_ptr);
+    private static final Map<RegisterTypeId, OpCode> ldElem = Map.of(
+            RegisterTypeId.Int32, LdElem_i32,
+            RegisterTypeId.Float64, LdElem_f64,
+            RegisterTypeId.Unsigned8, LdElem_u8,
+            RegisterTypeId.Ref, LdElem_ref,
+            RegisterTypeId.NativePtr, LdElem_ptr);
 
     public static OpCode ldElem(Type type) {
-        return ldElem.get(type.primitive());
+        return assertOpCode(ldElem, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> stGlb = Map.of(
-            BuiltInTypeSymbol.INT, StGlb_i32,
-            BuiltInTypeSymbol.FLOAT, StGlb_f64,
-            BuiltInTypeSymbol.BYTE, StGlb_u8,
-            BuiltInTypeSymbol.OBJECT, StGlb_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, StGlb_ptr);
+    private static final Map<RegisterTypeId, OpCode> stGlb = Map.of(
+            RegisterTypeId.Int32, StGlb_i32,
+            RegisterTypeId.Float64, StGlb_f64,
+            RegisterTypeId.Unsigned8, StGlb_u8,
+            RegisterTypeId.Ref, StGlb_ref,
+            RegisterTypeId.NativePtr, StGlb_ptr);
 
     public static OpCode stGlb(Type type) {
-        return stGlb.get(type.primitive());
+        return assertOpCode(stGlb, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> stFld = Map.of(
-            BuiltInTypeSymbol.INT, StFld_i32,
-            BuiltInTypeSymbol.FLOAT, StFld_f64,
-            BuiltInTypeSymbol.BYTE, StFld_u8,
-            BuiltInTypeSymbol.OBJECT, StFld_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, StFld_ptr);
+    private static final Map<RegisterTypeId, OpCode> stFld = Map.of(
+            RegisterTypeId.Int32, StFld_i32,
+            RegisterTypeId.Float64, StFld_f64,
+            RegisterTypeId.Unsigned8, StFld_u8,
+            RegisterTypeId.Ref, StFld_ref,
+            RegisterTypeId.NativePtr, StFld_ptr);
 
     public static OpCode stFld(Type type) {
-        return stFld.get(type.primitive());
+        return assertOpCode(stFld, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> stElem = Map.of(
-            BuiltInTypeSymbol.INT, StElem_i32,
-            BuiltInTypeSymbol.FLOAT, StElem_f64,
-            BuiltInTypeSymbol.BYTE, StElem_u8,
-            BuiltInTypeSymbol.OBJECT, StElem_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, StElem_ptr);
+    private static final Map<RegisterTypeId, OpCode> stElem = Map.of(
+            RegisterTypeId.Int32, StElem_i32,
+            RegisterTypeId.Float64, StElem_f64,
+            RegisterTypeId.Unsigned8, StElem_u8,
+            RegisterTypeId.Ref, StElem_ref,
+            RegisterTypeId.NativePtr, StElem_ptr);
 
     public static OpCode stElem(Type type) {
-        return stElem.get(type.primitive());
+        return assertOpCode(stElem, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> ldc = Map.of(
-            BuiltInTypeSymbol.INT, Ldc_i32,
-            BuiltInTypeSymbol.FLOAT, Ldc_f64,
-            BuiltInTypeSymbol.OBJECT, Ldc_ref);
-
-    public static OpCode ldc(Type type) {
-        return ldc.get(type.primitive());
-    }
-
-    private static final Map<BuiltInTypeSymbol, OpCode> add = Map.of(
-            BuiltInTypeSymbol.INT, Add_i32,
-            BuiltInTypeSymbol.FLOAT, Add_f64,
-            BuiltInTypeSymbol.BYTE, Add_u8,
-            BuiltInTypeSymbol.STRING, Add_str);
+    private static final Map<RegisterTypeId, OpCode> add = Map.of(
+            RegisterTypeId.Int32, Add_i32,
+            RegisterTypeId.Float64, Add_f64,
+            RegisterTypeId.Unsigned8, Add_u8,
+            RegisterTypeId.String, Add_str);
 
     public static OpCode add(Type type) {
-        return add.get(type.primitive());
+        return assertOpCode(add, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> sub = Map.of(
-            BuiltInTypeSymbol.INT, Sub_i32,
-            BuiltInTypeSymbol.FLOAT, Sub_f64,
-            BuiltInTypeSymbol.BYTE, Sub_u8);
+    private static final Map<RegisterTypeId, OpCode> sub = Map.of(
+            RegisterTypeId.Int32, Sub_i32,
+            RegisterTypeId.Float64, Sub_f64,
+            RegisterTypeId.Unsigned8, Sub_u8);
 
     public static OpCode sub(Type type) {
-        return sub.get(type.primitive());
+        return assertOpCode(sub, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> mul = Map.of(
-            BuiltInTypeSymbol.INT, Mul_i32,
-            BuiltInTypeSymbol.FLOAT, Mul_f64,
-            BuiltInTypeSymbol.BYTE, Mul_u8);
+    private static final Map<RegisterTypeId, OpCode> mul = Map.of(
+            RegisterTypeId.Int32, Mul_i32,
+            RegisterTypeId.Float64, Mul_f64,
+            RegisterTypeId.Unsigned8, Mul_u8);
 
     public static OpCode mul(Type type) {
-        return mul.get(type.primitive());
+        return assertOpCode(mul, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> div = Map.of(
-            BuiltInTypeSymbol.INT, Div_i32,
-            BuiltInTypeSymbol.FLOAT, Div_f64,
-            BuiltInTypeSymbol.BYTE, Div_u8);
+    private static final Map<RegisterTypeId, OpCode> div = Map.of(
+            RegisterTypeId.Int32, Div_i32,
+            RegisterTypeId.Float64, Div_f64,
+            RegisterTypeId.Unsigned8, Div_u8);
 
     public static OpCode div(Type type) {
-        return div.get(type.primitive());
+        return assertOpCode(div, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> eq = Map.of(
-            BuiltInTypeSymbol.INT, Eq_i32,
-            BuiltInTypeSymbol.FLOAT, Eq_f64,
-            BuiltInTypeSymbol.BYTE, Eq_u8,
-            BuiltInTypeSymbol.OBJECT, Eq_ref,
-            BuiltInTypeSymbol.STRING, Eq_str,
-            BuiltInTypeSymbol.RUNTIME_PTR, Eq_ptr);
+    private static final Map<RegisterTypeId, OpCode> eq = Map.of(
+            RegisterTypeId.Int32, Eq_i32,
+            RegisterTypeId.Float64, Eq_f64,
+            RegisterTypeId.Unsigned8, Eq_u8,
+            RegisterTypeId.Ref, Eq_ref,
+            RegisterTypeId.String, Eq_str,
+            RegisterTypeId.NativePtr, Eq_ptr);
 
     public static OpCode eq(Type type) {
-        return eq.get(type.primitive());
+        return assertOpCode(eq, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> ne = Map.of(
-            BuiltInTypeSymbol.INT, Ne_i32,
-            BuiltInTypeSymbol.FLOAT, Ne_f64,
-            BuiltInTypeSymbol.BYTE, Ne_u8,
-            BuiltInTypeSymbol.OBJECT, Ne_ref,
-            BuiltInTypeSymbol.STRING, Ne_str,
-            BuiltInTypeSymbol.RUNTIME_PTR, Ne_ptr);
+    private static final Map<RegisterTypeId, OpCode> ne = Map.of(
+            RegisterTypeId.Int32, Ne_i32,
+            RegisterTypeId.Float64, Ne_f64,
+            RegisterTypeId.Unsigned8, Ne_u8,
+            RegisterTypeId.Ref, Ne_ref,
+            RegisterTypeId.String, Ne_str,
+            RegisterTypeId.NativePtr, Ne_ptr);
 
     public static OpCode ne(Type type) {
-        return ne.get(type.primitive());
+        return assertOpCode(ne, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> gt = Map.of(
-            BuiltInTypeSymbol.INT, Gt_i32,
-            BuiltInTypeSymbol.FLOAT, Gt_f64,
-            BuiltInTypeSymbol.BYTE, Gt_u8,
-            BuiltInTypeSymbol.STRING, Gt_str);
+    private static final Map<RegisterTypeId, OpCode> gt = Map.of(
+            RegisterTypeId.Int32, Gt_i32,
+            RegisterTypeId.Float64, Gt_f64,
+            RegisterTypeId.Unsigned8, Gt_u8,
+            RegisterTypeId.String, Gt_str);
 
     public static OpCode gt(Type type) {
-        return gt.get(type.primitive());
+        return assertOpCode(gt, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> ge = Map.of(
-            BuiltInTypeSymbol.INT, Ge_i32,
-            BuiltInTypeSymbol.FLOAT, Ge_f64,
-            BuiltInTypeSymbol.BYTE, Ge_u8,
-            BuiltInTypeSymbol.STRING, Ge_str);
+    private static final Map<RegisterTypeId, OpCode> ge = Map.of(
+            RegisterTypeId.Int32, Ge_i32,
+            RegisterTypeId.Float64, Ge_f64,
+            RegisterTypeId.Unsigned8, Ge_u8,
+            RegisterTypeId.String, Ge_str);
 
     public static OpCode ge(Type type) {
-        return ge.get(type.primitive());
+        return assertOpCode(ge, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> lt = Map.of(
-            BuiltInTypeSymbol.INT, Lt_i32,
-            BuiltInTypeSymbol.FLOAT, Lt_f64,
-            BuiltInTypeSymbol.BYTE, Lt_u8,
-            BuiltInTypeSymbol.STRING, Lt_str);
+    private static final Map<RegisterTypeId, OpCode> lt = Map.of(
+            RegisterTypeId.Int32, Lt_i32,
+            RegisterTypeId.Float64, Lt_f64,
+            RegisterTypeId.Unsigned8, Lt_u8,
+            RegisterTypeId.String, Lt_str);
 
     public static OpCode lt(Type type) {
-        return lt.get(type.primitive());
+        return assertOpCode(lt, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> le = Map.of(
-            BuiltInTypeSymbol.INT, Le_i32,
-            BuiltInTypeSymbol.FLOAT, Le_f64,
-            BuiltInTypeSymbol.BYTE, Le_u8,
-            BuiltInTypeSymbol.STRING, Le_str);
+    private static final Map<RegisterTypeId, OpCode> le = Map.of(
+            RegisterTypeId.Int32, Le_i32,
+            RegisterTypeId.Float64, Le_f64,
+            RegisterTypeId.Unsigned8, Le_u8,
+            RegisterTypeId.String, Le_str);
 
     public static OpCode le(Type type) {
-        return le.get(type.primitive());
+        return assertOpCode(le, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> conv = Map.of(
-            BuiltInTypeSymbol.INT, Conv_i32,
-            BuiltInTypeSymbol.FLOAT, Conv_f64,
-            BuiltInTypeSymbol.BYTE, Conv_u8,
-            BuiltInTypeSymbol.OBJECT, Conv_ref,
-            BuiltInTypeSymbol.STRING, Conv_str,
-            BuiltInTypeSymbol.RUNTIME_PTR, Conv_ptr);
+    private static final Map<RegisterTypeId, OpCode> conv = Map.of(
+            RegisterTypeId.Int32, Conv_i32,
+            RegisterTypeId.Float64, Conv_f64,
+            RegisterTypeId.Unsigned8, Conv_u8,
+            RegisterTypeId.Ref, Conv_ref,
+            RegisterTypeId.String, Conv_str,
+            RegisterTypeId.NativePtr, Conv_ptr);
 
     public static OpCode conv(Type type) {
-        return conv.get(type.primitive());
+        return assertOpCode(conv, type);
     }
 
-    private static final Map<BuiltInTypeSymbol, OpCode> newArr = Map.of(
-            BuiltInTypeSymbol.INT, NewArr_i32,
-            BuiltInTypeSymbol.FLOAT, NewArr_f64,
-            BuiltInTypeSymbol.BYTE, NewArr_u8,
-            BuiltInTypeSymbol.OBJECT, NewArr_ref,
-            BuiltInTypeSymbol.RUNTIME_PTR, NewArr_ptr);
+    private static final Map<RegisterTypeId, OpCode> newArr = Map.of(
+            RegisterTypeId.Int32, NewArr_i32,
+            RegisterTypeId.Float64, NewArr_f64,
+            RegisterTypeId.Unsigned8, NewArr_u8,
+            RegisterTypeId.Ref, NewArr_ref,
+            RegisterTypeId.NativePtr, NewArr_ptr);
 
     public static OpCode newArr(Type type) {
-        return newArr.get(type.primitive());
+        return assertOpCode(newArr, type);
+    }
+
+    private static OpCode assertOpCode(Map<RegisterTypeId, OpCode> map, Type key) {
+        final RegisterType registerType = key.registerType();
+        final OpCode opCode = map.get(registerType.id());
+        if (opCode == null) {
+            throw new NullPointerException("no opcode for type '%s' (register type '%s', id %s)".formatted(key, registerType, registerType.id()));
+        }
+        return opCode;
     }
 }

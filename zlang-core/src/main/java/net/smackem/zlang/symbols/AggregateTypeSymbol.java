@@ -73,8 +73,8 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
     }
 
     @Override
-    public BuiltInTypeSymbol primitive() {
-        return BuiltInTypeSymbol.OBJECT;
+    public RegisterType registerType() {
+        return BuiltInType.OBJECT.type();
     }
 
     void defineBuiltInMethod(Type returnType, BuiltInFunction bif, Type... parameterTypes) throws CompilationErrorException {
@@ -95,7 +95,7 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
             assert field.declaringType() == this;
             define(field.name(), field);
             field.setAddress(address);
-            address += field.type().primitive().byteSize();
+            address += field.type().registerType().byteSize();
         }
     }
 
@@ -103,7 +103,7 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
         int size = 0;
         for (final Symbol symbol : symbols()) {
             if (symbol instanceof FieldSymbol) {
-                size += symbol.type().primitive().byteSize();
+                size += symbol.type().registerType().byteSize();
             }
         }
         return size;

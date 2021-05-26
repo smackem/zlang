@@ -260,7 +260,7 @@ void test07(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg2(code_ptr, OPC_NewArr_u8, 3, 1);
     code_ptr += emit_reg_addr(code_ptr, OPC_StGlb_i32, 3, glb_i2);
     // i1[5] <- 123
-    code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_ref, 1, 5);
+    code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_i32, 1, 5);
     code_ptr += emit_reg_addr(code_ptr, OPC_Ldc_i32, 4, 123);
     code_ptr += emit_reg3(code_ptr, OPC_StElem_i32, 4, 2, 1);
     // i3 <- i1[5]
@@ -278,11 +278,11 @@ void test07(byte_t *code, MemoryLayout *memory) {
     const HeapEntry *entry1 = (HeapEntry *) (heap_segment + get_int(global_segment, glb_i1));
     assert_equal(entry1->header, TYPE_Int32, "heap_entry_1.header");
     assert_equal(entry1->data_size, 40, "heap_entry_1.data_size");
-    assert_equal(entry1->ref_count, 1, "heap_entry_1.refcount");
+    assert_equal(entry1->ref_count, 0, "heap_entry_1.refcount");
     const HeapEntry *entry2 = (HeapEntry *) (heap_segment + get_int(global_segment, glb_i2));
     assert_equal(entry2->header, TYPE_Unsigned8, "heap_entry_2.header");
     assert_equal(entry2->data_size, 20, "heap_entry_2.data_size");
-    assert_equal(entry2->ref_count, 1, "heap_entry_2.refcount");
+    assert_equal(entry2->ref_count, 0, "heap_entry_2.refcount");
     assert_equal(get_int(global_segment, glb_i3), 123, "i3");
 }
 
@@ -332,7 +332,7 @@ void test08(byte_t *code, MemoryLayout *memory) {
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 123);
     code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_i32, 2, 1, 0);
     // r1.ref <- 234
-    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_ref, 2, 234);
+    code_ptr += emit_reg_int(code_ptr, OPC_Ldc_i32, 2, 234);
     code_ptr += emit_reg2_addr(code_ptr, OPC_StFld_ref, 2, 1, 4);
     // r1.f <- 1000.125
     code_ptr += emit_reg_int(code_ptr, OPC_Ldc_f64, 2, const_f1);

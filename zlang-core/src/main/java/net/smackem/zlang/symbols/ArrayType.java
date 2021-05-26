@@ -48,13 +48,13 @@ public class ArrayType extends AggregateTypeSymbol {
 
     @Override
     public int byteSize() {
-        return BuiltInTypeSymbol.OBJECT.byteSize(); // dummy - array sizes are calculated inline on creation
+        return BuiltInType.OBJECT.type().byteSize(); // dummy - array sizes are calculated inline on creation
     }
 
     private void defineBuiltInMethods() {
         try {
-            defineBuiltInMethod(BuiltInTypeSymbol.INT, BuiltInFunction.ARRAY_SIZE);
-            defineBuiltInMethod(this, BuiltInFunction.ARRAY_COPY, BuiltInTypeSymbol.INT, BuiltInTypeSymbol.INT);
+            defineBuiltInMethod(BuiltInType.INT.type(), BuiltInFunction.ARRAY_SIZE);
+            defineBuiltInMethod(this, BuiltInFunction.ARRAY_COPY, BuiltInType.INT.type(), BuiltInType.INT.type());
         } catch (CompilationErrorException e) {
             throw new RuntimeException(e); // duplicate identifier -> programming error
         }
