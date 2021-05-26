@@ -502,6 +502,13 @@ void execute(const byte_t *code,
                 reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ptr == reg(&cpu, r_right)->ptr;
                 size = 1 + 3;
                 break;
+            case OPC_Eq_str:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ptr == reg(&cpu, r_right)->ptr;
+                size = 1 + 3;
+                break;
 
             // -------------------- not equals
             //

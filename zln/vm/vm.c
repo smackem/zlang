@@ -38,7 +38,7 @@ static const char *const opcode_names[] = {
     "StElem_ref",
     "StElem_ptr",
     "Ldc_i32",
-    "Ldc_ref",
+    "Ldc_str",
     "Ldc_f64",
     "Ldc_zero",
     "Add_i32",

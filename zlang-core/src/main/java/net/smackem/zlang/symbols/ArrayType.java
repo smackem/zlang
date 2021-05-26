@@ -8,7 +8,11 @@ public class ArrayType extends AggregateTypeSymbol {
     private final Type elementType;
 
     public ArrayType(Scope enclosingScope, Type elementType) {
-        super(typeName(elementType), enclosingScope);
+        this(enclosingScope, elementType, typeName(elementType));
+    }
+
+    ArrayType(Scope enclosingScope, Type elementType, String typeName) {
+        super(typeName, enclosingScope);
         this.elementType = Objects.requireNonNull(elementType);
         defineBuiltInMethods();
     }

@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.*;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -68,7 +69,10 @@ public class ByteCodeReader {
             final int dataSize = buf.getInt(heapOffset + ref + 8);
             final int count = dataSize / elementType.byteSize();
             final int arrayOffset = heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE;
-            return readArray(buf, arrayOffset, elementType, count);
+            final Object array = readArray(buf, arrayOffset, elementType, count);
+            return type instanceof StringType
+                    ? new String((byte[]) array, 0, count - 1, StandardCharsets.US_ASCII)
+                    : array;
         }
         if (type instanceof Scope scope) {
             final int ref = buf.getInt(index);

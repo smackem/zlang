@@ -2,9 +2,9 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
-public class StringType extends AggregateTypeSymbol implements RegisterType {
+public class StringType extends ArrayType implements RegisterType {
     StringType() {
-        super("string", null);
+        super(null, BuiltInType.BYTE.type(), "string");
         defineBuiltInMethods();
     }
 

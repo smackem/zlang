@@ -780,6 +780,11 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             emit(OpCode.Ldc_str, target, CharMatcher.is('"').trimFrom(ctx.StringLiteral().getText()));
             return value(target, BuiltInType.STRING.type());
         }
+        if(ctx.CharLiteral() != null) {
+            final Register target = allocFreedRegister();
+            emit(OpCode.Ldc_i32, target, (int) ctx.CharLiteral().getText().charAt(1));
+            return value(target, BuiltInType.BYTE.type());
+        }
         if (ctx.number() != null) {
             return ctx.number().accept(this);
         }

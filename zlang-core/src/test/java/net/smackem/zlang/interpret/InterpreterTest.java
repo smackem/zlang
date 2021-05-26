@@ -815,6 +815,55 @@ public class InterpreterTest {
         assertThat(globals.get("size")).isEqualTo(100);
     }
 
+    @Test
+    public void stringLength() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var len0: int
+                var size0: int
+                var len3: int
+                var size3: int
+                fn main() {
+                    let str0: string = ""
+                    let str3: string = "abc"
+                    size0 = str0.size()
+                    len0 = str0.length()
+                    size3 = str3.size()
+                    len3 = str3.length()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("size0")).isEqualTo(1);
+        assertThat(globals.get("len0")).isEqualTo(0);
+        assertThat(globals.get("size3")).isEqualTo(4);
+        assertThat(globals.get("len3")).isEqualTo(3);
+    }
+
+    @Test
+    public void stringIndex() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var char0: byte
+                var char1: byte
+                var char2: byte
+                var char3: byte
+                var result: string
+                fn main() {
+                    let str: string = "abc"
+                    char0 = str[0]
+                    char1 = str[1]
+                    char2 = str[2]
+                    char3 = str[3]
+                    str[0] = 'Z'
+                    result = str
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("char0")).isEqualTo((byte) 'a');
+        assertThat(globals.get("char1")).isEqualTo((byte) 'b');
+        assertThat(globals.get("char2")).isEqualTo((byte) 'c');
+        assertThat(globals.get("char3")).isEqualTo((byte) 0);
+        assertThat(globals.get("result")).isEqualTo("Zbc");
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);

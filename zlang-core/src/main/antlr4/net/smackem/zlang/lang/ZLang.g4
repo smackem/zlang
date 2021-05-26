@@ -322,6 +322,7 @@ listInstanceCreation
 literal
     : number
     | StringLiteral
+    | CharLiteral
     | True
     | False
     | Nil
@@ -424,6 +425,10 @@ HexLiteral
 
 StringLiteral
     : '"' ~["\\\r\n]* '"'
+    ;
+
+CharLiteral
+    : '\'' ~['\\\r\n] '\''
     ;
 
 DocCommentLine
