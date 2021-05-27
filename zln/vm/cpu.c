@@ -566,6 +566,13 @@ void execute(const byte_t *code,
                 reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 > reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
+            case OPC_Gt_str:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = compare_strings(&cpu, reg(&cpu, r_left)->ref, reg(&cpu, r_right)->ref) > 0;
+                size = 1 + 3;
+                break;
 
             // -------------------- greater than or equal
             //
@@ -584,8 +591,15 @@ void execute(const byte_t *code,
                 reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 >= reg(&cpu, r_right)->f64;
                 size = 1 + 3;
                 break;
+            case OPC_Ge_str:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = compare_strings(&cpu, reg(&cpu, r_left)->ref, reg(&cpu, r_right)->ref) >= 0;
+                size = 1 + 3;
+                break;
 
-            // -------------------- greater than or equal
+            // -------------------- less than
             //
             case OPC_Lt_i32:
             case OPC_Lt_u8:
@@ -600,6 +614,13 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
                 reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 < reg(&cpu, r_right)->f64;
+                size = 1 + 3;
+                break;
+            case OPC_Lt_str:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = compare_strings(&cpu, reg(&cpu, r_left)->ref, reg(&cpu, r_right)->ref) < 0;
                 size = 1 + 3;
                 break;
 
@@ -618,6 +639,13 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
                 reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->f64 <= reg(&cpu, r_right)->f64;
+                size = 1 + 3;
+                break;
+            case OPC_Le_str:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = compare_strings(&cpu, reg(&cpu, r_left)->ref, reg(&cpu, r_right)->ref) <= 0;
                 size = 1 + 3;
                 break;
 

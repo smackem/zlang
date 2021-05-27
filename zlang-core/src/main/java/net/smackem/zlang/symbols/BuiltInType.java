@@ -27,12 +27,4 @@ public enum BuiltInType {
                 .map(BuiltInType::type)
                 .toList();
     }
-
-    public static RegisterType fromId(int id) {
-        return Arrays.stream(values())
-                .filter(v -> v.type.id().number() == id)
-                .findFirst()
-                .map(v -> v.type)
-                .orElseThrow();
-    }
 }

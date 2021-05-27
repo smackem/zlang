@@ -320,6 +320,7 @@ public enum OpCode {
             RegisterTypeId.Float64, LdGlb_f64,
             RegisterTypeId.Unsigned8, LdGlb_u8,
             RegisterTypeId.Ref, LdGlb_ref,
+            RegisterTypeId.String, LdGlb_ref,
             RegisterTypeId.NativePtr, LdGlb_ptr);
 
     public static OpCode ldGlb(Type type) {
@@ -331,6 +332,7 @@ public enum OpCode {
             RegisterTypeId.Float64, LdFld_f64,
             RegisterTypeId.Unsigned8, LdFld_u8,
             RegisterTypeId.Ref, LdFld_ref,
+            RegisterTypeId.String, LdFld_ref,
             RegisterTypeId.NativePtr, LdFld_ptr);
 
     public static OpCode ldFld(Type type) {
@@ -342,6 +344,7 @@ public enum OpCode {
             RegisterTypeId.Float64, LdElem_f64,
             RegisterTypeId.Unsigned8, LdElem_u8,
             RegisterTypeId.Ref, LdElem_ref,
+            RegisterTypeId.String, LdElem_ref,
             RegisterTypeId.NativePtr, LdElem_ptr);
 
     public static OpCode ldElem(Type type) {
@@ -353,6 +356,7 @@ public enum OpCode {
             RegisterTypeId.Float64, StGlb_f64,
             RegisterTypeId.Unsigned8, StGlb_u8,
             RegisterTypeId.Ref, StGlb_ref,
+            RegisterTypeId.String, StGlb_ref,
             RegisterTypeId.NativePtr, StGlb_ptr);
 
     public static OpCode stGlb(Type type) {
@@ -364,6 +368,7 @@ public enum OpCode {
             RegisterTypeId.Float64, StFld_f64,
             RegisterTypeId.Unsigned8, StFld_u8,
             RegisterTypeId.Ref, StFld_ref,
+            RegisterTypeId.String, StFld_ref,
             RegisterTypeId.NativePtr, StFld_ptr);
 
     public static OpCode stFld(Type type) {
@@ -375,6 +380,7 @@ public enum OpCode {
             RegisterTypeId.Float64, StElem_f64,
             RegisterTypeId.Unsigned8, StElem_u8,
             RegisterTypeId.Ref, StElem_ref,
+            RegisterTypeId.String, StElem_ref,
             RegisterTypeId.NativePtr, StElem_ptr);
 
     public static OpCode stElem(Type type) {
@@ -499,6 +505,7 @@ public enum OpCode {
             RegisterTypeId.Float64, NewArr_f64,
             RegisterTypeId.Unsigned8, NewArr_u8,
             RegisterTypeId.Ref, NewArr_ref,
+            RegisterTypeId.String, NewArr_ref,
             RegisterTypeId.NativePtr, NewArr_ptr);
 
     public static OpCode newArr(Type type) {

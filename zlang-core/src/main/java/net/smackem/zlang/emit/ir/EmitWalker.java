@@ -344,6 +344,23 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitForIteratorStmt(ZLangParser.ForIteratorStmtContext ctx) {
+        final Value iterable = ctx.expr().accept(this);
+        if (iterable.type instanceof ArrayType == false) {
+            return logLocalError(ctx, "iterable is not an array");
+        }
+        final ArrayType arrayType = (ArrayType) iterable.type;
+        final Value from = value(allocFreedRegister(), BuiltInType.INT.type());
+        emit(OpCode.Ldc_zero, from.register);
+        final Value size = value(allocFreedRegister(), BuiltInType.INT.type());
+        final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.LIST_ADD.ident());
+        emit(OpCode.Invoke, size.register, iterable.register, sizeFunction);
+        final VariableSymbol iterator = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), from, true);
+        assert iterator != null && iterator.isGlobal() == false;
+        return null;
+    }
+
+    @Override
     public Value visitExpr(ZLangParser.ExprContext ctx) {
         if (ctx.If() != null) {
             Label elseLabel = addLabel();
@@ -435,9 +452,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             throw new UnsupportedOperationException("unsupported relational operator");
         }
 
-        if (opc == null) {
-            return logLocalError(ctx, "unsupported type for relational operator " + left.type);
-        }
         emit(opc, target, left.register, right.register);
         return value(target, BuiltInType.BOOL.type());
     }
@@ -464,9 +478,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             throw new UnsupportedOperationException("unsupported additive operator");
         }
 
-        if (opc == null) {
-            return logLocalError(ctx, "unsupported type for additive operator " + left.type);
-        }
         emit(opc, target, left.register, right.register);
         return value(target, left.type);
     }
@@ -493,9 +504,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             throw new UnsupportedOperationException("unsupported multiplicative operator");
         }
 
-        if (opc == null) {
-            return logLocalError(ctx, "unsupported type for multiplicative operator " + left.type);
-        }
         emit(opc, target, left.register, right.register);
         return value(target, left.type);
     }
@@ -510,9 +518,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
         if (ctx.unaryOp().Minus() != null) {
             final OpCode opcSub = OpCode.sub(value.type);
-            if (opcSub == null) {
-                return logLocalError(ctx, "operator - not supported for type " + value.type);
-            }
             final Register zero = allocFreedRegister();
             emit(OpCode.Ldc_zero, zero);
             final Register target = allocFreedRegister(value.register, zero);
@@ -522,9 +527,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
         if (ctx.unaryOp().Not() != null) {
             final OpCode opcEq = OpCode.eq(value.type);
-            if (opcEq == null) {
-                return logLocalError(ctx, "operator == not supported for type " + value.type);
-            }
             final Register zero = allocFreedRegister();
             emit(OpCode.Ldc_zero, zero);
             final Register target = allocFreedRegister(value.register, zero);

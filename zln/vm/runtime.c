@@ -194,6 +194,12 @@ void invoke(BuiltInFunction function_id, Cpu *cpu, Register *result, const Regis
 }
 
 int compare_strings(const Cpu *cpu, addr_t a, addr_t b) {
+    if (a == 0) {
+        return b == 0 ? 0 : -1;
+    }
+    if (b == 0) {
+        return 1;
+    }
     const HeapEntry *entry_a = get_heap_entry(&cpu->heap, a);
     const HeapEntry *entry_b = get_heap_entry(&cpu->heap, b);
     assert(entry_a->header == TYPE_Unsigned8);

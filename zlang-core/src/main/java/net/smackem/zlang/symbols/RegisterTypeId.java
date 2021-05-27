@@ -24,4 +24,13 @@ public enum RegisterTypeId {
     public int byteSize() {
         return this.byteSize;
     }
+
+    public static RegisterTypeId fromNumber(int number) {
+        for (final RegisterTypeId value : values()) {
+            if (number == value.number()) {
+                return value;
+            }
+        }
+        throw new IllegalArgumentException("no RegisterTypeId exists with number " + number);
+    }
 }

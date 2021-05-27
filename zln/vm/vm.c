@@ -184,6 +184,7 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
         case OPC_Add_i32:
         case OPC_Add_f64:
         case OPC_Add_u8:
+        case OPC_Add_str:
         case OPC_Sub_i32:
         case OPC_Sub_f64:
         case OPC_Sub_u8:
@@ -198,23 +199,29 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
         case OPC_Eq_f64:
         case OPC_Eq_ref:
         case OPC_Eq_ptr:
+        case OPC_Eq_str:
         case OPC_Ne_i32:
         case OPC_Ne_u8:
         case OPC_Ne_f64:
         case OPC_Ne_ref:
         case OPC_Ne_ptr:
+        case OPC_Ne_str:
         case OPC_Gt_i32:
         case OPC_Gt_u8:
         case OPC_Gt_f64:
+        case OPC_Gt_str:
         case OPC_Ge_i32:
         case OPC_Ge_u8:
         case OPC_Ge_f64:
+        case OPC_Ge_str:
         case OPC_Lt_i32:
         case OPC_Lt_u8:
         case OPC_Lt_f64:
+        case OPC_Lt_str:
         case OPC_Le_i32:
         case OPC_Le_u8:
         case OPC_Le_f64:
+        case OPC_Le_str:
         case OPC_And:
         case OPC_Or:
             fprintf(f, "%12s r%d r%d r%d",

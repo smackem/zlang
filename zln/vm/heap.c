@@ -36,6 +36,10 @@ static inline uint32_t heap_entry_data_size(const Heap *heap, const HeapEntry *h
     return heap_entry->data_size;
 }
 
+static inline void assert_not_nil(addr_t addr) {
+    assert_that(addr != 0, "nil reference error");
+}
+
 const TypeMeta *instance_type(const Heap *heap, const HeapEntry *entry) {
     if ((entry->header & HEAP_ENTRY_TYPE_META_FLAG) == 0) {
         return NULL;
@@ -90,6 +94,7 @@ addr_t alloc_str(Heap *heap, addr_t const_addr) {
 }
 
 addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
+    assert_not_nil(entry_addr);
     const HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     assert_that(entry_addr != 0, "null reference error");
     assert_that(offset < heap_entry_data_size(heap, entry), "field address out of bounds");
@@ -97,15 +102,18 @@ addr_t get_field_addr(const Heap *heap, addr_t entry_addr, addr_t offset) {
 }
 
 HeapEntry *get_heap_entry(const Heap *heap, addr_t heap_addr) {
+    assert_not_nil(heap_addr);
     return (HeapEntry *) &heap->memory[heap_addr];
 }
 
 uint32_t add_ref(Heap *heap, addr_t heap_addr) {
+    assert_not_nil(heap_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
     return ++(entry->ref_count);
 }
 
 uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
+    assert_not_nil(heap_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
     entry->ref_count--;
     if (entry->ref_count > 0) {

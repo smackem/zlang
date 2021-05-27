@@ -865,7 +865,7 @@ public class InterpreterTest {
     }
 
     @Test
-    public void stringCompare() throws Exception {
+    public void stringEquality() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 let result: bool[] = new bool[5]
                 fn main() {
@@ -879,13 +879,26 @@ public class InterpreterTest {
                 }
                 """);
         final Map<String, Object> globals = run(modules);
-        assertThat(globals.get("result")).isEqualTo(new boolean[] {
-                true,
-                false,
-                true,
-                false,
-                true,
-        });
+        assertThat(globals.get("result")).isEqualTo(new int[] { 1, 0, 1, 0, 1 });
+    }
+
+    @Test
+    public void stringComparison() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                let result: bool[] = new bool[6]
+                fn main() {
+                    let s1: string = "abc"
+                    let s2: string = "def"
+                    result[0] = s1 < s2
+                    result[1] = s1 >= s2
+                    result[2] = s2 > s1
+                    result[3] = s2 <= s1
+                    result[4] = s1 > nil
+                    result[5] = s1 <= nil
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo(new int[] { 1, 0, 1, 0, 1, 0 });
     }
 
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {

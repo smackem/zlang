@@ -5,8 +5,10 @@ import net.smackem.zlang.symbols.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.swing.*;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -64,12 +66,12 @@ public class ByteCodeReader {
             if (ref == 0) {
                 return null;
             }
-            final int elementTypeId = buf.getInt(heapOffset + ref);
-            final RegisterType elementType = BuiltInType.fromId(elementTypeId);
+            final int elementTypeNumber = buf.getInt(heapOffset + ref);
+            final RegisterTypeId elementTypeId = RegisterTypeId.fromNumber(elementTypeNumber);
             final int dataSize = buf.getInt(heapOffset + ref + 8);
-            final int count = dataSize / elementType.byteSize();
+            final int count = dataSize / elementTypeId.byteSize();
             final int arrayOffset = heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE;
-            final Object array = readArray(buf, arrayOffset, elementType, count);
+            final Object array = readArray(buf, arrayOffset, elementTypeId, count);
             return type instanceof StringType
                     ? new String((byte[]) array, 0, count - 1, StandardCharsets.US_ASCII)
                     : array;
@@ -86,32 +88,30 @@ public class ByteCodeReader {
         throw new UnsupportedOperationException("unsupported type '" + type + "'");
     }
 
-    private static Object readArray(ByteBuffer buf, int offset, RegisterType elementType, int count) {
-        if (elementType == BuiltInType.INT.type()
-                || elementType == BuiltInType.OBJECT.type()
-                || elementType == BuiltInType.BOOL.type()) {
-            final IntBuffer intBuf = buf.slice(offset, count * elementType.byteSize()).order(ByteOrder.nativeOrder()).asIntBuffer();
+    private static Object readArray(ByteBuffer buf, int offset, RegisterTypeId elementTypeId, int count) {
+        if (elementTypeId == RegisterTypeId.Int32 || elementTypeId == RegisterTypeId.Ref) {
+            final IntBuffer intBuf = buf.slice(offset, count * elementTypeId.byteSize()).order(ByteOrder.nativeOrder()).asIntBuffer();
             final int[] data = new int[count];
             intBuf.get(0, data);
             return data;
         }
-        if (elementType == BuiltInType.BYTE.type()) {
+        if (elementTypeId == RegisterTypeId.Unsigned8) {
             final byte[] data = new byte[count];
             buf.get(offset, data);
             return data;
         }
-        if (elementType == BuiltInType.FLOAT.type()) {
-            final DoubleBuffer floatBuf = buf.slice(offset, count * elementType.byteSize()).order(ByteOrder.nativeOrder()).asDoubleBuffer();
+        if (elementTypeId == RegisterTypeId.Float64) {
+            final DoubleBuffer floatBuf = buf.slice(offset, count * elementTypeId.byteSize()).order(ByteOrder.nativeOrder()).asDoubleBuffer();
             final double[] data = new double[count];
             floatBuf.get(0, data);
             return data;
         }
-        if (elementType == BuiltInType.RUNTIME_PTR.type()) {
-            final LongBuffer longBuf = buf.slice(offset, count * elementType.byteSize()).order(ByteOrder.nativeOrder()).asLongBuffer();
+        if (elementTypeId == RegisterTypeId.NativePtr) {
+            final LongBuffer longBuf = buf.slice(offset, count * elementTypeId.byteSize()).order(ByteOrder.nativeOrder()).asLongBuffer();
             final long[] data = new long[count];
             longBuf.get(0, data);
             return data;
         }
-        throw new UnsupportedOperationException("unsupported type '" + elementType + "'");
+        throw new UnsupportedOperationException("unsupported type '" + elementTypeId + "'");
     }
 }
