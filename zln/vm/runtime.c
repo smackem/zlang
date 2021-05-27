@@ -81,6 +81,9 @@ static void array_copy(Cpu *cpu, Register *result, const Register *first_arg) {
     memcpy(copy_entry->data, &self->data[from * element_size], copy_count * element_size);
 }
 
+static void array_wrap(Cpu *cpu, Register *result, const Register *first_arg) {
+}
+
 // see ListType.java
 #define LIST_FIELD_SIZE 0
 #define LIST_FIELD_ARRAY 4
@@ -154,7 +157,7 @@ static invocation_t invocations[] = {
         NULL,
         array_size,     //BIF_ArrayLength     = 1,
         array_copy,     //BIF_ArrayCopy       = 2,
-        NULL,           // 3
+        array_wrap,     //BIF_ArrayWrap       = 3,
         NULL,           // 4
         NULL,           // 5
         NULL,           // 6

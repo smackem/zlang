@@ -10,6 +10,7 @@
 typedef enum built_in_function {
     BIF_ArraySize       = 1,
     BIF_ArrayCopy       = 2,
+    BIF_ArrayWrap       = 3,
     BIF_ListSize        = 10,
     BIF_ListCapacity    = 11,
     BIF_ListAdd         = 12,

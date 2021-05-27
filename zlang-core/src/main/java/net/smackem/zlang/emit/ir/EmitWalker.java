@@ -353,10 +353,25 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value from = value(allocFreedRegister(), BuiltInType.INT.type());
         emit(OpCode.Ldc_zero, from.register);
         final Value size = value(allocFreedRegister(), BuiltInType.INT.type());
-        final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.LIST_ADD.ident());
+        final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
         emit(OpCode.Invoke, size.register, iterable.register, sizeFunction);
-        final VariableSymbol iterator = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), from, true);
+        final Label loopLabel = addLabel();
+        final Label exitLabel = addLabel();
+        final Register condRegister = allocFreedRegister();
+        final Register stepRegister = allocFreedRegister();
+        emit(OpCode.Ldc_i32, stepRegister, 1);
+        emit(OpCode.Lt_i32, condRegister, from.register, size.register);
+        loopLabel.setTarget(this.currentInstructions.get(this.currentInstructions.size() - 1));
+        emitBranch(condRegister, exitLabel);
+        final Value target = value(allocFreedRegister(), arrayType.elementType());
+        emit(OpCode.ldElem(arrayType.elementType()), target.register, iterable.register, from.register);
+        VariableSymbol iterator = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), target, true);
         assert iterator != null && iterator.isGlobal() == false;
+        ctx.block().accept(this);
+        emit(OpCode.Add_i32, from.register, from.register, stepRegister);
+        emitBranch(loopLabel);
+        exitLabel.setTarget(emitNop());
+        freeRegister(from.register, size.register, target.register, condRegister, stepRegister);
         return null;
     }
 
