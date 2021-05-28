@@ -704,12 +704,33 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     @Override
     public Value visitArrayInstanceCreation(ZLangParser.ArrayInstanceCreationContext ctx) {
-        final Value size = ctx.expr().accept(this);
+        final Value size;
+        if (ctx.expr() != null) {
+            size = ctx.expr().accept(this);
+        } else {
+            size = value(allocFreedRegister(), BuiltInType.INT.type());
+            emit(OpCode.Ldc_i32, size.register, ctx.arguments().expr().size());
+        }
         final Type elementType = resolveType(ctx.type());
         final Register target = allocFreedRegister(size.register);
         emit(OpCode.newArr(elementType), target, size.register);
         final Type arrayType = defineArrayType(elementType);
-        return new Value(target, arrayType);
+        final Value array = value(target, arrayType);
+        if (ctx.arguments() != null) {
+            int i = 0;
+            final Register indexRegister = allocFreedRegister();
+            for (final var elemCtx : ctx.arguments().expr()) {
+                final Value elem = elemCtx.accept(this);
+                if (Types.isAssignable(elementType, elem.type) == false) {
+                    return logLocalError(elemCtx, "type is not assignable to array element type");
+                }
+                emit(OpCode.Ldc_i32, indexRegister, i);
+                emit(OpCode.stElem(elementType), elem.register, array.register, indexRegister);
+                i++;
+            }
+            freeRegister(indexRegister);
+        }
+        return array;
     }
 
     @Override

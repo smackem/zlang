@@ -398,6 +398,13 @@ void execute(const byte_t *code,
                 reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 + reg(&cpu, r_right)->i32) & 0xff);
                 size = 1 + 3;
                 break;
+            case OPC_Add_str:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->ref = concat_strings(&cpu, reg(&cpu, r_left)->ref, reg(&cpu, r_right)->ref);
+                size = 1 + 3;
+                break;
 
             // -------------------- subtract
             //

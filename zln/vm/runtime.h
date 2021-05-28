@@ -24,5 +24,6 @@ typedef enum built_in_function {
 void invoke(BuiltInFunction function_id, Cpu *cpu, Register *result, const Register *first_arg);
 
 int compare_strings(const Cpu *cpu, addr_t a, addr_t b);
+addr_t concat_strings(Cpu *cpu, addr_t left, addr_t right);
 
 #endif //ZLN_RUNTIME_H

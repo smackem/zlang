@@ -209,3 +209,16 @@ int compare_strings(const Cpu *cpu, addr_t a, addr_t b) {
     assert(entry_b->header == TYPE_Unsigned8);
     return strcmp((const char *) entry_a->data, (const char *) entry_b->data);
 }
+
+addr_t concat_strings(Cpu *cpu, addr_t left, addr_t right) {
+    const HeapEntry *left_entry = get_heap_entry(&cpu->heap, left);
+    const HeapEntry *right_entry = get_heap_entry(&cpu->heap, right);
+    uint32_t size = left_entry->data_size + right_entry->data_size - 1;
+    assert(left_entry->header == TYPE_Unsigned8);
+    assert(right_entry->header == TYPE_Unsigned8);
+    addr_t dest_addr = alloc_array(&cpu->heap, TYPE_Unsigned8, size);
+    HeapEntry *dest_entry = get_heap_entry(&cpu->heap, dest_addr);
+    memcpy(dest_entry->data, left_entry->data, left_entry->data_size);
+    memcpy(&dest_entry->data[left_entry->data_size - 1], right_entry->data, right_entry->data_size);
+    return dest_addr;
+}
