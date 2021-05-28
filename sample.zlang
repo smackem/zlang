@@ -112,3 +112,13 @@ fn Number::is_int() -> bool {
         else -> false
     }
 }
+
+// static methods:
+struct StringMethods {}
+let Strings: StringMethods = new StringMethods {}
+
+// alternative:
+// struct instance Strings {}
+
+fn Strings::compare(a: string, b: string) -> int {
+}

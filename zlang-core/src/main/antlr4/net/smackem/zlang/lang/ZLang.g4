@@ -313,10 +313,11 @@ fieldInitializer
 
 arrayInstanceCreation
     : New type LBracket expr RBracket
+    | New type LBracket RBracket LBrace arguments? LineBreak? RBrace
     ;
 
 listInstanceCreation
-    : New type List LBrace arguments? RBrace
+    : New type List LBrace arguments? LineBreak? RBrace
     ;
 
 literal

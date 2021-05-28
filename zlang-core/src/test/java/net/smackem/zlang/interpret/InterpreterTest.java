@@ -901,6 +901,27 @@ public class InterpreterTest {
         assertThat(globals.get("result")).isEqualTo(new int[] { 1, 0, 1, 0, 1, 0 });
     }
 
+    @Test
+    public void forIterator() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var result: int
+                fn main() {
+                    let array: int[] = new int[3]
+                    array[0] = 1
+                    array[1] = 2
+                    array[2] = 3
+                    var n: int
+                    var x: int
+                    for i: int in array {
+                        n = n + i
+                    }
+                    result = n
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo(6);
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
