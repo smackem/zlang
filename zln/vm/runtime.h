@@ -15,8 +15,6 @@ typedef enum built_in_function {
     BIF_ListCapacity    = 11,
     BIF_ListAdd         = 12,
     BIF_ListRemove      = 13,
-    BIF_ListSet         = 14,
-    BIF_ListGet         = 15,
     BIF_Print           = 20,
     BIF_StringLength    = 30,
 } BuiltInFunction;

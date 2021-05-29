@@ -64,8 +64,6 @@ public class ListType extends AggregateTypeSymbol {
             defineBuiltInMethod(BuiltInType.INT.type(), BuiltInFunction.LIST_CAPACITY);
             defineBuiltInMethod(null, BuiltInFunction.LIST_ADD, elementType);
             defineBuiltInMethod(null, BuiltInFunction.LIST_REMOVE, BuiltInType.INT.type());
-            defineBuiltInMethod(null, BuiltInFunction.LIST_SET, BuiltInType.INT.type(), elementType);
-            defineBuiltInMethod(elementType, BuiltInFunction.LIST_GET, BuiltInType.INT.type());
         } catch (CompilationErrorException e) {
             throw new RuntimeException(e); // duplicate identifier -> programming error
         }

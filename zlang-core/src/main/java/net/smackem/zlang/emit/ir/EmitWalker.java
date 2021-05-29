@@ -177,11 +177,16 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     public void emitPostFixedPrimaryAssign(ZLangParser.PostFixedPrimaryContext ctx, Value rvalue) {
-        final Value primary = ctx.primary() != null
+        Value primary = ctx.primary() != null
                 ? ctx.primary().accept(this)
                 : ctx.postFixedPrimary().accept(this);
 
         if (ctx.arrayAccessPostfix() != null) {
+            if (primary.type instanceof ListType listType) {
+                final Register arrayRegister = allocFreedRegister(primary.register);
+                emit(OpCode.ldFld(listType.arrayType()), arrayRegister, primary.register, listType.arrayField().address());
+                primary = value(arrayRegister, listType.arrayType());
+            }
             if (primary.type instanceof ArrayType == false) {
                 logLocalError(ctx, "indexed value is not an array");
                 return;
@@ -567,9 +572,14 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             return ctx.primary().accept(this);
         }
 
-        final Value primary = ctx.postFixedPrimary().accept(this);
+        Value primary = ctx.postFixedPrimary().accept(this);
 
         if (ctx.arrayAccessPostfix() != null) {
+            if (primary.type instanceof ListType listType) {
+                final Register arrayRegister = allocFreedRegister(primary.register);
+                emit(OpCode.ldFld(listType.arrayType()), arrayRegister, primary.register, listType.arrayField().address());
+                primary = value(arrayRegister, listType.arrayType());
+            }
             if (primary.type instanceof ArrayType == false) {
                 return logLocalError(ctx, "indexed value is not an array");
             }

@@ -125,25 +125,6 @@ static void list_add(Cpu *cpu, Register *result, const Register *first_arg) {
 static void list_remove(Cpu *cpu, Register *result, const Register *first_arg) {
 }
 
-static void list_set(Cpu *cpu, Register *result, const Register *first_arg) {
-    addr_t array_field_addr = get_field_addr(&cpu->heap, first_arg[0].ref, LIST_FIELD_ARRAY);
-    addr_t array_addr = get_addr(cpu->heap.memory, array_field_addr);
-    int32_t index = first_arg[1].i32;
-    const HeapEntry *array = get_heap_entry(&cpu->heap, array_addr);
-    addr_t elem_addr = get_field_addr(&cpu->heap, array_addr, index * sizeof_type(array->header));
-    store(cpu->heap.memory, elem_addr, &first_arg[2], array->header);
-}
-
-static void list_get(Cpu *cpu, Register *result, const Register *first_arg) {
-    addr_t array_field_addr = get_field_addr(&cpu->heap, first_arg[0].ref, LIST_FIELD_ARRAY);
-    addr_t array_addr = get_addr(cpu->heap.memory, array_field_addr);
-    int32_t index = first_arg[1].i32;
-    trace("list_addr=%u, array_addr=%u, index=%d", first_arg[0].ref, array_addr, index);
-    const HeapEntry *array = get_heap_entry(&cpu->heap, array_addr);
-    addr_t elem_addr = get_field_addr(&cpu->heap, array_addr, index * sizeof_type(array->header));
-    load(cpu->heap.memory, elem_addr, result, array->header);
-}
-
 static void print(Cpu *cpu, Register *result, const Register *first_arg) {
 }
 
@@ -168,8 +149,8 @@ static invocation_t invocations[] = {
         list_capacity,  //BIF_ListCapacity    = 11,
         list_add,       //BIF_ListAdd         = 12,
         list_remove,    //BIF_ListRemove      = 13,
-        list_set,       //BIF_ListSet         = 14,
-        list_get,       //BIF_ListGet         = 15,
+        NULL,           // 14
+        NULL,           // 15
         NULL,           // 16
         NULL,           // 17
         NULL,           // 18

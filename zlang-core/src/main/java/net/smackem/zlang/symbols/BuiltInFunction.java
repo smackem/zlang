@@ -8,8 +8,6 @@ public enum BuiltInFunction {
     LIST_CAPACITY("capacity", 11),
     LIST_ADD("add", 12),
     LIST_REMOVE("remove", 13),
-    LIST_SET("set", 14),
-    LIST_GET("get", 15),
     PRINT("print", 20),
     STRING_LENGTH("length", 30);
 

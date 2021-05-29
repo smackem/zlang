@@ -779,9 +779,9 @@ public class InterpreterTest {
                     let l: int list = new int list { 1, 2, 3 }
                     size = l.size()
                     capacity = l.capacity()
-                    a = l.get(0)
-                    b = l.get(1)
-                    c = l.get(2)
+                    a = l[0]
+                    b = l[1]
+                    c = l[2]
                 }
                 """);
         final Map<String, Object> globals = run(modules);
@@ -802,7 +802,8 @@ public class InterpreterTest {
                     for i: int in 0 .. 100 {
                         l.add(i)
                     }
-                    l.set(4, 666)
+                    l[4] = 666
+                    l[5] = 777
                     capacity = l.capacity()
                     size = l.size()
                 }
@@ -810,7 +811,7 @@ public class InterpreterTest {
         final Map<String, Object> globals = run(modules);
         //noinspection unchecked
         final Map<String, Object> list = (Map<String, Object>) globals.get("l");
-        assertThat((int[]) list.get("@array")).startsWith(0, 1, 2, 3, 666, 5);
+        assertThat((int[]) list.get("@array")).startsWith(0, 1, 2, 3, 666, 777);
         assertThat(globals.get("capacity")).isEqualTo(112);
         assertThat(globals.get("size")).isEqualTo(100);
     }
@@ -901,6 +902,18 @@ public class InterpreterTest {
                 """);
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("result")).isEqualTo(new int[] { 1, 0, 1, 0, 1, 0 });
+    }
+
+    @Test
+    public void stringConcat() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var result: string
+                fn main() {
+                    result = "" + "abc" + "." + "def"
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo("abc.def");
     }
 
     @Test
