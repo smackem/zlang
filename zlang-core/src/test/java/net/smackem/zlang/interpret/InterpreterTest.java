@@ -936,6 +936,30 @@ public class InterpreterTest {
         assertThat(globals.get("result")).isEqualTo(6);
     }
 
+    @Test
+    public void forIteratorList() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var result: int
+                var count: int
+                fn main() {
+                    let numbers: int list = new int list {
+                        1, 2, 3
+                    }
+                    var n: int
+                    var x: int
+                    for i: int in numbers {
+                        n = n + i
+                        x = x + 1
+                    }
+                    result = n
+                    count = x
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo(6);
+        assertThat(globals.get("count")).isEqualTo(3);
+    }
+
     private Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);

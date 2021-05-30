@@ -350,16 +350,26 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     @Override
     public Value visitForIteratorStmt(ZLangParser.ForIteratorStmtContext ctx) {
-        final Value iterable = ctx.expr().accept(this);
-        if (iterable.type instanceof ArrayType == false) {
-            return logLocalError(ctx, "iterable is not an array");
+        Value iterable = ctx.expr().accept(this);
+        final ArrayType arrayType;
+        final Value size = value(allocFreedRegister(), BuiltInType.INT.type());
+        if (iterable.type instanceof ListType listType) {
+            final Register arrayRegister = allocFreedRegister(iterable.register);
+            final Symbol sizeFunction = listType.resolveMember(BuiltInFunction.LIST_SIZE.ident());
+            emit(OpCode.Invoke, size.register, iterable.register, sizeFunction);
+            emit(OpCode.ldFld(listType.arrayType()), arrayRegister, iterable.register, listType.arrayField().address());
+            iterable = value(arrayRegister, listType.arrayType());
+            arrayType = listType.arrayType();
+        } else {
+            if (iterable.type instanceof ArrayType == false) {
+                return logLocalError(ctx, "iterable is not an array");
+            }
+            arrayType = (ArrayType) iterable.type;
+            final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
+            emit(OpCode.Invoke, size.register, iterable.register, sizeFunction);
         }
-        final ArrayType arrayType = (ArrayType) iterable.type;
         final Value from = value(allocFreedRegister(), BuiltInType.INT.type());
         emit(OpCode.Ldc_zero, from.register);
-        final Value size = value(allocFreedRegister(), BuiltInType.INT.type());
-        final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
-        emit(OpCode.Invoke, size.register, iterable.register, sizeFunction);
         final Label loopLabel = addLabel();
         final Label exitLabel = addLabel();
         final Register condRegister = allocFreedRegister();
@@ -368,6 +378,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         emit(OpCode.Lt_i32, condRegister, from.register, size.register);
         loopLabel.setTarget(this.currentInstructions.get(this.currentInstructions.size() - 1));
         emitBranch(condRegister, exitLabel);
+        freeRegister(condRegister);
         final Value target = value(allocFreedRegister(), arrayType.elementType());
         emit(OpCode.ldElem(arrayType.elementType()), target.register, iterable.register, from.register);
         VariableSymbol iterator = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), target, true);
@@ -376,7 +387,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         emit(OpCode.Add_i32, from.register, from.register, stepRegister);
         emitBranch(loopLabel);
         exitLabel.setTarget(emitNop());
-        freeRegister(from.register, size.register, target.register, condRegister, stepRegister);
+        freeRegister(iterable.register, from.register, size.register, target.register, stepRegister);
         return null;
     }
 
