@@ -301,6 +301,8 @@ instanceCreation
     : structOrUnionInstanceCreation
     | arrayInstanceCreation
     | listInstanceCreation
+    | listInstanceCreationFromArray
+    | stringInstanceCreation
     ;
 
 structOrUnionInstanceCreation
@@ -318,6 +320,14 @@ arrayInstanceCreation
 
 listInstanceCreation
     : New type List LBrace arguments? LineBreak? RBrace
+    ;
+
+listInstanceCreationFromArray
+    : New type List LParen expr RParen
+    ;
+
+stringInstanceCreation
+    : New String LParen expr RParen
     ;
 
 literal

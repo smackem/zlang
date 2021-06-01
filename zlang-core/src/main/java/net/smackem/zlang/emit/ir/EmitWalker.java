@@ -787,6 +787,29 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitListInstanceCreationFromArray(ZLangParser.ListInstanceCreationFromArrayContext ctx) {
+        final Type elementType = resolveType(ctx.type());
+        final Register target = allocFreedRegister();
+        final ListType listType = defineListType(elementType);
+        final Value array = ctx.expr().accept(this);
+        if (array.type instanceof ArrayType == false) {
+            return logLocalError(ctx, "expression is not an array type");
+        }
+        final ArrayType arrayType = (ArrayType) array.type;
+        if (arrayType.elementType() != elementType) {
+            return logLocalError(ctx, "array element type does not match list element type");
+        }
+        final Register sizeRegister = allocFreedRegister();
+        final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
+        emit(OpCode.Invoke, sizeRegister, array.register, sizeFunction);
+        emit(OpCode.stFld(listType.arrayType()), array.register, target, listType.arrayField().address());
+        emit(OpCode.NewObj, target, listType);
+        emit(OpCode.stFld(elementType), sizeRegister, target, listType.sizeField().address());
+        freeRegister(sizeRegister, array.register);
+        return new Value(target, listType);
+    }
+
+    @Override
     public Value visitStructOrUnionInstanceCreation(ZLangParser.StructOrUnionInstanceCreationContext ctx) {
         final Type type = resolveType(ctx, ctx.Ident().getText());
         if (type instanceof AggregateType == false) {

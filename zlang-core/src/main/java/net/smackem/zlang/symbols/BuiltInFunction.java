@@ -3,7 +3,6 @@ package net.smackem.zlang.symbols;
 public enum BuiltInFunction {
     ARRAY_SIZE("size", 1),
     ARRAY_COPY("copy", 2),
-    ARRAY_WRAP("wrap", 3),
     LIST_SIZE("size", 10),
     LIST_CAPACITY("capacity", 11),
     LIST_ADD("add", 12),

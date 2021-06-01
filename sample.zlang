@@ -122,3 +122,9 @@ let Strings: StringMethods = new StringMethods {}
 
 fn Strings::compare(a: string, b: string) -> int {
 }
+
+fn make_list(numbers: int[]) -> int list {
+    let number_list: int list = new int list {}
+    number_list.add_array(numbers)
+    return number_list
+}
