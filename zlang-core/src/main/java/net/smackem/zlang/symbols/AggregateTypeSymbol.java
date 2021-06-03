@@ -28,18 +28,18 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
 
     @Override
     public Symbol resolveMember(String name) {
-        Symbol symbol = this.symbolTable.resolveMember(name);
-        if (symbol == null) {
-            for (final Type t : this.implementedInterfaces) {
-                if (t instanceof MemberScope) {
-                    symbol = ((MemberScope) t).resolveMember(name);
-                    if (symbol != null) {
-                        return symbol;
-                    }
-                }
+        final Symbol symbol = this.symbolTable.resolveMember(name);
+        if (symbol != null) {
+            return symbol;
+        }
+        for (final Type t : this.implementedInterfaces) {
+            final MemberScope ms = (MemberScope) t;
+            final Symbol ifcMember = ms.resolveMember(name);
+            if (ifcMember != null) {
+                return ifcMember;
             }
         }
-        return symbol;
+        return null;
     }
 
     @Override
