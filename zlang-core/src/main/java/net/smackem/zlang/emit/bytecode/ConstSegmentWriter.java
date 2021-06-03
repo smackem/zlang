@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import java.util.Map;
 
 class ConstSegmentWriter extends NativeValueWriter {
@@ -69,15 +70,39 @@ class ConstSegmentWriter extends NativeValueWriter {
     //    byte_t data[4];
     public void writeType2(AggregateTypeSymbol symbol) throws Exception {
         final ChunkWriter chunk = new ChunkWriter();
+        final int nameOffset, interfacesOffset, vtableOffset, fieldsOffset;
         try (chunk) {
             chunk.writeInt32(0); // name_offset
             chunk.writeInt32(0); // implemented_interfaces_offset
             chunk.writeInt32(0); // vtable_offset
             chunk.writeInt32(0); // fields_offset
-
+            nameOffset = chunk.bytesWritten();
+            chunk.writeString(symbol.typeName());
+            interfacesOffset = chunk.bytesWritten();
+            for (final Type ifc : symbol.implementedInterfaces()) {
+                chunk.writeAddr(((InterfaceSymbol) ifc).address());
+            }
+            chunk.writeAddr(0); // zero-terminate name
+            vtableOffset = chunk.bytesWritten();
+            // TODO write vtable...
+            chunk.writeAddr(0); // zero-terminate vtable tuple
+            chunk.writeAddr(0);
+            fieldsOffset = chunk.bytesWritten();
+            for (final Symbol field : symbol.symbols()) {
+                if (field instanceof FieldSymbol) {
+                    writeByte((byte) field.type().registerType().id().number());
+                }
+            }
+            writeByte((byte) 0); // zero-terminate fields
         }
+        final ByteBuffer byteBuffer = chunk.toByteBuffer();
+        final IntBuffer intBuffer = byteBuffer.asIntBuffer();
+        intBuffer.put(0, nameOffset);
+        intBuffer.put(1, interfacesOffset);
+        intBuffer.put(2, vtableOffset);
+        intBuffer.put(3, fieldsOffset);
         symbol.setAddress(bytesWritten());
-        writeChunk(chunk.toByteBuffer());
+        writeChunk(byteBuffer);
     }
 
     // typedef struct function_meta {
