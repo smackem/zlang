@@ -817,6 +817,25 @@ public class InterpreterTest {
     }
 
     @Test
+    public void listCreateFromArray() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var l: int list
+                var size: int
+                fn main() {
+                    let a: int[] = new int[] { 1, 2, 3 }
+                    l = new int list(a)
+                    a[2] = 666
+                    size = l.size()
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        //noinspection unchecked
+        final Map<String, Object> list = (Map<String, Object>) globals.get("l");
+        assertThat(list.get("@array")).isEqualTo(new int[] { 1, 2, 666 });
+        assertThat(globals.get("size")).isEqualTo(3);
+    }
+
+    @Test
     public void stringLength() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var len0: int
@@ -905,7 +924,7 @@ public class InterpreterTest {
     }
 
     @Test
-    public void stringConcat() throws Exception {
+    public void stringConcatenation() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var result: string
                 fn main() {
@@ -914,6 +933,21 @@ public class InterpreterTest {
                 """);
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("result")).isEqualTo("abc.def");
+    }
+
+    @Test
+    public void stringConversion() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var s: string
+                var a: byte[]
+                fn main() {
+                    s = (string) new byte[] { 'a', 'b', 'c', (byte) 0 }
+                    a = (byte[]) s
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("s")).isEqualTo("abc");
+        assertThat(globals.get("a")).isEqualTo(new byte[] { (byte) 'a', (byte) 'b', (byte) 'c', 0});
     }
 
     @Test

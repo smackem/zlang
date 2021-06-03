@@ -571,9 +571,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     @Override
     public Value visitCastExpr(ZLangParser.CastExprContext ctx) {
         final Type type = resolveType(ctx.type());
-        final Value value = ctx.unaryExpr().accept(this);
-        final Register target = allocFreedRegister(value.register);
-        emit(OpCode.conv(value.type), target, value.register, type.registerType().id().number());
+        final Value v = ctx.unaryExpr().accept(this);
+        if (Types.isImplicitlyConvertible(type, v.type)) {
+            return value(v.register, type);
+        }
+        final Register target = allocFreedRegister(v.register);
+        emit(OpCode.conv(v.type), target, v.register, type.registerType().id().number());
         return value(target, type);
     }
 
@@ -802,8 +805,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Register sizeRegister = allocFreedRegister();
         final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
         emit(OpCode.Invoke, sizeRegister, array.register, sizeFunction);
-        emit(OpCode.stFld(listType.arrayType()), array.register, target, listType.arrayField().address());
         emit(OpCode.NewObj, target, listType);
+        emit(OpCode.stFld(listType.arrayType()), array.register, target, listType.arrayField().address());
         emit(OpCode.stFld(elementType), sizeRegister, target, listType.sizeField().address());
         freeRegister(sizeRegister, array.register);
         return new Value(target, listType);

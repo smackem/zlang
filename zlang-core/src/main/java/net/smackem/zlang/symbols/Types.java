@@ -37,9 +37,19 @@ public final class Types {
         if (left.registerType() == BuiltInType.STRING.type() && right == NilType.INSTANCE) {
             return true;
         }
-        if (right.registerType() == BuiltInType.STRING.type() && left == NilType.INSTANCE) {
+        return right.registerType() == BuiltInType.STRING.type() && left == NilType.INSTANCE;
+    }
+
+    public static boolean isImplicitlyConvertible(Type target, Type source) {
+        if (Objects.equals(target, source)) {
             return true;
         }
-        return false;
+        if (target == BuiltInType.STRING.type()) {
+            return source instanceof ArrayType a && a.elementType() == BuiltInType.BYTE.type();
+        }
+        if (source == BuiltInType.STRING.type()) {
+            return target instanceof ArrayType a && a.elementType() == BuiltInType.BYTE.type();
+        }
+        return source.registerType().id() == RegisterTypeId.Ref && target.registerType().id() == RegisterTypeId.Ref;
     }
 }

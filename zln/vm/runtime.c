@@ -135,6 +135,7 @@ static invocation_t invocations[] = {
         NULL,
         array_size,     //BIF_ArrayLength     = 1,
         array_copy,     //BIF_ArrayCopy       = 2,
+        NULL,           // 3
         NULL,           // 4
         NULL,           // 5
         NULL,           // 6

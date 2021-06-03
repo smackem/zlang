@@ -302,7 +302,6 @@ instanceCreation
     | arrayInstanceCreation
     | listInstanceCreation
     | listInstanceCreationFromArray
-    | stringInstanceCreation
     ;
 
 structOrUnionInstanceCreation
@@ -324,10 +323,6 @@ listInstanceCreation
 
 listInstanceCreationFromArray
     : New type List LParen expr RParen
-    ;
-
-stringInstanceCreation
-    : New String LParen expr RParen
     ;
 
 literal
