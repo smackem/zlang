@@ -42,6 +42,14 @@ class NativeValueWriter implements AutoCloseable {
         this.buf.put((byte) value);
     }
 
+    public void writeChunk(ByteBuffer chunk) throws IOException {
+        if (chunk.order() != this.buf.order()) {
+            throw new IllegalArgumentException("specifed chunk has incompatible byte order");
+        }
+        flush();
+        this.os.write(chunk.array(), chunk.arrayOffset(), chunk.position());
+    }
+
     public void writeInt32(int value) throws IOException {
         if (this.buf.remaining() < BuiltInType.INT.type().byteSize()) {
             flush();

@@ -40,6 +40,7 @@ class ConstSegmentWriter extends NativeValueWriter {
             writeAddr(0);
         }
         // no fields to write...
+        writeByte((byte) 0); // zero-terminated
     }
 
     public void writeType(AggregateTypeSymbol symbol) throws IOException {
@@ -59,6 +60,24 @@ class ConstSegmentWriter extends NativeValueWriter {
             }
         }
         writeByte((byte) 0); // zero-terminated
+    }
+
+    //    addr_t name_offet;
+    //    addr_t implemented_interfaces_offset;
+    //    addr_t vtable_offset;
+    //    addr_t field_types_offset;
+    //    byte_t data[4];
+    public void writeType2(AggregateTypeSymbol symbol) throws Exception {
+        final ChunkWriter chunk = new ChunkWriter();
+        try (chunk) {
+            chunk.writeInt32(0); // name_offset
+            chunk.writeInt32(0); // implemented_interfaces_offset
+            chunk.writeInt32(0); // vtable_offset
+            chunk.writeInt32(0); // fields_offset
+
+        }
+        symbol.setAddress(bytesWritten());
+        writeChunk(chunk.toByteBuffer());
     }
 
     // typedef struct function_meta {

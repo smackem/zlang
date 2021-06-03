@@ -33,6 +33,14 @@ typedef struct function_meta {
 #define FUNCTION_META_MIN_SIZE 48
 
 /**
+ * Holds information about a function declared abstractly, e.g. by an interface
+ */
+typedef struct virtual_function_meta {
+    /// the address in the const segment of the type that declares this function
+    addr_t declaring_type;
+} VirtualFunctionMeta;
+
+/**
  * Defines a register containing either an integer, a reference or a float.
  */
 typedef union register_union {

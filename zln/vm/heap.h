@@ -8,11 +8,23 @@
 #include "types.h"
 
 #define MAX_IMPLEMENTED_INTERFACES 8
+#define MAX_VTABLE_ENTRIES 64
+
+typedef struct vtable_entry {
+    addr_t virtual_function;
+    addr_t impl_function;
+} VTableEntry;
 
 /**
  * Holds information about a type, stored in the const segment
  */
 typedef struct type_meta {
+//    addr_t name_offset;
+//    addr_t implemented_interfaces_offset;
+//    addr_t vtable_offset;
+//    addr_t field_types_offset;
+//    byte_t data[4];
+
     /// the name of the type as a zero-terminated string
     char name[64]; // always 64 bytes (padded with zeroes)
 
