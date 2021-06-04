@@ -131,6 +131,7 @@ public class SymbolExtractorTest {
                     > Readable: InterfaceSymbol
                         - read: InterfaceMethodSymbol{int}@0
                         > read: InterfaceMethodSymbol
+                            - self: SelfSymbol{Readable}@1
                             - buf: ConstantSymbol{Array<byte>}@0
                     > Socket: StructSymbol
                         - address: FieldSymbol{string}@0

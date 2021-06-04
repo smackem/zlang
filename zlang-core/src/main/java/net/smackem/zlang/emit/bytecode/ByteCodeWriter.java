@@ -230,7 +230,7 @@ public class ByteCodeWriter implements AutoCloseable {
                 writer.writeAddr(0); // needs fixup
             }
             case Br -> writer.writeAddr(0); // needs fixup
-            case Call, Invoke -> {
+            case Call, CallVirt, Invoke -> {
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeByte(instr.registerArg(1).number());
                 writer.writeAddr(instr.symbolArg().address());

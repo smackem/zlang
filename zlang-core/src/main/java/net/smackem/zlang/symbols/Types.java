@@ -21,6 +21,9 @@ public final class Types {
         if (lvalue == BuiltInType.INT.type()) {
             return rvalue == BuiltInType.BOOL.type() || rvalue == BuiltInType.BYTE.type();
         }
+        if (rvalue instanceof AggregateTypeSymbol aggregate) {
+            return aggregate.implementedInterfaces().contains(lvalue);
+        }
         return false;
     }
 

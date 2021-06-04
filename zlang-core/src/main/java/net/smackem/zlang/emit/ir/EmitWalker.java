@@ -629,7 +629,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     private Value emitMethodInvocation(Value primary, ZLangParser.MethodInvocationPostfixContext ctx) {
-        if (primary.type instanceof AggregateType == false) {
+        if (primary.type instanceof MemberScope == false) {
             return logLocalError(ctx, "method invocation target is not an aggregate");
         }
         final MemberScope memberScope = (MemberScope) primary.type;
@@ -684,13 +684,23 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             registerIndex++;
         }
 
-        emit(function.isBuiltIn() ? OpCode.Invoke : OpCode.Call, retValRegister,
+        emit(getCallOpCode(function), retValRegister,
                 argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0),
                 function);
         freeRegister(argRegisters.toArray(new Register[0]));
         return function.type() != null
                 ? value(retValRegister, function.type())
                 : null;
+    }
+
+    private static OpCode getCallOpCode(FunctionSymbol callee) {
+        if (callee.isBuiltIn()) {
+            return OpCode.Invoke;
+        }
+        if (callee instanceof InterfaceMethodSymbol) {
+            return OpCode.CallVirt;
+        }
+        return OpCode.Call;
     }
 
     @Override
