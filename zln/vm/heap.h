@@ -7,38 +7,42 @@
 
 #include "types.h"
 
-#define MAX_IMPLEMENTED_INTERFACES 8
-#define MAX_VTABLE_ENTRIES 64
-
 typedef struct vtable_entry {
+    /// const address of a virtual function (VirtualFunctionMeta)
     addr_t virtual_function;
+
+    /// const address of the implementing function (FunctionMeta)
     addr_t impl_function;
 } VTableEntry;
 
+#define VTABLE_ENTRY_SIZE 8
+
 /**
- * Holds information about a type, stored in the const segment
+ * Holds information about a type, stored in the const segment.
+ * all offsets are relative to <c>TypeMeta.data</c>:
+ * to access a member, use this expression: <c>&type_meta->data[type_meta->name_offset]</c>
  */
 typedef struct type_meta {
-//    addr_t name_offset;
-//    addr_t implemented_interfaces_offset;
-//    addr_t vtable_offset;
-//    addr_t field_types_offset;
-//    byte_t data[4];
+    /// data offset of the name of the type as a zero-terminated string
+    addr_t name_offset;
 
-    /// the name of the type as a zero-terminated string
-    char name[64]; // always 64 bytes (padded with zeroes)
+    /// data offset of the addresses of implemented interfaces in const segment.
+    /// implemented interfaces is a zero-terminated list of <c>addr_t</c>s
+    addr_t implemented_interfaces_offset;
 
-    /// number of implemented interfaces
-    uint32_t implemented_interfaces_count;
+    /// data offset of the vtable.
+    /// the vtable is a zero-terminated list of <c>VTableEntry</c> structs. the last struct has all fields zeroed.
+    addr_t vtable_offset;
 
-    /// addresses of implemented interfaces in const segment
-    addr_t implemented_interfaces[MAX_IMPLEMENTED_INTERFACES];
+    /// data offset of a zero-terminated list of field types.
+    /// field types is a list of <c>Type</c>s, terminated by a <c>TYPE_Void</c>
+    addr_t field_types_offset;
 
-    /// zero-terminated list of field types -
-    Type field_types[4]; // zero-terminated (last item is TYPE_Void), 4 bytes for padding
+    /// the data chunk
+    byte_t data[4];
 } TypeMeta;
 
-#define TYPE_META_MIN_SIZE 104
+#define TYPE_META_MIN_SIZE 20
 
 /**
  * Holds a heap entry (dynamically allocated, typed data chunk - e.g. an array, struct or union)

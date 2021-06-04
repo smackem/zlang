@@ -1,7 +1,6 @@
 package net.smackem.zlang.emit.bytecode;
 
 import net.smackem.zlang.symbols.BuiltInType;
-import net.smackem.zlang.symbols.PrimitiveTypeSymbol;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -44,10 +43,10 @@ class NativeValueWriter implements AutoCloseable {
 
     public void writeChunk(ByteBuffer chunk) throws IOException {
         if (chunk.order() != this.buf.order()) {
-            throw new IllegalArgumentException("specifed chunk has incompatible byte order");
+            throw new IllegalArgumentException("specified chunk has incompatible byte order");
         }
         flush();
-        this.os.write(chunk.array(), chunk.arrayOffset(), chunk.position());
+        writeBytesDirectly(chunk.array(), chunk.arrayOffset(), chunk.limit());
     }
 
     public void writeInt32(int value) throws IOException {
@@ -104,19 +103,23 @@ class NativeValueWriter implements AutoCloseable {
     }
 
     private void writeZeroTerminated(byte[] bytes) throws IOException {
-        final int length = bytes.length + 1; // +1 for terminating zero
+        final int length = bytes.length;
         if (this.buf.remaining() < length) {
             flush();
         }
         if (this.buf.remaining() < length) {
             // string is too big for buffer - write it directly to output stream
-            this.os.write(bytes);
-            this.os.write(0);
-            this.bytesFlushed += length;
-            return;
+            writeBytesDirectly(bytes, 0, length);
+        } else {
+            this.buf.put(bytes);
         }
-        this.buf.put(bytes);
-        this.buf.put((byte) 0);
+        this.buf.put((byte) 0); // zero terminate
+    }
+
+    private void writeBytesDirectly(byte[] bytes, int offset, int length) throws IOException {
+        assert this.buf.position() == 0; // buffer should be clear - call flush() before this function
+        this.os.write(bytes, offset, length);
+        this.bytesFlushed += length;
     }
 
     void flush() throws IOException {

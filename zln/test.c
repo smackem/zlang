@@ -305,15 +305,15 @@ void test08(byte_t *code, MemoryLayout *memory) {
     set_float(memory->base, const_f1, 1000.125);
     const addr_t const_ts = 8;
     TypeMeta *test08_meta = (TypeMeta *) &memory->base[const_ts];
-    strcpy(test08_meta->name, "test08_struct");
-    test08_meta->field_types[0] = TYPE_Int32;
-    test08_meta->field_types[1] = TYPE_Ref;
-    test08_meta->field_types[2] = TYPE_Float64;
-    test08_meta->field_types[3] = TYPE_Unsigned8;
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Warray-bounds"
-    test08_meta->field_types[4] = 0;
-#pragma clang diagnostic pop
+    test08_meta->name_offset = 0;
+    strcpy((char *) test08_meta->data, "test08_struct");
+    test08_meta->field_types_offset = strlen((char *) test08_meta->data);
+    Type *field_types = &test08_meta->data[test08_meta->field_types_offset];
+    field_types[0] = TYPE_Int32;
+    field_types[1] = TYPE_Ref;
+    field_types[2] = TYPE_Float64;
+    field_types[3] = TYPE_Unsigned8;
+    field_types[4] = TYPE_Void; // zero-terminate
 
     // globals
     const addr_t glb_i1 = 0;

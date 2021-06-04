@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 class ConstSegmentWriter extends NativeValueWriter {
@@ -18,90 +20,73 @@ class ConstSegmentWriter extends NativeValueWriter {
         super(new ByteArrayOutputStream());
     }
 
-    // #define MAX_IMPLEMENTED_INTERFACES 8
     // typedef struct type_meta {
-    //     /// the name of the type as a zero-terminated string
-    //     char name[64]; // always 64 bytes (padded with zeroes)
+    //     /// data offset of the name of the type as a zero-terminated string
+    //     addr_t name_offset;
     //
-    //     /// number of implemented interfaces
-    //     size_t implemented_interfaces_count;
+    //     /// data offset of the addresses of implemented interfaces in const segment.
+    //     /// implemented interfaces is a zero-terminated list of <c>addr_t</c>s
+    //     addr_t implemented_interfaces_offset;
     //
-    //     /// addresses of implemented interfaces in const segment
-    //     addr_t implemented_interfaces[MAX_IMPLEMENTED_INTERFACES];
+    //     /// data offset of the vtable.
+    //     /// the vtable is a zero-terminated list of <c>VTableEntry</c> structs. the last struct has all fields zeroed.
+    //     addr_t vtable_offset;
     //
-    //     /// zero-terminated list of field types -
-    //     Type field_types[4]; // zero-terminated (last item is TYPE_Void), 4 bytes for padding
+    //     /// data offset of a zero-terminated list of field types.
+    //     /// field types is a list of <c>Type</c>s, terminated by a <c>TYPE_Void</c>
+    //     addr_t field_types_offset;
+    //
+    //     /// the data chunk
+    //     byte_t data[4];
     // } TypeMeta;
 
     public void writeType(InterfaceSymbol symbol) throws IOException {
-        symbol.setAddress(bytesWritten());
-        writeString(symbol.name(), typeNameByteLength);
-        writeInt32(0);
-        for (int i = 0; i < maxImplementedInterfaces; i++) {
-            writeAddr(0);
-        }
-        // no fields to write...
-        writeByte((byte) 0); // zero-terminated
+        writeType(symbol, List.of(), List.of());
     }
 
     public void writeType(AggregateTypeSymbol symbol) throws IOException {
-        symbol.setAddress(bytesWritten());
-        writeString(symbol.name(), typeNameByteLength);
-        final int implCount = symbol.implementedInterfaces().size();
-        writeInt32(implCount);
-        for (final Type ifc : symbol.implementedInterfaces()) {
-            writeAddr(((InterfaceSymbol) ifc).address());
-        }
-        for (int i = implCount; i < maxImplementedInterfaces; i++) {
-            writeAddr(0);
-        }
-        for (final Symbol field : symbol.symbols()) {
-            if (field instanceof FieldSymbol) {
-                writeByte((byte) field.type().registerType().id().number());
-            }
-        }
-        writeByte((byte) 0); // zero-terminated
+        writeType(symbol, symbol.implementedInterfaces(), symbol.symbols());
     }
 
-    //    addr_t name_offet;
-    //    addr_t implemented_interfaces_offset;
-    //    addr_t vtable_offset;
-    //    addr_t field_types_offset;
-    //    byte_t data[4];
-    public void writeType2(AggregateTypeSymbol symbol) throws Exception {
+    private void writeType(Symbol symbol, Collection<Type> implementedInterfaces, Collection<Symbol> fields) throws IOException {
+        symbol.setAddress(bytesWritten());
         final ChunkWriter chunk = new ChunkWriter();
         final int nameOffset, interfacesOffset, vtableOffset, fieldsOffset;
         try (chunk) {
-            chunk.writeInt32(0); // name_offset
-            chunk.writeInt32(0); // implemented_interfaces_offset
-            chunk.writeInt32(0); // vtable_offset
-            chunk.writeInt32(0); // fields_offset
-            nameOffset = chunk.bytesWritten();
-            chunk.writeString(symbol.typeName());
-            interfacesOffset = chunk.bytesWritten();
-            for (final Type ifc : symbol.implementedInterfaces()) {
+            chunk.writeAddr(0); // name_offset
+            chunk.writeAddr(0); // implemented_interfaces_offset
+            chunk.writeAddr(0); // vtable_offset
+            chunk.writeAddr(0); // fields_offset
+            chunk.setMark();
+            nameOffset = chunk.bytesWrittenSinceMark();
+            chunk.writeString(((Type) symbol).typeName());
+            interfacesOffset = chunk.bytesWrittenSinceMark();
+            for (final Type ifc : implementedInterfaces) {
                 chunk.writeAddr(((InterfaceSymbol) ifc).address());
             }
             chunk.writeAddr(0); // zero-terminate name
-            vtableOffset = chunk.bytesWritten();
+            vtableOffset = chunk.bytesWrittenSinceMark();
             // TODO write vtable...
             chunk.writeAddr(0); // zero-terminate vtable tuple
             chunk.writeAddr(0);
-            fieldsOffset = chunk.bytesWritten();
-            for (final Symbol field : symbol.symbols()) {
+            fieldsOffset = chunk.bytesWrittenSinceMark();
+            for (final Symbol field : fields) {
                 if (field instanceof FieldSymbol) {
-                    writeByte((byte) field.type().registerType().id().number());
+                    chunk.writeByte((byte) field.type().registerType().id().number());
                 }
             }
-            writeByte((byte) 0); // zero-terminate fields
+            chunk.writeByte((byte) 0); // zero-terminate fields
+        } catch (IOException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e); // plain 'Exception' is required by AutoCloseable.close()
         }
         final ByteBuffer byteBuffer = chunk.toByteBuffer();
-        final IntBuffer intBuffer = byteBuffer.asIntBuffer();
-        intBuffer.put(0, nameOffset);
-        intBuffer.put(1, interfacesOffset);
-        intBuffer.put(2, vtableOffset);
-        intBuffer.put(3, fieldsOffset);
-        symbol.setAddress(bytesWritten());
+        byteBuffer.asIntBuffer()
+                .put(0, nameOffset)
+                .put(1, interfacesOffset)
+                .put(2, vtableOffset)
+                .put(3, fieldsOffset);
         writeChunk(byteBuffer);
     }
 

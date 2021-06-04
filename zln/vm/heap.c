@@ -50,7 +50,7 @@ const TypeMeta *instance_type(const Heap *heap, const HeapEntry *entry) {
 
 uint32_t sizeof_instance(const TypeMeta *type) {
     uint32_t size = 0;
-    const Type *field_type_ptr = type->field_types;
+    const Type *field_type_ptr = &type->data[type->field_types_offset];
     for ( ; *field_type_ptr != TYPE_Void; field_type_ptr++) {
         size += sizeof_type(*field_type_ptr);
     }
@@ -135,7 +135,7 @@ uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
     // b) user type
     const TypeMeta *type = instance_type(heap, entry);
     if (type != NULL) {
-        const Type *field_type_ptr = type->field_types;
+        const Type *field_type_ptr = &type->data[type->field_types_offset];
         byte_t *field_data_ptr = entry->data;
         for ( ; *field_type_ptr != TYPE_Void; field_type_ptr++) {
             if (*field_type_ptr == TYPE_Ref) {

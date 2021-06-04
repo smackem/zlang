@@ -60,6 +60,7 @@ static void base_assertions() {
     assert_equal(sizeof(FunctionMeta), FUNCTION_META_MIN_SIZE, "function_meta data_size mismatch");
     assert_equal(sizeof(TypeMeta), TYPE_META_MIN_SIZE, "type_meta data_size mismatch");
     assert_equal(sizeof(HeapEntry), HEAP_ENTRY_MIN_SIZE, "heap_entry data_size mismatch");
+    assert_equal(sizeof(VTableEntry), VTABLE_ENTRY_SIZE, "vtable_entry data_size mismatch");
 }
 
 static inline Register *reg(Cpu *cpu, int r) {
