@@ -12,8 +12,9 @@ void conv_u8(Register *target, Type target_type, const Register *source);
 void conv_ref(Register *target, Type target_type, const Register *source);
 void conv_ptr(Register *target, Type target_type, const Register *source);
 
-void exec_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, const FunctionMeta *func, addr_t *pc_ptr);
-void exec_return(Cpu *cpu, addr_t *pc_ptr);
+addr_t exec_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, const FunctionMeta *func, addr_t pc);
+addr_t exec_virtual_call(Cpu *cpu, byte_t r_ret, byte_t r_first_arg, addr_t virtual_func_address, addr_t pc);
+addr_t exec_return(Cpu *cpu);
 
 static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *config, const FunctionMeta *entry_point) {
     byte_t *const_segment = memory->base;
@@ -703,10 +704,16 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                exec_call(&cpu, r_target, r_left, (FunctionMeta *) &cpu.const_segment[addr], &pc);
+                pc = exec_call(&cpu, r_target, r_left, (FunctionMeta *) &cpu.const_segment[addr], pc);
+                break;
+            case OPC_CallVirt:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                addr = get_addr(instr->args, 2);
+                pc = exec_virtual_call(&cpu, r_target, r_left, (VirtualFunctionMeta *) &cpu.const_segment[addr], pc);
                 break;
             case OPC_Ret:
-                exec_return(&cpu, &pc);
+                pc = exec_return(&cpu);
                 break;
             case OPC_Invoke:
                 r_target = get_byte(instr->args, 0);
@@ -822,18 +829,27 @@ void execute(const byte_t *code,
     }
 }
 
-inline void exec_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, const FunctionMeta *func, addr_t *pc_ptr) {
+inline addr_t exec_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, const FunctionMeta *func, addr_t pc) {
     const StackFrame *old_top = cpu->call_stack.top;
     assert(old_top != NULL);
     StackFrame *top = push_stack_frame(&cpu->call_stack,
                                        func,
                                        r_ret_val,
-                                       *pc_ptr + 1 + 6); // add data_size of call instr
+                                       pc + 1 + 6); // add data_size of call instr
     memcpy(&top->registers[1], &old_top->registers[r_first_arg], func->arg_count * sizeof(Register));
-    *pc_ptr = func->pc;
+    return func->pc;
 }
 
-inline void exec_return(Cpu *cpu, addr_t *pc_ptr) {
+inline addr_t exec_virtual_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, addr_t virtual_func_addr, addr_t pc) {
+    const StackFrame *old_top = cpu->call_stack.top;
+    assert(old_top != NULL);
+    addr_t self = reg(cpu, r_first_arg)->ref;
+    const FunctionMeta *func = get_impl_function(&cpu->heap, self, virtual_func_addr);
+    assert(func != NULL);
+    return exec_call(cpu, r_ret_val, r_first_arg, func, pc);
+}
+
+inline addr_t exec_return(Cpu *cpu) {
     const StackFrame *old_top = pop_stack_frame(&cpu->call_stack);
     assert(old_top != NULL);
     StackFrame *top = cpu->call_stack.top;
@@ -841,7 +857,7 @@ inline void exec_return(Cpu *cpu, addr_t *pc_ptr) {
     if (old_top->meta->ret_type != TYPE_Void) {
         top->registers[old_top->r_ret_val] = old_top->registers[0];
     }
-    *pc_ptr = old_top->ret_pc;
+    return old_top->ret_pc;
 }
 
 inline void conv_i32(Register *target, Type target_type, const Register *source) {

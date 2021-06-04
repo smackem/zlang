@@ -6,6 +6,7 @@
 #define ZLN_HEAP_H
 
 #include "types.h"
+#include "callstack.h"
 
 typedef struct vtable_entry {
     /// const address of a virtual function (VirtualFunctionMeta)
@@ -209,5 +210,22 @@ uint32_t sizeof_instance(const TypeMeta *type);
  *      entry is not an instance of a user type.
  */
 const TypeMeta *instance_type(const Heap * heap, const HeapEntry *entry);
+
+/**
+ * implements dynamic dispatch by looking up the implementation function for virtual_function_addr
+ * in the vtable of the instance at heap_addr.
+ *
+ * @param heap
+ *      This heap.
+ *
+ * @param heap_addr
+ *      The address of the object that implements the virtual function.
+ *
+ * @param virtual_function_addr
+ *      The address of a VirtualFunctionMeta object in the const segment.
+ *
+ * @return A pointer to the FunctionMeta struct that describes the implementation function.
+ */
+const FunctionMeta *get_impl_function(const Heap *heap, addr_t heap_addr, addr_t virtual_function_addr);
 
 #endif //ZLN_HEAP_H

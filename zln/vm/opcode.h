@@ -306,6 +306,18 @@ enum op_code {
      *      store result in r_target
      */
     OPC_Invoke,
+
+    /**
+     * call_virtual(REG r_target, REG r_first_arg, INT const_addr):
+     *      (look at VirtualFunctionMeta at const_addr)
+     *      (look up FunctionMeta address from vtable of TypeMeta at r_first_arg [which is self])
+     *      push stack_frame(#r_target, base_pc, pc, FunctionMeta)
+     *      copy arguments: registers r_first_arg..r_first_arg + FunctionMeta.arg_count
+     *              to new stack frame
+     *      base_pc <- FunctionMeta.base_pc
+     *      pc <- FunctionMeta.pc
+     */
+    OPC_CallVirt,
 };
 
 typedef byte_t OpCode;

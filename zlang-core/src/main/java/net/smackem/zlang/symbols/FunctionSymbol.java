@@ -2,8 +2,9 @@ package net.smackem.zlang.symbols;
 
 import net.smackem.zlang.lang.CompilationErrorException;
 
-import java.util.Collection;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class FunctionSymbol extends Symbol implements Scope {
     private final SymbolTable symbolTable;
@@ -59,6 +60,32 @@ public class FunctionSymbol extends Symbol implements Scope {
 
     public boolean isBuiltIn() {
         return false;
+    }
+
+    public boolean signatureMatches(FunctionSymbol other) {
+        if (Objects.equals(other.name(), name()) == false) {
+            return false;
+        }
+        if (Objects.equals(other.type(), type()) == false) {
+            return false;
+        }
+        if (symbols().size() != other.symbols().size()) {
+            return false;
+        }
+        final Iterator<Symbol> xParam = symbols().iterator();
+        final Iterator<Symbol> yParam = other.symbols().iterator();
+        while (xParam.hasNext() && yParam.hasNext()) {
+            final Symbol x = xParam.next();
+            final Symbol y = yParam.next();
+            if (x instanceof SelfSymbol && y instanceof SelfSymbol) {
+                // skip self because it will not have identical types
+                continue;
+            }
+            if (Objects.equals(x.type(), y.type()) == false) {
+                return false;
+            }
+        }
+        return true;
     }
 
     @Override

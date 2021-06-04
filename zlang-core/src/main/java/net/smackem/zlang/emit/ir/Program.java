@@ -67,7 +67,7 @@ public final class Program {
             this.cachedCodeMap = this.modules.stream()
                     .flatMap(em -> em.codeMap().entrySet().stream()
                             .map(entry -> Map.entry(entry.getKey(),
-                                    new FunctionCode(entry.getValue(), em.firstInstruction().orElseThrow()))))
+                                    new FunctionCode(entry.getValue()))))
                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
         return this.cachedCodeMap;

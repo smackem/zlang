@@ -46,7 +46,7 @@ public class ByteCodeWriter implements AutoCloseable {
         renderFunctions(program.codeMap().keySet());
         // render code segment to memory
         final RenderedCode code = renderCode(program.instructions(), program.labels());
-        final byte[] constSegment = this.constSegment.fixup(program.codeMap());
+        final byte[] constSegment = this.constSegment.fixup(program.types(), program.codeMap());
         final int headerSize = ByteCode.HEADER_SIZE;
         final int globalSegmentSize = program.globalSegmentSize();
         // approximate minimum buffer size
@@ -247,6 +247,7 @@ public class ByteCodeWriter implements AutoCloseable {
             case NewStr -> {
                 assert false;
             }
+            default -> throw new RuntimeException("unsupported opcode " + instr.opCode());
         }
     }
 

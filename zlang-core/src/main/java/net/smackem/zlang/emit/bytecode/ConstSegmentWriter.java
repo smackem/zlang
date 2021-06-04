@@ -13,42 +13,45 @@ import java.util.List;
 import java.util.Map;
 
 class ConstSegmentWriter extends NativeValueWriter {
-    private static final int typeNameByteLength = 64;
-    private static final int maxImplementedInterfaces = 8;
+
+    private static final int typeMetaHeaderSize = 16;
 
     ConstSegmentWriter() {
         super(new ByteArrayOutputStream());
     }
 
-    // typedef struct type_meta {
-    //     /// data offset of the name of the type as a zero-terminated string
-    //     addr_t name_offset;
-    //
-    //     /// data offset of the addresses of implemented interfaces in const segment.
-    //     /// implemented interfaces is a zero-terminated list of <c>addr_t</c>s
-    //     addr_t implemented_interfaces_offset;
-    //
-    //     /// data offset of the vtable.
-    //     /// the vtable is a zero-terminated list of <c>VTableEntry</c> structs. the last struct has all fields zeroed.
-    //     addr_t vtable_offset;
-    //
-    //     /// data offset of a zero-terminated list of field types.
-    //     /// field types is a list of <c>Type</c>s, terminated by a <c>TYPE_Void</c>
-    //     addr_t field_types_offset;
-    //
-    //     /// the data chunk
-    //     byte_t data[4];
-    // } TypeMeta;
+    // typedef struct virtual_function_meta {
+    //     addr_t declaring_type;
+    // } VirtualFunctionMeta;
 
     public void writeType(InterfaceSymbol symbol) throws IOException {
-        writeType(symbol, List.of(), List.of());
+        writeType(symbol, List.of(), Map.of(), List.of());
+
+        // write interface methods
+        for (final Symbol methodSymbol : symbol.symbols()) {
+            if (methodSymbol instanceof InterfaceMethodSymbol ifcMethod) {
+                ifcMethod.setAddress(bytesWritten());
+                writeInt32(symbol.address());
+            }
+        }
     }
 
     public void writeType(AggregateTypeSymbol symbol) throws IOException {
-        writeType(symbol, symbol.implementedInterfaces(), symbol.symbols());
+        writeType(symbol, symbol.implementedInterfaces(), symbol.buildVirtualTable(), symbol.symbols());
     }
 
-    private void writeType(Symbol symbol, Collection<Type> implementedInterfaces, Collection<Symbol> fields) throws IOException {
+    // typedef struct type_meta {
+    //     addr_t name_offset;
+    //     addr_t implemented_interfaces_offset;
+    //     addr_t vtable_offset;
+    //     addr_t field_types_offset;
+    //     byte_t data[4];
+    // } TypeMeta;
+
+    private void writeType(Symbol symbol,
+                           Collection<Type> implementedInterfaces,
+                           Map<InterfaceMethodSymbol, MethodSymbol> vtable,
+                           Collection<Symbol> fields) throws IOException {
         symbol.setAddress(bytesWritten());
         final ChunkWriter chunk = new ChunkWriter();
         final int nameOffset, interfacesOffset, vtableOffset, fieldsOffset;
@@ -57,6 +60,7 @@ class ConstSegmentWriter extends NativeValueWriter {
             chunk.writeAddr(0); // implemented_interfaces_offset
             chunk.writeAddr(0); // vtable_offset
             chunk.writeAddr(0); // fields_offset
+            assert chunk.bytesWritten() == typeMetaHeaderSize;
             chunk.setMark();
             nameOffset = chunk.bytesWrittenSinceMark();
             chunk.writeString(((Type) symbol).typeName());
@@ -66,7 +70,11 @@ class ConstSegmentWriter extends NativeValueWriter {
             }
             chunk.writeAddr(0); // zero-terminate name
             vtableOffset = chunk.bytesWrittenSinceMark();
-            // TODO write vtable...
+            for (final var vtableEntry : vtable.entrySet()) {
+                assert vtableEntry.getKey().address() != 0;
+                chunk.writeAddr(vtableEntry.getKey().address());
+                chunk.writeAddr(0); // method addresses need to be fixed up later
+            }
             chunk.writeAddr(0); // zero-terminate vtable tuple
             chunk.writeAddr(0);
             fieldsOffset = chunk.bytesWrittenSinceMark();
@@ -91,20 +99,10 @@ class ConstSegmentWriter extends NativeValueWriter {
     }
 
     // typedef struct function_meta {
-    //     /// the offset of the function's first instruction
     //     addr_t pc;
-    //
-    //     /// the number of local variables of the function
     //     int local_count;
-    //
-    //     /// the number of arguments accepted by the function
     //     int arg_count;
-    //
-    //     /// the return type of the function
     //     Type ret_type;
-    //
-    //     /// zero-terminated string containing the function name. when contained in the constant segment,
-    //     /// the length of the string may be variable.
     //     char name[32];
     // } FunctionMeta;
 
@@ -117,10 +115,28 @@ class ConstSegmentWriter extends NativeValueWriter {
         writeString(symbol.name());
     }
 
-    public byte[] fixup(Map<FunctionSymbol, FunctionCode> codeMap) throws IOException {
+    public byte[] fixup(Collection<Type> types, Map<FunctionSymbol, FunctionCode> codeMap) throws IOException {
         flush();
         final byte[] bytes = ((ByteArrayOutputStream) outputStream()).toByteArray();
         final ByteBuffer buf = ByteBuffer.wrap(bytes).order(ByteOrder.nativeOrder());
+
+        // fixup aggregate type vtables
+        for (final Type type : types) {
+            if (type instanceof AggregateTypeSymbol == false) {
+                continue;
+            }
+            final AggregateTypeSymbol aggregate = (AggregateTypeSymbol) type;
+            final IntBuffer typeMetaHeader = buf.slice(aggregate.address(), typeMetaHeaderSize).order(ByteOrder.nativeOrder()).asIntBuffer();
+            int vtableEntryOffset = aggregate.address() + typeMetaHeaderSize + typeMetaHeader.get(2);
+            for (final var vtableEntry : aggregate.buildVirtualTable().entrySet()) {
+                assert buf.getInt(vtableEntryOffset) == vtableEntry.getKey().address();
+                assert vtableEntry.getValue().address() != 0;
+                buf.putInt(vtableEntryOffset + 4, vtableEntry.getValue().address());
+                vtableEntryOffset += 8;
+            }
+        }
+
+        // fixup function pcs
         for (final var entry : codeMap.entrySet()) {
             final int offset = entry.getKey().address();
             final FunctionCode fc = entry.getValue();

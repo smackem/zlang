@@ -7,6 +7,7 @@ import java.util.*;
 public abstract class AggregateTypeSymbol extends Symbol implements AggregateType, MemberScope {
     private final SymbolTable symbolTable;
     private final List<Type> implementedInterfaces = new ArrayList<>();
+    private Map<InterfaceMethodSymbol, MethodSymbol> cachedVirtualTable;
 
     AggregateTypeSymbol(String name, Scope enclosingScope) {
         super(name, null);
@@ -75,6 +76,39 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
     @Override
     public RegisterType registerType() {
         return BuiltInType.OBJECT.type();
+    }
+
+    public Map<InterfaceMethodSymbol, MethodSymbol> buildVirtualTable() {
+        if (this.cachedVirtualTable != null) {
+            return this.cachedVirtualTable;
+        }
+        final Map<InterfaceMethodSymbol, MethodSymbol> map = new LinkedHashMap<>();
+        for (final Type ifcType : this.implementedInterfaces) {
+            final InterfaceSymbol ifc = (InterfaceSymbol) ifcType;
+            for (final Symbol methodSymbol : ifc.symbols()) {
+                if (methodSymbol instanceof InterfaceMethodSymbol == false) {
+                    continue;
+                }
+                final InterfaceMethodSymbol ifcMethod = (InterfaceMethodSymbol) methodSymbol;
+                final MethodSymbol implementingMethod = findMethodWithSignatureMatching(ifcMethod);
+                if (implementingMethod == null) {
+                    throw new RuntimeException(new CompilationErrorException(
+                            "type '%s' does not implement method '%s' declared by '%s'".formatted(this, ifcMethod, ifc)));
+                }
+                map.put(ifcMethod, implementingMethod);
+            }
+        }
+        this.cachedVirtualTable = map;
+        return map;
+    }
+
+    private MethodSymbol findMethodWithSignatureMatching(FunctionSymbol function) {
+        return symbols().stream()
+                .filter(s -> s instanceof MethodSymbol)
+                .map(s -> (MethodSymbol) s)
+                .filter(method -> method.signatureMatches(function))
+                .findFirst()
+                .orElse(null);
     }
 
     void defineBuiltInMethod(Type returnType, BuiltInFunction bif, Type... parameterTypes) throws CompilationErrorException {

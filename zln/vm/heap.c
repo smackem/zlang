@@ -149,3 +149,18 @@ uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
     }
     return 0;
 }
+
+const FunctionMeta *get_impl_function(const Heap *heap, addr_t heap_addr, addr_t virtual_function_addr) {
+    const HeapEntry *entry = get_heap_entry(heap, heap_addr);
+    const TypeMeta *type = instance_type(heap, entry);
+    if (type == NULL) {
+        return NULL;
+    }
+    const VTableEntry *vte = (VTableEntry *) &type->data[type->vtable_offset];
+    for ( ; vte->virtual_function != 0; vte++) {
+        if (vte->virtual_function == virtual_function_addr) {
+            return (FunctionMeta *) &heap->const_segment[vte->impl_function];
+        }
+    }
+    return NULL;
+}

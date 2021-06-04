@@ -136,10 +136,14 @@ class SymbolWalker extends ScopeWalker<Void> {
                 ? resolveType(ctx.returnType().type())
                 : null;
         super.visitInterfaceMethodDecl(ctx);
+        final Type interfaceType = (Type) currentScope();
         final InterfaceMethodSymbol imd = new InterfaceMethodSymbol(name, returnType, (MemberScope) currentScope());
         defineSymbol(ctx, currentScope(), imd);
 
         pushScope(ctx, imd);
+        final Symbol self = new SelfSymbol(interfaceType);
+        self.setAddress(1);
+        defineSymbol(ctx, imd, self);
         if (ctx.parameters() != null) {
             for (final var p : ctx.parameters().parameter()) {
                 defineTypedIdent(p, (ident, type) -> new ConstantSymbol(ident, type, false));
@@ -159,8 +163,8 @@ class SymbolWalker extends ScopeWalker<Void> {
             if (resolvedSymbol == null) {
                 logSemanticError(ctx, "undeclared symbol '" + id + "'");
             }
-            if (resolvedSymbol instanceof InterfaceSymbol) {
-                aggregate.addImplementedInterface((InterfaceSymbol) resolvedSymbol);
+            if (resolvedSymbol instanceof InterfaceSymbol ifc) {
+                aggregate.addImplementedInterface(ifc);
             } else {
                 logSemanticError(ctx, "symbol '" + id + "' is not an interface, but " + resolvedSymbol);
             }

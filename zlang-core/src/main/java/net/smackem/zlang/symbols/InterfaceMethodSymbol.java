@@ -11,9 +11,9 @@ public class InterfaceMethodSymbol extends MethodSymbol {
     public String toString() {
         return "InterfaceMethodSymbol{" +
                "name=" + name() +
-               "returnType=" + type() +
-               "declaringType=" + enclosingScope() +
-               "parameters=" + symbols().stream()
+               ", returnType=" + type() +
+               ", declaringType=" + enclosingScope() +
+               ", parameters=" + symbols().stream()
                        .map(s -> s.name() + ':' + s.type().typeName())
                        .collect(Collectors.joining(", ")) +
                '}';

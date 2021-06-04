@@ -303,7 +303,19 @@ public enum OpCode {
      *      invoke built-in function at internal_func_id, passing arguments starting at r_first_arg
      *      store result in r_target
      */
-    Invoke(99);
+    Invoke(99),
+
+    /**
+     * call_virtual(REG r_target, REG r_first_arg, INT const_addr):
+     *      (look at VirtualFunctionMeta at const_addr)
+     *      (look up FunctionMeta address from vtable of TypeMeta at r_first_arg [which is self])
+     *      push stack_frame(#r_target, base_pc, pc, FunctionMeta)
+     *      copy arguments: registers r_first_arg..r_first_arg + FunctionMeta.arg_count
+     *              to new stack frame
+     *      base_pc <- FunctionMeta.base_pc
+     *      pc <- FunctionMeta.pc
+     */
+    CallVirt(100);
 
     private final int code;
 

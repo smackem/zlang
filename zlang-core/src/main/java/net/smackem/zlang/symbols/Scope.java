@@ -14,7 +14,8 @@ public interface Scope {
      * @return all symbols defined in this scope, in the following order:
      * <ul>
      *     <li>types, in the order of definition</li>
-     *     <li>functions and methods, in the order of definitions</li>
+     *     <li>functions and methods, in the order of definition</li>
+     *     <li>variables, in the order of definition</li>
      * </ul>
      */
     Collection<Symbol> symbols();
