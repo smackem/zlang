@@ -710,7 +710,7 @@ void execute(const byte_t *code,
                 r_target = get_byte(instr->args, 0);
                 r_left = get_byte(instr->args, 1);
                 addr = get_addr(instr->args, 2);
-                pc = exec_virtual_call(&cpu, r_target, r_left, (VirtualFunctionMeta *) &cpu.const_segment[addr], pc);
+                pc = exec_virtual_call(&cpu, r_target, r_left, addr, pc);
                 break;
             case OPC_Ret:
                 pc = exec_return(&cpu);

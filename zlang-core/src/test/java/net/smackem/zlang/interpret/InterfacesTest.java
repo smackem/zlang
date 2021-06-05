@@ -13,7 +13,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class InterfacesTest {
     @Test
-    public void simpleInterfaceImpl() throws Exception {
+    public void dynamicDispatch() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 interface NumberGetter {
                     fn get_number() -> int
@@ -40,7 +40,7 @@ public class InterfacesTest {
     }
 
     @Test
-    public void multipleInterfaceImpl() throws Exception {
+    public void multipleInterfaceStaticDispatch() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 interface NumberGetter {
                     fn get_number() -> int
@@ -76,8 +76,7 @@ public class InterfacesTest {
     }
 
     @Test
-    @Ignore
-    public void dynamicDispatch() throws Exception {
+    public void dynamicDispatchParameter() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 interface NumberGetter {
                     fn get_number() -> int
