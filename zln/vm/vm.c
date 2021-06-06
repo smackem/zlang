@@ -134,6 +134,8 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
             fprintf(f, "%12s", opcode_name(instr->opc));
             return 1 + 0;
         case OPC_Ldc_zero:
+        case OPC_RemoveRef:
+        case OPC_AddRef:
             fprintf(f, "%12s r%d",
                     opcode_name(instr->opc),
                     get_byte(instr->args, 0));

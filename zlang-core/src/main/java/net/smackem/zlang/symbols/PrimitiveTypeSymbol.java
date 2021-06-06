@@ -6,16 +6,23 @@ public class PrimitiveTypeSymbol extends Symbol implements Type, RegisterType {
 
     private final String typeName;
     private final RegisterTypeId typeId;
+    private final boolean referenceType;
 
-    PrimitiveTypeSymbol(String typeName, RegisterTypeId id) {
+    PrimitiveTypeSymbol(String typeName, RegisterTypeId id, boolean referenceType) {
         super(typeName, null);
         this.typeName = typeName;
         this.typeId = id;
+        this.referenceType = referenceType;
     }
 
     @Override
     public RegisterTypeId id() {
         return this.typeId;
+    }
+
+    @Override
+    public boolean isReferenceType() {
+        return this.referenceType;
     }
 
     @Override

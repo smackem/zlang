@@ -8,6 +8,7 @@ import java.util.stream.Stream;
 
 public class FunctionSymbol extends Symbol implements Scope {
     private final SymbolTable symbolTable;
+    private final List<VariableSymbol> locals = new ArrayList<>();
     private int localCount;
 
     public FunctionSymbol(String name, Type type, Scope enclosingScope) {
@@ -45,6 +46,13 @@ public class FunctionSymbol extends Symbol implements Scope {
 
     public int localCount() {
         return this.localCount;
+    }
+
+    int addLocal(VariableSymbol symbol) {
+        final int address = this.symbolTable.symbols().size() + this.locals.size();
+        symbol.setAddress(address);
+        this.locals.add(symbol);
+        return address;
     }
 
     void setLocalCount(int localCount) {

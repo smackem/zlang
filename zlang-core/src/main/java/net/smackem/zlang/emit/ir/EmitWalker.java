@@ -167,10 +167,21 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             logLocalError(ctx, "incompatible types in assignment");
             return null;
         }
+        final boolean incRefCount = init == false && rvalue.type.registerType().isReferenceType();
         if (variable.isGlobal()) {
+            if (incRefCount) {
+                final Register r = allocFreedRegister();
+                emit(OpCode.ldGlb(symbol.type()), r, symbol.address());
+                emit(OpCode.RemoveRef, r);
+                emit(OpCode.AddRef, rvalue.register);
+                freeRegister(r);
+            }
             emit(OpCode.stGlb(symbol.type()), rvalue.register, symbol.address());
         } else {
-            emit(OpCode.Mov, Register.fromNumber(symbol.address()), rvalue.register);
+            final Register r = Register.fromNumber(symbol.address());
+            emit(OpCode.RemoveRef, r);
+            emit(OpCode.AddRef, rvalue.register);
+            emit(OpCode.Mov, r, rvalue.register);
         }
         freeRegister(rvalue.register);
         return variable;
@@ -201,6 +212,13 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 logLocalError(ctx, "incompatible types in assignment");
                 return;
             }
+            if (rvalue.type.registerType().isReferenceType()) {
+                final Register r = allocFreedRegister();
+                emit(OpCode.ldElem(arrayType.elementType()), r, primary.register, index.register);
+                emit(OpCode.RemoveRef, r);
+                emit(OpCode.AddRef, rvalue.register);
+                freeRegister(r);
+            }
             emit(OpCode.stElem(arrayType.elementType()), rvalue.register, primary.register, index.register);
             freeRegister(rvalue.register, primary.register, index.register);
             return;
@@ -220,6 +238,13 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (Types.isAssignable(field.type(), rvalue.type) == false) {
                 logLocalError(ctx, "incompatible types in assignment");
                 return;
+            }
+            if (rvalue.type.registerType().isReferenceType()) {
+                final Register r = allocFreedRegister();
+                emit(OpCode.ldFld(field.type()), r, primary.register, field.address());
+                emit(OpCode.RemoveRef, r);
+                emit(OpCode.AddRef, rvalue.register);
+                freeRegister(r);
             }
             emit(OpCode.stFld(field.type()), rvalue.register, primary.register, field.address());
             freeRegister(rvalue.register, primary.register);

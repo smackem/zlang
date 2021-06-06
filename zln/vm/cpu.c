@@ -810,14 +810,20 @@ void execute(const byte_t *code,
             // -------------------- increment/decrement refcount
             //
             case OPC_AddRef:
-                addr = get_addr(instr->args, 0);
-                add_ref(&cpu.heap, addr);
-                size = 1 + 4;
+                r_target = get_byte(instr->args, 0);
+                addr = reg(&cpu, r_target)->ref;
+                if (addr != 0) {
+                    add_ref(&cpu.heap, addr);
+                }
+                size = 1 + 1;
                 break;
             case OPC_RemoveRef:
-                addr = get_addr(instr->args, 0);
-                remove_ref(&cpu.heap, addr);
-                size = 1 + 4;
+                r_target = get_byte(instr->args, 0);
+                addr = reg(&cpu, r_target)->ref;
+                if (addr != 0) {
+                    remove_ref(&cpu.heap, addr);
+                }
+                size = 1 + 1;
                 break;
 
             default:

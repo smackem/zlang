@@ -15,6 +15,11 @@ public class StringType extends ArrayType implements RegisterType {
     }
 
     @Override
+    public boolean isReferenceType() {
+        return true;
+    }
+
+    @Override
     public RegisterType registerType() {
         return this;
     }
