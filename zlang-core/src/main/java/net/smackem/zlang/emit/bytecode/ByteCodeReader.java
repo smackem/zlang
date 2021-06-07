@@ -56,12 +56,12 @@ public class ByteCodeReader {
 
     private static String readZeroTerminatedString(ByteBuffer buf, int offset) {
         int length = 0;
-        for ( ; buf.get(offset) != 0; offset++) {
+        for (int index = offset; buf.get(index) != 0; index++) {
             length++;
         }
-        return length == 0
-            ? ""
-            : StandardCharsets.US_ASCII.decode(buf.slice(offset, length)).toString();
+        return length > 0
+            ? StandardCharsets.US_ASCII.decode(buf.slice(offset, length)).toString()
+            : "";
     }
 
     private static void readObject(ByteBuffer buf, int offset, int heapOffset, Collection<? extends Symbol> symbols, Map<String, Object> out) {

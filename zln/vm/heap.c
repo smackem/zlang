@@ -115,7 +115,9 @@ uint32_t add_ref(Heap *heap, addr_t heap_addr) {
 uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
     assert_not_nil(heap_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
-    entry->ref_count--;
+    if (entry->ref_count > 0) {
+        entry->ref_count--;
+    }
     if (entry->ref_count > 0) {
         return entry->ref_count;
     }

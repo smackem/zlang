@@ -858,8 +858,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
         emit(OpCode.Invoke, sizeRegister, array.register, sizeFunction);
         emit(OpCode.NewObj, target, listType);
+        emit(OpCode.AddRef, array.register);
         emit(OpCode.stFld(listType.arrayType()), array.register, target, listType.arrayField().address());
-        emit(OpCode.stFld(elementType), sizeRegister, target, listType.sizeField().address());
+        emit(OpCode.stFld(BuiltInType.INT.type()), sizeRegister, target, listType.sizeField().address());
         freeRegister(sizeRegister, array.register);
         return new Value(target, listType);
     }
@@ -883,6 +884,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (Types.isAssignable(field.type(), rvalue.type) == false) {
                 return logLocalError(ctx, "incompatible types in assignment to '%s'. left='%s', right='%s'"
                         .formatted(field.name(), field.type(), rvalue.type));
+            }
+            if (rvalue.type.registerType().isReferenceType()) {
+                emit(OpCode.AddRef, rvalue.register);
             }
             emit(OpCode.stFld(rvalue.type), rvalue.register, target, field.address());
             freeRegister(rvalue.register);

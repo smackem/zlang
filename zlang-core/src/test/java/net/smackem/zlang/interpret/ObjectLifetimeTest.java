@@ -57,4 +57,24 @@ public class ObjectLifetimeTest {
                 .containsExactly(Tuple.tuple(4, 1, "SomeType"));
         System.out.println(heap);
     }
+
+    @Test
+    public void graphWithSingleGlobalRoot() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct SomeType {
+                    array: int[]
+                }
+                let x: SomeType = new SomeType {
+                    array: new int[10]
+                }
+                fn main() {
+                }
+                """);
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(4, 1, "SomeType"),
+                        Tuple.tuple(40, 1, "Int32[]"));
+        System.out.println(heap);
+    }
 }
