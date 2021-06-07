@@ -5,13 +5,9 @@ import net.smackem.zlang.symbols.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.*;
 import java.nio.*;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ByteCodeReader {
     private static final Logger log = LoggerFactory.getLogger(ByteCodeReader.class);
@@ -32,16 +28,40 @@ public class ByteCodeReader {
 
     public static Collection<HeapEntry> readHeap(ByteBuffer zl, int heapOffset) {
         final int codeSize = zl.getInt(4);
-        final int constSize = zl.getInt(8);
-        final int globalSize = zl.getInt(12);
-        int offset = ByteCode.HEADER_SIZE + codeSize + constSize;
+        final int constOffset = ByteCode.HEADER_SIZE + codeSize;
+        final List<HeapEntry> entries = new ArrayList<>();
+        int offset = heapOffset + ByteCode.HEAP_RESERVED_BYTES;
         int dataSize;
-        do {
+        while (true) {
             int header = zl.getInt(offset);
             int refCount = zl.getInt(offset + 4);
             dataSize = zl.getInt(offset + 8);
             offset += dataSize + ByteCode.HEAP_ENTRY_HEADER_SIZE;
-        } while (dataSize != 0);
+            if (header == 0 || offset >= zl.limit()) {
+                break;
+            }
+            final String name;
+            if ((header & ByteCode.HEAP_ENTRY_TYPE_META_FLAG) != 0) {
+                // TypeMeta info in const segment
+                final int typeMetaOffset = constOffset + (header & ~ByteCode.HEAP_ENTRY_TYPE_META_FLAG);
+                final int nameOffset = typeMetaOffset + ByteCode.TYPE_META_HEADER_SIZE + zl.getInt(typeMetaOffset);
+                name = readZeroTerminatedString(zl, nameOffset);
+            } else {
+                name = RegisterTypeId.fromNumber(header) + "[]";
+            }
+            entries.add(new HeapEntry(offset, name, refCount, dataSize));
+        }
+        return entries;
+    }
+
+    private static String readZeroTerminatedString(ByteBuffer buf, int offset) {
+        int length = 0;
+        for ( ; buf.get(offset) != 0; offset++) {
+            length++;
+        }
+        return length == 0
+            ? ""
+            : StandardCharsets.US_ASCII.decode(buf.slice(offset, length)).toString();
     }
 
     private static void readObject(ByteBuffer buf, int offset, int heapOffset, Collection<? extends Symbol> symbols, Map<String, Object> out) {

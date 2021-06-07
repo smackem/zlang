@@ -1,6 +1,8 @@
 package net.smackem.zlang.interpret;
 
+import net.smackem.zlang.emit.bytecode.ByteCodeReader;
 import net.smackem.zlang.emit.bytecode.ByteCodeWriter;
+import net.smackem.zlang.emit.bytecode.HeapEntry;
 import net.smackem.zlang.emit.ir.Emitter;
 import net.smackem.zlang.emit.ir.Instructions;
 import net.smackem.zlang.emit.ir.Program;
@@ -23,6 +25,19 @@ class InterpreterTests {
     private InterpreterTests() { }
 
     static Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
+        final CompilationResult result = compile(modules);
+        return Interpreter.run(result.zl(), result.program());
+    }
+
+    static Collection<HeapEntry> runExtractingHeap(Collection<ParsedModule> modules) throws Exception {
+        final CompilationResult result = compile(modules);
+        final int heapOffset = Interpreter.run(result.zl());
+        return ByteCodeReader.readHeap(result.zl(), heapOffset);
+    }
+
+    private static record CompilationResult(Program program, ByteBuffer zl) {}
+
+    private static CompilationResult compile(Collection<ParsedModule> modules) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
@@ -32,6 +47,6 @@ class InterpreterTests {
         assertThat(zl.capacity()).isGreaterThan(heapSize);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
-        return Interpreter.run(zl, program);
+        return new CompilationResult(program, zl);
     }
 }

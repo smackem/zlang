@@ -14,7 +14,11 @@ public class Interpreter {
     private Interpreter() { }
 
     public static Map<String, Object> run(ByteBuffer zl, Program program) {
-        final int heapOffset = Zln.executeProgram(zl);
+        final int heapOffset = run(zl);
         return ByteCodeReader.readGlobals(zl, heapOffset, program);
+    }
+
+    static int run(ByteBuffer zl) {
+        return Zln.executeProgram(zl);
     }
 }
