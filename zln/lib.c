@@ -13,7 +13,8 @@ typedef struct zl_header {
     uint32_t entry_point_address;
     int32_t register_count;
     int32_t max_stack_depth;
-    uint32_t reserved[3];
+    uint32_t max_heap_size;
+    uint32_t reserved[2];
 } ZLHeader;
 
 JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEnv *env_ptr, jclass cls, jobject buf) {

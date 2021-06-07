@@ -34,9 +34,13 @@ static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *
                     config->max_stack_depth,
                     config->register_count,
                     entry_point);
+    uint32_t heap_size = memory_end - heap_segment;
+    if (memory->heap_size_limit != 0 && memory->heap_size_limit < heap_size) {
+        heap_size = memory->heap_size_limit;
+    }
     init_heap(&cpu->heap,
               heap_segment,
-              memory_end - heap_segment,
+              heap_size,
               cpu->const_segment);
     trace("const_segment @ %08x\n"
           "global_segment @ %08x\n"
@@ -49,7 +53,7 @@ static void init_cpu(Cpu *cpu, const MemoryLayout *memory, const RuntimeConfig *
           (addr_t) (register_segment - memory->base),
           (addr_t) (stack_frame_segment - memory->base),
           (addr_t) (heap_segment - memory->base),
-          (addr_t) cpu->heap.size);
+          (addr_t) heap_size);
 }
 
 static void free_cpu(Cpu *cpu) {

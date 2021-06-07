@@ -185,7 +185,7 @@ swapStmt
     ;
 
 returnStmt
-    : Return expr
+    : Return expr?
     ;
 
 expr

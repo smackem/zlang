@@ -30,6 +30,20 @@ public class ByteCodeReader {
         return globals;
     }
 
+    public static Collection<HeapEntry> readHeap(ByteBuffer zl, int heapOffset) {
+        final int codeSize = zl.getInt(4);
+        final int constSize = zl.getInt(8);
+        final int globalSize = zl.getInt(12);
+        int offset = ByteCode.HEADER_SIZE + codeSize + constSize;
+        int dataSize;
+        do {
+            int header = zl.getInt(offset);
+            int refCount = zl.getInt(offset + 4);
+            dataSize = zl.getInt(offset + 8);
+            offset += dataSize + ByteCode.HEAP_ENTRY_HEADER_SIZE;
+        } while (dataSize != 0);
+    }
+
     private static void readObject(ByteBuffer buf, int offset, int heapOffset, Collection<? extends Symbol> symbols, Map<String, Object> out) {
         for (final Symbol symbol : symbols) {
             if (symbol instanceof VariableSymbol) {

@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final static Logger log = LoggerFactory.getLogger(EmitWalker.class);
@@ -83,6 +84,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (this.currentFunction.type() != null) {
                 return logLocalError(ctx, "function must return a value");
             }
+            emitFunctionCleanup(function);
             emit(function.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
         }
         popScope();
@@ -167,20 +169,25 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             logLocalError(ctx, "incompatible types in assignment");
             return null;
         }
-        final boolean incRefCount = init == false && rvalue.type.registerType().isReferenceType();
         if (variable.isGlobal()) {
-            if (incRefCount) {
-                final Register r = allocFreedRegister();
-                emit(OpCode.ldGlb(symbol.type()), r, symbol.address());
-                emit(OpCode.RemoveRef, r);
+            if (rvalue.type.registerType().isReferenceType()) {
+                if (init == false) {
+                    final Register r = allocFreedRegister();
+                    emit(OpCode.ldGlb(symbol.type()), r, symbol.address());
+                    emit(OpCode.RemoveRef, r);
+                    freeRegister(r);
+                }
                 emit(OpCode.AddRef, rvalue.register);
-                freeRegister(r);
             }
             emit(OpCode.stGlb(symbol.type()), rvalue.register, symbol.address());
         } else {
             final Register r = Register.fromNumber(symbol.address());
-            emit(OpCode.RemoveRef, r);
-            emit(OpCode.AddRef, rvalue.register);
+            if (rvalue.type.registerType().isReferenceType()) {
+                if (init == false) {
+                    emit(OpCode.RemoveRef, r);
+                }
+                emit(OpCode.AddRef, rvalue.register);
+            }
             emit(OpCode.Mov, r, rvalue.register);
         }
         freeRegister(rvalue.register);
@@ -256,14 +263,24 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     @Override
     public Value visitReturnStmt(ZLangParser.ReturnStmtContext ctx) {
-        final Value value = ctx.expr().accept(this);
-        if (Types.isAssignable(this.currentFunction.type(), value.type()) == false) {
-            return logLocalError(ctx, "incompatible return type. expecting %s, got %s".formatted(
-                    this.currentFunction.type(), value.type()));
+        if (ctx.expr() == null) {
+            if (this.currentFunction.type() != null) {
+                return logLocalError(ctx, "function signature requires a return value");
+            }
+        } else {
+            if (this.currentFunction.type() == null) {
+                return logLocalError(ctx, "function signature does not allow a return value");
+            }
+            final Value value = ctx.expr().accept(this);
+            if (Types.isAssignable(this.currentFunction.type(), value.type()) == false) {
+                return logLocalError(ctx, "incompatible return type. expecting %s, got %s".formatted(
+                        this.currentFunction.type(), value.type()));
+            }
+            emit(OpCode.Mov, Register.R000, value.register);
+            freeRegister(value.register);
         }
-        emit(OpCode.Mov, Register.R000, value.register);
+        emitFunctionCleanup(this.currentFunction);
         emit(this.currentFunction.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
-        freeRegister(value.register);
         return null;
     }
 
@@ -991,14 +1008,22 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private void enterFunction(FunctionSymbol function, List<Instruction> instructions) {
         this.currentInstructions = instructions;
         this.codeMap.computeIfAbsent(function, ignored -> {
-            final Instruction nop = new Instruction(OpCode.Nop);
-            this.currentInstructions.add(nop);
+            final Instruction nop = emitNop();
+            function.symbols().stream()
+                    .filter(s -> s instanceof VariableSymbol && s.type().registerType().isReferenceType())
+                    .forEach(s -> emit(OpCode.AddRef, Register.fromNumber(s.address())));
             return nop;
         });
         this.currentFunction = function;
         int top = this.currentFunction.symbols().size() + this.currentFunction.localCount() + 1;
         this.firstVolatileRegister = Register.fromNumber(top);
         this.allocatedRegisters.clear();
+    }
+
+    private void emitFunctionCleanup(FunctionSymbol function) {
+        Stream.concat(function.symbols().stream(), function.locals().stream())
+                .filter(s -> s instanceof VariableSymbol && s.type().registerType().isReferenceType())
+                .forEach(s -> emit(OpCode.RemoveRef, Register.fromNumber(s.address())));
     }
 
     private Instruction emitNop() {

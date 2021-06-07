@@ -55,6 +55,10 @@ typedef struct memory_layout {
     /// size of the stack frames segment. must be large enough to hold max_stack_septh * sizeof(StackFrame) bytes.
     /// (see ::RuntimeConfig and ::StackFrame)
     addr_t stack_frame_segment_size;
+
+    /// maximum size of the heap. if set to zero, all remaining memory in the program buffer is available as
+    /// heap memory.
+    uint32_t heap_size_limit;
 } MemoryLayout;
 
 /**

@@ -40,7 +40,7 @@ public class ByteCodeWriter implements AutoCloseable {
      * 4) global segment (zeroed memory, length @header)
      * 5) heap memory (zeroed memory, all remaining bytes)
      */
-    public ByteBuffer writeProgram(Program program, int heapSize, int maxStackDepth) throws Exception {
+    public ByteBuffer writeProgram(Program program, int heapSize, boolean limitHeapSize, int maxStackDepth) throws Exception {
         // render const segment to memory
         renderTypes(program.types());
         renderFunctions(program.codeMap().keySet());
@@ -61,7 +61,8 @@ public class ByteCodeWriter implements AutoCloseable {
         log.info("approximate required size: {} -> allocate buffer of size {}", approximateSize, size);
         final ByteBuffer buf = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
         // 1) header
-        writeHeaderBytes(buf, code.segment.length, constSegment.length, globalSegmentSize, program.entryPoint(), code.registerCount, maxStackDepth);
+        writeHeaderBytes(buf, code.segment.length, constSegment.length, globalSegmentSize,
+                program.entryPoint(), code.registerCount, maxStackDepth, limitHeapSize ? heapSize : 0);
         // 2) code segment
         buf.put(headerSize, code.segment);
         // 3) const segment
@@ -88,7 +89,8 @@ public class ByteCodeWriter implements AutoCloseable {
                                   int globalSegmentSize,
                                   FunctionSymbol entryPoint,
                                   int registerCount,
-                                  int maxStackDepth) {
+                                  int maxStackDepth,
+                                  int maxHeapSize) {
         log.info("ZL header: codeSize={} constSize={} globalSize={} entryPoint={}",
                 codeSegmentSize, constSegmentSize, globalSegmentSize, entryPoint.address());
         buf.put(0, (byte) 'Z');
@@ -101,6 +103,7 @@ public class ByteCodeWriter implements AutoCloseable {
         buf.putInt(16, entryPoint.address());
         buf.putInt(20, registerCount);
         buf.putInt(24, maxStackDepth);
+        buf.putInt(28, maxHeapSize);
     }
 
     private void renderTypes(Collection<Type> types) throws IOException {

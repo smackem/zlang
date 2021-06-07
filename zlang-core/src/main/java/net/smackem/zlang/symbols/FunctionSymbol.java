@@ -9,7 +9,6 @@ import java.util.stream.Stream;
 public class FunctionSymbol extends Symbol implements Scope {
     private final SymbolTable symbolTable;
     private final List<VariableSymbol> locals = new ArrayList<>();
-    private int localCount;
 
     public FunctionSymbol(String name, Type type, Scope enclosingScope) {
         super(name, type);
@@ -45,18 +44,17 @@ public class FunctionSymbol extends Symbol implements Scope {
     }
 
     public int localCount() {
-        return this.localCount;
+        return this.locals.size();
     }
 
-    int addLocal(VariableSymbol symbol) {
-        final int address = this.symbolTable.symbols().size() + this.locals.size();
+    public Collection<VariableSymbol> locals() {
+        return Collections.unmodifiableCollection(this.locals);
+    }
+
+    void addLocal(VariableSymbol symbol) {
+        final int address = this.symbolTable.symbols().size() + this.locals.size() + 1; // locals start at 1 + paramCount
         symbol.setAddress(address);
         this.locals.add(symbol);
-        return address;
-    }
-
-    void setLocalCount(int localCount) {
-        this.localCount = localCount;
     }
 
     public boolean isEntryPoint() {

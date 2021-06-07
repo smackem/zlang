@@ -184,7 +184,7 @@ class SymbolWalker extends ScopeWalker<Void> {
     public Void visitForIteratorStmt(ZLangParser.ForIteratorStmtContext ctx) {
         final var symbol = defineTypedIdent(ctx.parameter(),
                 (ident, type) -> new ConstantSymbol(ident, type, false));
-        symbol.setAddress(incrementLocalCount());
+        addLocal(symbol);
         return super.visitForIteratorStmt(ctx);
     }
 
@@ -192,25 +192,33 @@ class SymbolWalker extends ScopeWalker<Void> {
     public Void visitForRangeStmt(ZLangParser.ForRangeStmtContext ctx) {
         final var symbol = defineTypedIdent(ctx.parameter(),
                 (ident, type) -> new ConstantSymbol(ident, type, false));
-        symbol.setAddress(incrementLocalCount());
+        addLocal(symbol);
         return super.visitForRangeStmt(ctx);
     }
 
     @Override
     public Void visitBindingStmt(ZLangParser.BindingStmtContext ctx) {
-        final int register = incrementLocalCount();
+        final boolean global = enclosingFunction() == null;
         final var symbol = defineTypedIdent(ctx.parameter(),
-                (ident, type) -> new ConstantSymbol(ident, type, register == 0));
-        symbol.setAddress(register != 0 ? register : incrementGlobalSegmentSize(symbol));
+                (ident, type) -> new ConstantSymbol(ident, type, global));
+        if (global) {
+            symbol.setAddress(incrementGlobalSegmentSize(symbol));
+        } else {
+            addLocal(symbol);
+        }
         return super.visitBindingStmt(ctx);
     }
 
     @Override
     public Void visitVarDeclStmt(ZLangParser.VarDeclStmtContext ctx) {
-        final int register = incrementLocalCount();
+        final boolean global = enclosingFunction() == null;
         final var symbol = defineTypedIdent(ctx.parameter(),
-                (ident, type) -> new VariableSymbol(ident, type, register == 0));
-        symbol.setAddress(register != 0 ? register : incrementGlobalSegmentSize(symbol));
+                (ident, type) -> new VariableSymbol(ident, type, global));
+        if (global) {
+            symbol.setAddress(incrementGlobalSegmentSize(symbol));
+        } else {
+            addLocal(symbol);
+        }
         return super.visitVarDeclStmt(ctx);
     }
 
@@ -222,18 +230,14 @@ class SymbolWalker extends ScopeWalker<Void> {
         return symbol;
     }
 
-    /**
-     * increments the number of local variables of the current function and returns
-     * the address (register number) of the newest variable.
-     */
-    private int incrementLocalCount() {
-        final FunctionSymbol declaringFunction = Scopes.enclosingSymbol(currentScope(), FunctionSymbol.class);
-        if (declaringFunction != null) {
-            int count = declaringFunction.localCount() + 1;
-            declaringFunction.setLocalCount(count);
-            return declaringFunction.symbols().size() + count;
-        }
-        return 0;
+    private void addLocal(VariableSymbol variable) {
+        final FunctionSymbol declaringFunction = enclosingFunction();
+        assert declaringFunction != null;
+        declaringFunction.addLocal(variable);
+    }
+
+    private FunctionSymbol enclosingFunction() {
+        return Scopes.enclosingSymbol(currentScope(), FunctionSymbol.class);
     }
 
     private int incrementGlobalSegmentSize(Symbol symbol) {
