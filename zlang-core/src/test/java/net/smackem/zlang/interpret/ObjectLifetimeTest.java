@@ -24,9 +24,9 @@ public class ObjectLifetimeTest {
                 }
                 """);
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(Tuple.tuple(40, 0, "Int32[]"));
-        System.out.println(heap);
     }
 
     @Test
@@ -37,9 +37,9 @@ public class ObjectLifetimeTest {
                 }
                 """);
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(Tuple.tuple(40, 1, "Int32[]"));
-        System.out.println(heap);
     }
 
     @Test
@@ -53,28 +53,161 @@ public class ObjectLifetimeTest {
                 }
                 """);
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(Tuple.tuple(4, 1, "SomeType"));
-        System.out.println(heap);
     }
 
     @Test
     public void graphWithSingleGlobalRoot() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 struct SomeType {
-                    array: int[]
+                    others: OtherType[]
+                }
+                struct OtherType {
+                    array: byte[]
                 }
                 let x: SomeType = new SomeType {
-                    array: new int[10]
+                    others: new OtherType[] {
+                        new OtherType {
+                            array: new byte[10]
+                        }
+                    }
                 }
                 fn main() {
                 }
                 """);
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(
                         Tuple.tuple(4, 1, "SomeType"),
-                        Tuple.tuple(40, 1, "Int32[]"));
+                        Tuple.tuple(4, 1, "Ref[]"),
+                        Tuple.tuple(4, 1, "OtherType"),
+                        Tuple.tuple(10, 1, "Unsigned8[]"));
+    }
+
+    @Test
+    public void graphOnStack() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                struct SomeType {
+                    others: OtherType[]
+                }
+                struct OtherType {
+                    array: byte[]
+                }
+                fn main() {
+                    let x: SomeType = new SomeType {
+                        others: new OtherType[] {
+                            new OtherType {
+                                array: new byte[10]
+                            }
+                        }
+                    }
+                }
+                """);
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(4, 0, "SomeType"),
+                        Tuple.tuple(4, 0, "Ref[]"),
+                        Tuple.tuple(4, 0, "OtherType"),
+                        Tuple.tuple(10, 0, "Unsigned8[]"));
+    }
+
+    @Test
+    public void refCountOnStack() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn main() {
+                    let a: byte[] = new byte[0]
+                    let b: byte[] = a
+                    let c: byte[] = b
+                    panic 0 // break execution without cleaning up
+                }
+                """);
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(0, 3, "Unsigned8[]"));
+    }
+
+    @Test
+    public void refCountOnStackWithCleanup() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn main() {
+                    let a: byte[] = new byte[0]
+                    let b: byte[] = a
+                    let c: byte[] = b
+                }
+                """);
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(0, 0, "Unsigned8[]"));
+    }
+
+    @Test
+    public void refCountPerStackFrame() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn pass1(a: byte[]) {
+                    pass2(a)
+                }
+                fn pass2(a: byte[]) {
+                    let b: byte[] = a
+                    panic 0 // break execution without cleaning up
+                }
+                fn main() {
+                    let a: byte[] = new byte[0]
+                    pass1(a)
+                }
+                """);
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(0, 4, "Unsigned8[]"));
+    }
+
+    @Test
+    public void refCountPerStackFrameWithCleanup() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn pass1(a: byte[]) {
+                    pass2(a)
+                }
+                fn pass2(a: byte[]) {
+                    let b: byte[] = a
+                }
+                fn main() {
+                    let a: byte[] = new byte[0]
+                    pass1(a)
+                }
+                """);
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(0, 0, "Unsigned8[]"));
+    }
+
+    @Test
+    public void reuseHeapSlot() throws Exception {
+        final int blobSize = InterpreterTests.HEAP_SIZE - 50; // allocate complete heap for each object, minus header
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn alloc() {
+                    let a: byte[] = new byte[%d]
+                }
+                fn main() {
+                    for i: int in 0 .. 10 {
+                        alloc()
+                    }
+                }
+                """.formatted(blobSize));
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(Tuple.tuple(blobSize, 0, "Unsigned8[]"));
     }
 }

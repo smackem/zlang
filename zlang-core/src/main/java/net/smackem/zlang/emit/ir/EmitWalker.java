@@ -101,6 +101,14 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitPanicStmt(ZLangParser.PanicStmtContext ctx) {
+        final Value value = ctx.expr().accept(this);
+        emit(OpCode.Mov, Register.R000, value.register);
+        emit(OpCode.Halt);
+        return null;
+    }
+
+    @Override
     public Value visitForStmt(ZLangParser.ForStmtContext ctx) {
         enterScope(ctx);
         super.visitForStmt(ctx);
@@ -858,7 +866,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Symbol sizeFunction = arrayType.resolveMember(BuiltInFunction.ARRAY_SIZE.ident());
         emit(OpCode.Invoke, sizeRegister, array.register, sizeFunction);
         emit(OpCode.NewObj, target, listType);
-        emit(OpCode.AddRef, array.register);
         emit(OpCode.stFld(listType.arrayType()), array.register, target, listType.arrayField().address());
         emit(OpCode.stFld(BuiltInType.INT.type()), sizeRegister, target, listType.sizeField().address());
         freeRegister(sizeRegister, array.register);
@@ -884,9 +891,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (Types.isAssignable(field.type(), rvalue.type) == false) {
                 return logLocalError(ctx, "incompatible types in assignment to '%s'. left='%s', right='%s'"
                         .formatted(field.name(), field.type(), rvalue.type));
-            }
-            if (rvalue.type.registerType().isReferenceType()) {
-                emit(OpCode.AddRef, rvalue.register);
             }
             emit(OpCode.stFld(rvalue.type), rvalue.register, target, field.address());
             freeRegister(rvalue.register);

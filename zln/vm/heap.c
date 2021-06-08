@@ -7,15 +7,34 @@
 #include <util.h>
 #include "heap.h"
 
+#define HEAP_RESERVED_BYTES 0x10
+
 static inline uint32_t unallocated_byte_count(Heap *heap) {
     return heap->size - heap->tail;
 }
 
-static inline addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
+static addr_t find_free_slot(Heap *heap, uint32_t data_size) {
+    addr_t entry_addr = HEAP_RESERVED_BYTES;
+    while (entry_addr < heap->tail) {
+        HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
+        if (entry->ref_count == 0 && entry->data_size >= data_size) {
+            return entry_addr;
+        }
+        entry_addr += entry->data_size + HEAP_ENTRY_HEADER_SIZE;
+    }
+    return 0;
+}
+
+static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
     uint32_t entry_size = data_size + HEAP_ENTRY_HEADER_SIZE;
     uint32_t free_size = unallocated_byte_count(heap);
-    assert_that(entry_size <= free_size, "out of memory");
-    addr_t entry_addr = heap->tail;
+    addr_t entry_addr;
+    if (entry_size <= free_size) {
+        entry_addr = heap->tail;
+    } else {
+        entry_addr = find_free_slot(heap, data_size);
+    }
+    assert_that(entry_addr != 0, "out of memory");
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
     entry->ref_count = 0;
@@ -56,8 +75,6 @@ uint32_t sizeof_instance(const TypeMeta *type) {
     }
     return size;
 }
-
-#define HEAP_RESERVED_BYTES 0x10
 
 void init_heap(Heap *heap, byte_t *memory, uint32_t size, const byte_t *const_segment) {
     assert(heap != NULL);
@@ -109,7 +126,38 @@ HeapEntry *get_heap_entry(const Heap *heap, addr_t heap_addr) {
 uint32_t add_ref(Heap *heap, addr_t heap_addr) {
     assert_not_nil(heap_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
-    return ++(entry->ref_count);
+    entry->ref_count++;
+    if (entry->ref_count > 1) {
+        return entry->ref_count;
+    }
+    // reference count has been incremented to one => now the object graph is rooted, inc refcount for all referenced objects
+    // a) array of ref
+    if (entry->header == TYPE_Ref) {
+        uint32_t elem_count = entry->data_size / sizeof_type(TYPE_Ref);
+        addr_t *addr_ptr = (addr_t *) entry->data;
+        for ( ; elem_count > 0; elem_count--, addr_ptr++) {
+            if (*addr_ptr != 0) {
+                add_ref(heap, *addr_ptr);
+            }
+        }
+        return 1;
+    }
+    // b) user type
+    const TypeMeta *type = instance_type(heap, entry);
+    if (type != NULL) {
+        const Type *field_type_ptr = &type->data[type->field_types_offset];
+        byte_t *field_data_ptr = entry->data;
+        for ( ; *field_type_ptr != TYPE_Void; field_type_ptr++) {
+            if (*field_type_ptr == TYPE_Ref) {
+                addr_t addr = get_addr(field_data_ptr, 0);
+                if (addr != 0) {
+                    add_ref(heap, addr);
+                }
+            }
+            field_data_ptr += sizeof_type(*field_type_ptr);
+        }
+    }
+    return 1;
 }
 
 uint32_t remove_ref(Heap *heap, addr_t heap_addr) {

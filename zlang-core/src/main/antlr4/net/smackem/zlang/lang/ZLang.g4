@@ -169,15 +169,15 @@ whileStmt
     ;
 
 logStmt
-    : Log LParen arguments RParen
+    : Log expr
     ;
 
 panicStmt
-    : Panic LParen arguments RParen
+    : Panic expr
     ;
 
 assertStmt
-    : Assert LParen expr RParen
+    : Assert expr
     ;
 
 swapStmt

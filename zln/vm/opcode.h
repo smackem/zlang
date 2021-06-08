@@ -246,6 +246,7 @@ enum op_code {
 
     /**
      * halt():
+     *      outer_most_stack_frame.R00 <- R00
      *      stop program execution
      */
     OPC_Halt,

@@ -29,6 +29,19 @@ public class BasicTest {
     }
 
     @Test
+    public void panic() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var number: int = 123
+                fn main() {
+                    panic 0
+                    number = 666
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("number")).isEqualTo(123);
+    }
+
+    @Test
     public void expressions() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var x1: int

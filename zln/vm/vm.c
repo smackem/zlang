@@ -131,6 +131,8 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
     uint32_t size = 0;
     switch (instr->opc) {
         case OPC_Nop:
+        case OPC_Ret:
+        case OPC_Halt:
             fprintf(f, "%12s", opcode_name(instr->opc));
             return 1 + 0;
         case OPC_Ldc_zero:
@@ -259,10 +261,6 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
                     get_byte(instr->args, 1),
                     get_addr(instr->args, 2));
             return 1 + 6;
-        case OPC_Ret:
-        case OPC_Halt:
-            fprintf(f, "%12s", opcode_name(instr->opc));
-            return 1 + 0;
         case OPC_Conv_i32:
         case OPC_Conv_f64:
         case OPC_Conv_u8:

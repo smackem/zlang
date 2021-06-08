@@ -727,6 +727,7 @@ void execute(const byte_t *code,
                 size = 1 + 6;
                 break;
             case OPC_Halt:
+                cpu.call_stack.stack_frame_buf[0].registers[0].i32 = reg(&cpu, 0)->i32;
                 free_cpu(&cpu);
                 return;
 

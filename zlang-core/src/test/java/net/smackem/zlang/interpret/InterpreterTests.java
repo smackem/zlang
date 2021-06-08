@@ -19,7 +19,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class InterpreterTests {
-    private static final int heapSize = 1024;
+    public static final int HEAP_SIZE = 4096;
     private static final int maxStackDepth = 16;
 
     private InterpreterTests() { }
@@ -42,9 +42,9 @@ class InterpreterTests {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zl = writer.writeProgram(program, heapSize, true, maxStackDepth);
+        final ByteBuffer zl = writer.writeProgram(program, HEAP_SIZE, true, maxStackDepth);
         assertThat(zl.isDirect()).isTrue();
-        assertThat(zl.capacity()).isGreaterThan(heapSize);
+        assertThat(zl.capacity()).isGreaterThan(HEAP_SIZE);
         System.out.println(Instructions.print(program.instructions()));
         assertThat(errors).isEmpty();
         return new CompilationResult(program, zl);

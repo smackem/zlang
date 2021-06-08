@@ -8,6 +8,9 @@
 #include <stdio.h>
 #include "cpu.h"
 
+#define BYTE_CODE_MAJOR_VERSION 0
+#define BYTE_CODE_MINOR_VERSION 1
+
 /**
  * Gets the name of the given op code.
  */

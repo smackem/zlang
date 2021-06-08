@@ -22,6 +22,12 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
     jlong buf_size = env->GetDirectBufferCapacity(env_ptr, buf);
     byte_t *bytes = env->GetDirectBufferAddress(env_ptr, buf);
     const ZLHeader *header = (ZLHeader *) bytes;
+    if ((header->prefix & 0xff) != 'Z'
+        || (header->prefix >> 8 & 0xff) != 'L'
+        || (header->prefix >> 16 & 0xff) != BYTE_CODE_MAJOR_VERSION
+        || (header->prefix >> 24 & 0xff) != BYTE_CODE_MINOR_VERSION) {
+        return -1;
+    }
     const byte_t *code_segment = &bytes[sizeof(ZLHeader)];
     uint32_t non_memory_size = sizeof(ZLHeader) + header->code_segment_size;
     const RuntimeConfig config = {
@@ -36,6 +42,7 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
             .register_segment_size = config.register_count * config.max_stack_depth * sizeof(Register),
             .stack_frame_segment_size = config.max_stack_depth * sizeof(StackFrame),
             .total_size = buf_size - non_memory_size,
+            .heap_size_limit = header->max_heap_size,
     };
     trace("code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: %u\nheap_offset: %u\ntotal_memory: %u\n",
           header->code_segment_size,
