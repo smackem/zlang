@@ -31,12 +31,11 @@ public class ByteCodeReader {
         final int constOffset = ByteCode.HEADER_SIZE + codeSize;
         final List<HeapEntry> entries = new ArrayList<>();
         int offset = heapOffset + ByteCode.HEAP_RESERVED_BYTES;
-        int dataSize;
         while (true) {
             int header = zl.getInt(offset);
             int refCount = zl.getInt(offset + 4);
-            dataSize = zl.getInt(offset + 8);
-            offset += dataSize + ByteCode.HEAP_ENTRY_HEADER_SIZE;
+            int dataSize = zl.getInt(offset + 8);
+            int allocSize = zl.getInt(offset + 12);
             if (header == 0 || offset >= zl.limit()) {
                 break;
             }
@@ -50,6 +49,7 @@ public class ByteCodeReader {
                 name = RegisterTypeId.fromNumber(header) + "[]";
             }
             entries.add(new HeapEntry(offset, name, refCount, dataSize));
+            offset += allocSize + ByteCode.HEAP_ENTRY_HEADER_SIZE;
         }
         return entries;
     }

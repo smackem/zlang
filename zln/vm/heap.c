@@ -13,14 +13,15 @@ static inline uint32_t unallocated_byte_count(Heap *heap) {
     return heap->size - heap->tail;
 }
 
-static addr_t find_free_slot(Heap *heap, uint32_t data_size) {
+static addr_t find_free_slot(Heap *heap, uint32_t data_size, uint32_t *alloc_size) {
     addr_t entry_addr = HEAP_RESERVED_BYTES;
     while (entry_addr < heap->tail) {
         HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
-        if (entry->ref_count == 0 && entry->data_size >= data_size) {
+        if (entry->ref_count == 0 && entry->alloc_size >= data_size) {
+            *alloc_size = entry->alloc_size;
             return entry_addr;
         }
-        entry_addr += entry->data_size + HEAP_ENTRY_HEADER_SIZE;
+        entry_addr += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
     }
     return 0;
 }
@@ -29,16 +30,19 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
     uint32_t entry_size = data_size + HEAP_ENTRY_HEADER_SIZE;
     uint32_t free_size = unallocated_byte_count(heap);
     addr_t entry_addr;
+    uint32_t alloc_size;
     if (entry_size <= free_size) {
         entry_addr = heap->tail;
+        alloc_size = data_size;
     } else {
-        entry_addr = find_free_slot(heap, data_size);
+        entry_addr = find_free_slot(heap, data_size, &alloc_size);
     }
     assert_that(entry_addr != 0, "out of memory");
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
     entry->ref_count = 0;
     entry->data_size = data_size;
+    entry->alloc_size = alloc_size;
     zero_memory(entry->data, data_size);
     heap->tail += entry_size;
     return entry_addr;
