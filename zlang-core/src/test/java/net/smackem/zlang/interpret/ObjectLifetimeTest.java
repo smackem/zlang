@@ -1,5 +1,6 @@
 package net.smackem.zlang.interpret;
 
+import net.smackem.zlang.emit.bytecode.ByteCode;
 import net.smackem.zlang.emit.bytecode.HeapEntry;
 import net.smackem.zlang.modules.ParsedModule;
 import net.smackem.zlang.modules.ParsedModules;
@@ -8,9 +9,7 @@ import org.junit.Test;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
-import static net.smackem.zlang.interpret.InterpreterTests.run;
 import static net.smackem.zlang.interpret.InterpreterTests.runExtractingHeap;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -194,7 +193,8 @@ public class ObjectLifetimeTest {
 
     @Test
     public void reuseHeapSlot() throws Exception {
-        final int blobSize = InterpreterTests.HEAP_SIZE - 50; // allocate complete heap for each object, minus header
+        // allocate complete heap for each object, minus header
+        final int blobSize = InterpreterTests.HEAP_SIZE - (ByteCode.HEAP_ENTRY_HEADER_SIZE + ByteCode.HEAP_RESERVED_BYTES);
         final List<ParsedModule> modules = ParsedModules.single("""
                 fn alloc() {
                     let a: byte[] = new byte[%d]

@@ -59,14 +59,17 @@ typedef struct heap_entry {
     /// the data size in bytes
     uint32_t data_size;
 
+    /// number of allocated bytes. >= data_size. address of next entry is entry->data[entry->alloc_size].
+    uint32_t alloc_size;
+
     /// first data byte. actual number of bytes can be deducted from header.
     /// padded in struct to 8 bytes
-    byte_t data[8];
+    byte_t data[4];
 } HeapEntry;
 
 #define HEAP_ENTRY_TYPE_META_FLAG 0x80000000
 #define HEAP_ENTRY_MIN_SIZE 20
-#define HEAP_ENTRY_HEADER_SIZE 12
+#define HEAP_ENTRY_HEADER_SIZE 16
 
 /**
  * The heap - memory segment to hold dynamically allocated objects

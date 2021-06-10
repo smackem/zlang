@@ -33,7 +33,7 @@ JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEn
     const RuntimeConfig config = {
             .register_count = header->register_count,
             .max_stack_depth = header->max_stack_depth,
-            .debug_callback = dump_cpu,
+            //.debug_callback = dump_cpu,
     };
     const MemoryLayout memory = {
             .base = &bytes[non_memory_size],
