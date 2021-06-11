@@ -128,8 +128,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(
-                        Tuple.tuple(0, 3, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(0, 3, "Unsigned8[]"));
     }
 
     @Test
@@ -144,8 +143,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(
-                        Tuple.tuple(0, 0, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(0, 0, "Unsigned8[]"));
     }
 
     @Test
@@ -166,8 +164,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(
-                        Tuple.tuple(0, 4, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(0, 4, "Unsigned8[]"));
     }
 
     @Test
@@ -187,8 +184,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(
-                        Tuple.tuple(0, 0, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(0, 0, "Unsigned8[]"));
     }
 
     @Test
@@ -209,5 +205,26 @@ public class ObjectLifetimeTest {
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(Tuple.tuple(blobSize, 0, "Unsigned8[]"));
+    }
+
+    @Test
+    public void splitHeapSlot() throws Exception {
+        // allocate complete heap for each object, minus header
+        final int blobSize = InterpreterTests.HEAP_SIZE - (ByteCode.HEAP_ENTRY_HEADER_SIZE + ByteCode.HEAP_RESERVED_BYTES);
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn consume(a: byte[]) -> byte[] {
+                    return a
+                }
+                fn main() {
+                    consume(new byte[%d])
+                    let a: byte[] = consume(new byte[10])
+                    let b: byte[] = consume(new byte[100])
+                }
+                """.formatted(blobSize));
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(10, 0, "Unsigned8[]"));
     }
 }

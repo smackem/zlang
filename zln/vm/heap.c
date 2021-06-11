@@ -17,13 +17,35 @@ static addr_t find_free_slot(Heap *heap, uint32_t data_size, uint32_t *alloc_siz
     addr_t entry_addr = HEAP_RESERVED_BYTES;
     while (entry_addr < heap->tail) {
         HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
-        if (entry->ref_count == 0 && entry->alloc_size >= data_size) {
-            *alloc_size = entry->alloc_size;
-            return entry_addr;
+        if (entry->alloc_size >= data_size) {
+            if (entry->ref_count == 0) {
+                *alloc_size = entry->alloc_size;
+                return entry_addr;
+            }
+            if (entry->alloc_size >= entry->data_size + data_size + HEAP_ENTRY_HEADER_SIZE) {
+                *alloc_size = entry->alloc_size - entry->data_size - HEAP_ENTRY_HEADER_SIZE;
+                entry->alloc_size = entry->data_size;
+                return entry_addr + entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
+            }
         }
         entry_addr += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
     }
     return 0;
+}
+
+static void compact_heap(Heap *heap) {
+    trace("compact heap\n");
+    addr_t entry_addr = HEAP_RESERVED_BYTES;
+    HeapEntry *prev_entry = NULL;
+    while (entry_addr < heap->tail) {
+        HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
+        if (entry->ref_count == 0 && prev_entry != NULL && prev_entry->ref_count != 0) {
+            prev_entry->alloc_size += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
+        } else {
+            prev_entry = entry;
+        }
+        entry_addr += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
+    }
 }
 
 static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
@@ -35,7 +57,12 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
         entry_addr = heap->tail;
         alloc_size = data_size;
     } else {
+        trace("find free heap slot\n");
         entry_addr = find_free_slot(heap, data_size, &alloc_size);
+        if (entry_addr == 0) {
+            compact_heap(heap);
+            entry_addr = find_free_slot(heap, data_size, &alloc_size);
+        }
     }
     assert_that(entry_addr != 0, "out of memory");
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];

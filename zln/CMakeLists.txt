@@ -53,6 +53,7 @@ else()
 endif()
 
 message(STATUS "system include: ${JAVA_SYSTEM_INCLUDE_DIR}")
+message(STATUS "$ENV{JAVA_HOME}/include")
 
 target_include_directories(zln PUBLIC
         "$ENV{JAVA_HOME}/include"
