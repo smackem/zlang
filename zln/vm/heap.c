@@ -65,6 +65,7 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
         }
     }
     assert_that(entry_addr != 0, "out of memory");
+    entry_size = alloc_size + HEAP_ENTRY_HEADER_SIZE;
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
     entry->ref_count = 0;

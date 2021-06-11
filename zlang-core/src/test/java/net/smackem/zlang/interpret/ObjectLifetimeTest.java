@@ -225,6 +225,7 @@ public class ObjectLifetimeTest {
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(
-                        Tuple.tuple(10, 0, "Unsigned8[]"));
+                        Tuple.tuple(10, 0, "Unsigned8[]"),
+                        Tuple.tuple(100, 0, "Unsigned8[]"));
     }
 }
