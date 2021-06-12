@@ -33,14 +33,19 @@ public class ByteCodeWriter implements AutoCloseable {
     private final ConstSegmentWriter constSegment = new ConstSegmentWriter();
 
     /**
-     * ZL byte code format v0.1:
+     * ZL byte code format ZAP v0.1:
+     *
      * 1) header (ByteCode.HEADER_SIZE bytes)
      * 2) code segment (length @header)
      * 3) const segment (length @header)
+     *
+     * only if options.inMemoryImage is true:
      * 4) global segment (zeroed memory, length @header)
-     * 5) heap memory (zeroed memory, all remaining bytes)
+     * 5) register segment (zeroed memory, length = register_count * stack_depth * 8)
+     * 6) stack frame segment (zeroed memory, length = stack_depth * 32)
+     * 7) heap memory (zeroed memory, all remaining bytes)
      */
-    public ByteBuffer writeProgram(Program program, int heapSize, boolean limitHeapSize, int maxStackDepth) throws Exception {
+    public ByteBuffer writeProgram(Program program, ByteCodeWriterOptions options) throws Exception {
         // render const segment to memory
         renderTypes(program.types());
         renderFunctions(program.codeMap().keySet());
@@ -49,20 +54,29 @@ public class ByteCodeWriter implements AutoCloseable {
         final byte[] constSegment = this.constSegment.fixup(program.types(), program.codeMap());
         final int headerSize = ByteCode.HEADER_SIZE;
         final int globalSegmentSize = program.globalSegmentSize();
-        // approximate minimum buffer size
-        final int approximateSize = headerSize
-                + code.segment.length
-                + constSegment.length
-                + globalSegmentSize
-                + code.registerCount * maxStackDepth * 8 // registers: assume each register has 8 bytes
-                + maxStackDepth * 32 // approximate stack frame size
-                + heapSize;
-        final int size = getBufferSize(approximateSize);
-        log.info("approximate required size: {} -> allocate buffer of size {}", approximateSize, size);
-        final ByteBuffer buf = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+        final ByteBuffer buf;
+        if (options.isMemoryImage()) {
+            // approximate minimum buffer size
+            final int approximateSize = headerSize
+                                        + code.segment.length
+                                        + constSegment.length
+                                        + globalSegmentSize
+                                        + code.registerCount * options.maxStackDepth() * 8 // registers: assume each register has 8 bytes
+                                        + options.maxStackDepth() * 32 // approximate stack frame size
+                                        + options.heapSize();
+            final int size = getBufferSize(approximateSize);
+            log.info("approximate required size: {} -> allocate buffer of size {}", approximateSize, size);
+            buf = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+        } else {
+            final int size = headerSize
+                   + code.segment.length
+                   + constSegment.length;
+            buf = ByteBuffer.allocate(size).order(ByteOrder.nativeOrder());
+        }
         // 1) header
         writeHeaderBytes(buf, code.segment.length, constSegment.length, globalSegmentSize,
-                program.entryPoint(), code.registerCount, maxStackDepth, limitHeapSize ? heapSize : 0);
+                program.entryPoint(), code.registerCount,
+                options.maxStackDepth(), options.hasHeapSizeLimit() ? options.heapSize() : 0);
         // 2) code segment
         buf.put(headerSize, code.segment);
         // 3) const segment
@@ -70,7 +84,7 @@ public class ByteCodeWriter implements AutoCloseable {
         // 4) global segment - just reserve space
         // 5) register segment - just reserve space
         // 6) stack frame segment - just reserve space
-        // 5) heap segment - just reserve space
+        // 7) heap segment - just reserve space
         return buf;
     }
 

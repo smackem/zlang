@@ -29,20 +29,20 @@ include_directories(
 # -------------------------------------
 # main target
 # -------------------------------------
-add_executable(zln_executable main.c)
+add_executable(zl main.c)
 
-set_target_properties(zln_executable PROPERTIES OUTPUT_NAME "zln")
+set_target_properties(zl PROPERTIES OUTPUT_NAME "zl")
 
 # -------------------------------------
 # test target
 # -------------------------------------
-add_executable(zln_test test.c emit.c)
+add_executable(zl_test test.c emit.c)
 
 
 # -------------------------------------
 # lib target
 # -------------------------------------
-add_library(zln SHARED lib.c)
+add_library(zll SHARED lib.c)
 
 message(STATUS ${CMAKE_SYSTEM_NAME})
 
@@ -55,7 +55,7 @@ endif()
 message(STATUS "system include: ${JAVA_SYSTEM_INCLUDE_DIR}")
 message(STATUS "$ENV{JAVA_HOME}/include")
 
-target_include_directories(zln PUBLIC
+target_include_directories(zll PUBLIC
         "$ENV{JAVA_HOME}/include"
         "$ENV{JAVA_HOME}/include/${JAVA_SYSTEM_INCLUDE_DIR}"
         )

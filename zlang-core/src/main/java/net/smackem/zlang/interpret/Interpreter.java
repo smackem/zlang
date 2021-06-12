@@ -13,12 +13,12 @@ public class Interpreter {
 
     private Interpreter() { }
 
-    public static Map<String, Object> run(ByteBuffer zl, Program program) {
-        final int heapOffset = run(zl);
-        return ByteCodeReader.readGlobals(zl, heapOffset, program);
+    public static Map<String, Object> run(ByteBuffer zap, Program program) {
+        final int heapOffset = run(zap);
+        return ByteCodeReader.readGlobals(zap, heapOffset, program);
     }
 
-    static int run(ByteBuffer zl) {
-        return Zln.executeProgram(zl);
+    static int run(ByteBuffer zap) {
+        return Zll.executeProgram(zap);
     }
 }

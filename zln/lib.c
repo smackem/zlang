@@ -3,7 +3,7 @@
 //
 #include <util.h>
 #include <vm.h>
-#include "net_smackem_zlang_interpret_Zln.h"
+#include "net_smackem_zlang_interpret_Zll.h"
 
 typedef struct zl_header {
     uint32_t prefix; // 'Z' | 'L' << 8 ' | << MAJOR_VERSION << 16 | MINOR_VERSION << 24
@@ -17,7 +17,7 @@ typedef struct zl_header {
     uint32_t reserved[2];
 } ZLHeader;
 
-JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram(JNIEnv *env_ptr, jclass cls, jobject buf) {
+JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zll_executeProgram(JNIEnv *env_ptr, jclass cls, jobject buf) {
     JNIEnv env = *env_ptr;
     jlong buf_size = env->GetDirectBufferCapacity(env_ptr, buf);
     byte_t *bytes = env->GetDirectBufferAddress(env_ptr, buf);

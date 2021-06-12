@@ -12,7 +12,7 @@ extern "C" {
  * Method:    executeProgram
  * Signature: (Ljava/nio/ByteBuffer;)I
  */
-JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zln_executeProgram
+JNIEXPORT jint JNICALL Java_net_smackem_zlang_interpret_Zll_executeProgram
   (JNIEnv *, jclass, jobject);
 
 #ifdef __cplusplus

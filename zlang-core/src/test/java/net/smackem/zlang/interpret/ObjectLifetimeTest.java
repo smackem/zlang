@@ -1,5 +1,6 @@
 package net.smackem.zlang.interpret;
 
+import com.google.common.io.Files;
 import net.smackem.zlang.emit.bytecode.ByteCode;
 import net.smackem.zlang.emit.bytecode.HeapEntry;
 import net.smackem.zlang.modules.ParsedModule;
@@ -7,6 +8,7 @@ import net.smackem.zlang.modules.ParsedModules;
 import org.assertj.core.groups.Tuple;
 import org.junit.Test;
 
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
 
@@ -221,6 +223,7 @@ public class ObjectLifetimeTest {
                     let b: byte[] = consume(new byte[100])
                 }
                 """.formatted(blobSize));
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "splitHeapSlot.zap"));
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
