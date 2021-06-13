@@ -29,7 +29,7 @@ include_directories(
 # -------------------------------------
 # main target
 # -------------------------------------
-add_executable(zl main.c)
+add_executable(zl main.c zap.c)
 
 set_target_properties(zl PROPERTIES OUTPUT_NAME "zl")
 
@@ -42,7 +42,7 @@ add_executable(zl_test test.c emit.c)
 # -------------------------------------
 # lib target
 # -------------------------------------
-add_library(zll SHARED lib.c)
+add_library(zll SHARED lib.c zap.c)
 
 message(STATUS ${CMAKE_SYSTEM_NAME})
 

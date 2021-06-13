@@ -42,7 +42,11 @@ class InterpreterTests {
     }
 
     static void writeZap(Collection<ParsedModule> modules, Path path) throws Exception {
-        final ByteCodeWriterOptions options = new ByteCodeWriterOptions().isMemoryImage(false);
+        final ByteCodeWriterOptions options = new ByteCodeWriterOptions()
+                .isMemoryImage(false)
+                .hasHeapSizeLimit(true)
+                .heapSize(HEAP_SIZE)
+                .maxStackDepth(maxStackDepth);
         final CompilationResult result = compile(modules, options);
         final OutputStream os = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
         os.write(result.zap.array(), result.zap.arrayOffset(), result.zap.limit());

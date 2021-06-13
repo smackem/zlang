@@ -231,4 +231,28 @@ public class ObjectLifetimeTest {
                         Tuple.tuple(10, 0, "Unsigned8[]"),
                         Tuple.tuple(100, 0, "Unsigned8[]"));
     }
+
+    @Test
+    public void compactHeap() throws Exception {
+        final int blobSize = InterpreterTests.HEAP_SIZE - (ByteCode.HEAP_ENTRY_HEADER_SIZE + ByteCode.HEAP_RESERVED_BYTES);
+        final int smallObjSize = blobSize / 10;
+        final int largeObjSize = smallObjSize * 5;
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn consume(a: byte[]) -> byte[] {
+                    return a
+                }
+                fn main() {
+                    for i: int in 0 .. 10 {
+                        consume(new byte[%d])
+                    }
+                    let a: byte[] = new byte[%d]
+                }
+                """.formatted(smallObjSize, largeObjSize));
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "compactHeap.zap"));
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+        assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
+                .containsExactly(
+                        Tuple.tuple(largeObjSize, 0, "Unsigned8[]"));
+    }
 }

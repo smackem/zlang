@@ -21,8 +21,7 @@ public class ByteCodeWriterOptions {
     }
 
     /**
-     * @return the minimum size of the heap, if a full in-memory image is to be created.
-     *      otherwise, this value is ignored.
+     * @return the minimum size of the heap or 0 to let the vm choose the heap size.
      */
     public int heapSize() {
         return this.heapSize;
@@ -37,7 +36,6 @@ public class ByteCodeWriterOptions {
      * @return {@code true} if there is a hard limit on the heap size (see {@link #heapSize()}).
      *      Otherwise, {@link #heapSize()} specifies the minimum heap size, which may be exceeded
      *      for alignment reason.
-     *      Ignored if {@link #isMemoryImage()} is {@code false}.
      */
     public boolean hasHeapSizeLimit() {
         return this.limitHeapSize;

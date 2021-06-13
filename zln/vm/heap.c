@@ -39,7 +39,7 @@ static void compact_heap(Heap *heap) {
     HeapEntry *prev_entry = NULL;
     while (entry_addr < heap->tail) {
         HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
-        if (entry->ref_count == 0 && prev_entry != NULL && prev_entry->ref_count != 0) {
+        if (entry->ref_count == 0 && prev_entry != NULL && prev_entry->ref_count == 0) {
             prev_entry->alloc_size += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
         } else {
             prev_entry = entry;
@@ -56,6 +56,7 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
     if (entry_size <= free_size) {
         entry_addr = heap->tail;
         alloc_size = data_size;
+        heap->tail += entry_size;
     } else {
         trace("find free heap slot\n");
         entry_addr = find_free_slot(heap, data_size, &alloc_size);
@@ -65,14 +66,12 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
         }
     }
     assert_that(entry_addr != 0, "out of memory");
-    entry_size = alloc_size + HEAP_ENTRY_HEADER_SIZE;
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
     entry->ref_count = 0;
     entry->data_size = data_size;
     entry->alloc_size = alloc_size;
     zero_memory(entry->data, data_size);
-    heap->tail += entry_size;
     return entry_addr;
 }
 
@@ -83,6 +82,7 @@ static inline uint32_t heap_entry_data_size(const Heap *heap, const HeapEntry *h
         const TypeMeta *type_meta = (TypeMeta *) &heap->const_segment[const_addr];
         assert_equal(sizeof_instance(type_meta), heap_entry->data_size, "TypeMeta data_size");
     }
+    assert_that(heap_entry->alloc_size >= heap_entry->data_size, "alloc size is < data size");
 #endif
     return heap_entry->data_size;
 }
