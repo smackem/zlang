@@ -319,6 +319,12 @@ enum op_code {
      *      pc <- FunctionMeta.pc
      */
     OPC_CallVirt,
+
+    /**
+     * type_check(REG r_target, REG r_source, INT const_addr)
+     * r_target <- r_source != nil and r_source instance_of user_type @ const_addr
+     */
+    OPC_TypeChk,
 };
 
 typedef byte_t OpCode;

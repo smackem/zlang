@@ -246,3 +246,25 @@ const FunctionMeta *get_impl_function(const Heap *heap, addr_t heap_addr, addr_t
     }
     return NULL;
 }
+
+bool check_type(const Heap *heap, addr_t heap_addr, addr_t type_addr) {
+    if (heap_addr == 0) {
+        return false; // obj is nil
+    }
+    const HeapEntry *entry = get_heap_entry(heap, heap_addr);
+    if ((entry->header & HEAP_ENTRY_TYPE_META_FLAG) == 0) {
+        return false; // obj is not of a user type
+    }
+    addr_t entry_type_addr = entry->header & ~HEAP_ENTRY_TYPE_META_FLAG;
+    if (entry_type_addr == type_addr) {
+        return true;
+    }
+    const TypeMeta *type = (TypeMeta *) &heap->const_segment[entry_type_addr];
+    const addr_t *ifc_ptr = (addr_t *) &heap->const_segment[entry_type_addr + type->implemented_interfaces_offset];
+    for ( ; *ifc_ptr != 0; ifc_ptr++) {
+        if (*ifc_ptr == type_addr) {
+            return true;
+        }
+    }
+    return false;
+}

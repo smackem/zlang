@@ -107,6 +107,7 @@ static const char *const opcode_names[] = {
     "RemoveRef",
     "Invoke",
     "CallVirt",
+    "TypeChk",
 };
 
 static const char *const type_names[] = {
@@ -255,6 +256,7 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
         case OPC_Call:
         case OPC_Invoke:
         case OPC_CallVirt:
+        case OPC_TypeChk:
             fprintf(f, "%12s r%d r%d %08x",
                     opcode_name(instr->opc),
                     get_byte(instr->args, 0),

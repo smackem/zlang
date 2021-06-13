@@ -831,6 +831,14 @@ void execute(const byte_t *code,
                 size = 1 + 1;
                 break;
 
+            case OPC_TypeChk:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                value = get_addr(instr->args, 2);
+                reg(&cpu, r_target)->i32 = check_type(&cpu.heap, reg(&cpu, r_left)->ref, value);
+                size = 1 + 6;
+                break;
+
             default:
                 assert_that(false, "pc=%08x: unsupported opcode %d", pc, instr->opc);
                 break;

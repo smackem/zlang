@@ -231,4 +231,22 @@ const TypeMeta *instance_type(const Heap * heap, const HeapEntry *entry);
  */
 const FunctionMeta *get_impl_function(const Heap *heap, addr_t heap_addr, addr_t virtual_function_addr);
 
+/**
+ * checks if the object at {@code heap_addr} implements the user type at {@code type_addr}
+ * in the const segment. either the object is of the specified type or the specified type
+ * is an interface implemented by the type of the object.
+ *
+ * @param heap
+ *      This heap.
+ *
+ * @param heap_addr
+ *      The address of the object to check.
+ *
+ * @param type_addr
+ *      The address of the type to test for, relative to the const segment.
+ *
+ * @return {@code true} if the object implements the given type, otherwise {@code false}.
+ */
+bool check_type(const Heap *heap, addr_t heap_addr, addr_t type_addr);
+
 #endif //ZLN_HEAP_H

@@ -315,7 +315,13 @@ public enum OpCode {
      *      base_pc <- FunctionMeta.base_pc
      *      pc <- FunctionMeta.pc
      */
-    CallVirt(100);
+    CallVirt(100),
+
+    /**
+     * type_check(REG r_target, REG r_source, INT const_addr)
+     * r_target <- r_source != nil and r_source instance_of user_type @ const_addr
+     */
+    TypeChk(101);
 
     private final int code;
 

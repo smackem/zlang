@@ -247,7 +247,7 @@ public class ByteCodeWriter implements AutoCloseable {
                 writer.writeAddr(0); // needs fixup
             }
             case Br -> writer.writeAddr(0); // needs fixup
-            case Call, CallVirt, Invoke -> {
+            case Call, CallVirt, Invoke, TypeChk -> {
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeByte(instr.registerArg(1).number());
                 writer.writeAddr(instr.symbolArg().address());
@@ -261,7 +261,7 @@ public class ByteCodeWriter implements AutoCloseable {
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeAddr(instr.symbolArg().address());
             }
-            case NewStr -> {
+            case NewStr -> { // emitter uses NewArr_u8 instead
                 assert false;
             }
             default -> throw new RuntimeException("unsupported opcode " + instr.opCode());
