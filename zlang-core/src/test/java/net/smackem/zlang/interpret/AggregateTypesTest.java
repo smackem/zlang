@@ -127,8 +127,8 @@ public class AggregateTypesTest {
     public void multiModuleTypes() throws Exception {
         final String mainSource = """
                 module main uses dep1
-                var dep1: Dep1Type = new Dep1Type {}
-                var dep2: Dep2Type = new Dep2Type {}
+                var dep1: Dep1Type = makeDep1Type()
+                var dep2: Dep2Type = makeDep2Type()
                 fn main() {
                     dep1.f = 123
                     dep2.f = 234
@@ -140,10 +140,16 @@ public class AggregateTypesTest {
                 struct Dep1Type {
                     f: int
                 }
+                fn makeDep1Type() -> Dep1Type {
+                    return new Dep1Type {}
+                }
                 """;
         final String dep2Source = """
                 struct Dep2Type {
                     f: int
+                }
+                fn makeDep2Type() -> Dep2Type {
+                    return new Dep2Type {}
                 }
                 let x2: int = 555
                 """;

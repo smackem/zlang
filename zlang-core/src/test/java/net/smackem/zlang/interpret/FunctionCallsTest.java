@@ -251,8 +251,8 @@ public class FunctionCallsTest {
     public void multiModuleMethods() throws Exception {
         final String mainSource = """
                 module main uses dep1
-                var dep1: Dep1Type = new Dep1Type {}
-                var dep2: Dep2Type = new Dep2Type {}
+                var dep1: Dep1Type = makeDep1Type()
+                var dep2: Dep2Type = makeDep2Type()
                 var r: int
                 fn main() {
                     r = dep2.func(dep1.func(1))
@@ -263,6 +263,9 @@ public class FunctionCallsTest {
                 struct Dep1Type {
                     f: int
                 }
+                fn makeDep1Type() -> Dep1Type {
+                    return new Dep1Type {}
+                }
                 fn Dep1Type::func(x: int) -> int {
                     self.f = x
                     return x + 1
@@ -271,6 +274,9 @@ public class FunctionCallsTest {
         final String dep2Source = """
                 struct Dep2Type {
                     f: int
+                }
+                fn makeDep2Type() -> Dep2Type {
+                    return new Dep2Type {}
                 }
                 fn Dep2Type::func(x: int) -> int {
                     self.f = x

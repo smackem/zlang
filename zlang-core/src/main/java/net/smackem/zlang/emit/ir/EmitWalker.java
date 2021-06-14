@@ -899,6 +899,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         if (type instanceof AggregateType == false) {
             return logLocalError(ctx, "'" + type + "' is not an aggregate type");
         }
+        if (Scopes.enclosingModule((Scope) type) != Scopes.enclosingModule(currentScope())) {
+            return logLocalError(ctx, "instance creation of foreign type not allowed");
+        }
         final Symbol typeSymbol = (Symbol) type;
         final MemberScope typeScope = (MemberScope) typeSymbol;
         final Register target = allocFreedRegister();

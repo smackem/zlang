@@ -14,4 +14,8 @@ public final class Scopes {
             scope = scope.enclosingScope();
         }
     }
+
+    public static ModuleSymbol enclosingModule(Scope scope) {
+        return enclosingSymbol(scope, ModuleSymbol.class);
+    }
 }
