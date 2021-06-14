@@ -260,7 +260,7 @@ bool check_type(const Heap *heap, addr_t heap_addr, addr_t type_addr) {
         return true;
     }
     const TypeMeta *type = (TypeMeta *) &heap->const_segment[entry_type_addr];
-    const addr_t *ifc_ptr = (addr_t *) &heap->const_segment[entry_type_addr + type->implemented_interfaces_offset];
+    const addr_t *ifc_ptr = (addr_t *) &type->data[type->implemented_interfaces_offset];
     for ( ; *ifc_ptr != 0; ifc_ptr++) {
         if (*ifc_ptr == type_addr) {
             return true;

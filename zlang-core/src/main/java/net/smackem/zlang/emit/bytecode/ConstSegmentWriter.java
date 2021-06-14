@@ -18,6 +18,12 @@ class ConstSegmentWriter extends NativeValueWriter {
 
     ConstSegmentWriter() {
         super(new ByteArrayOutputStream());
+        // reserve first 4 bytes - since address 0 is not valid
+        try {
+            writeInt32(0x11223344);
+        } catch (IOException ignored) {
+            // must not happen because of in-memory output
+        }
     }
 
     // typedef struct virtual_function_meta {

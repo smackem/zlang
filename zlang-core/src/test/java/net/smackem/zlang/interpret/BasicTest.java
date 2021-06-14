@@ -6,6 +6,7 @@ import net.smackem.zlang.modules.SourceFileLocation;
 import net.smackem.zlang.modules.SourceFileLocations;
 import org.junit.Test;
 
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -130,5 +131,29 @@ public class BasicTest {
         assertThat(globals.get("mainX")).isEqualTo(123);
         assertThat(globals.get("depY")).isEqualTo(234);
         assertThat(globals.get("depYCopy")).isEqualTo(234);
+    }
+
+    @Test
+    public void typeChecks() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                interface MyInterface {
+                }
+                struct MyStruct {
+                    f: int
+                } is MyInterface
+                var result: bool[]
+                fn main() {
+                    let obj: object = new MyStruct{}
+                    result = new bool[] {
+                        obj is MyStruct,
+                        obj is MyInterface,
+                        nil is MyStruct,
+                        obj is int list
+                    }
+                }
+                """);
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "typeChecks.zap"));
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo(new int[] { 1, 1, 0, 0 });
     }
 }

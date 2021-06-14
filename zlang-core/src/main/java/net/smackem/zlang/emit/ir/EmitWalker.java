@@ -509,8 +509,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             return super.visitRelationalExpr(ctx);
         }
 
-        final Value left = ctx.additiveExpr(0).accept(this);
-        final Value right = ctx.additiveExpr(1).accept(this);
+        final Value left = ctx.typeCheckExpr(0).accept(this);
+        final Value right = ctx.typeCheckExpr(1).accept(this);
         final Register target = allocFreedRegister(left.register, right.register);
         if (Types.isComparable(left.type, right.type) == false) {
             return logLocalError(ctx, "incompatible operand types in relational expression");
@@ -534,6 +534,27 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         emit(opc, target, left.register, right.register);
+        return value(target, BuiltInType.BOOL.type());
+    }
+
+    @Override
+    public Value visitTypeCheckExpr(ZLangParser.TypeCheckExprContext ctx) {
+        if (ctx.Is() == null) {
+            return ctx.additiveExpr().accept(this);
+        }
+        final Value left = ctx.additiveExpr().accept(this);
+        if (left.type.registerType().isReferenceType() == false) {
+            return logLocalError(ctx.additiveExpr(), "type checks are only valid for objects of reference types, not for " + left.type);
+        }
+        final Type type = resolveType(ctx.type());
+        if (type == null) {
+            return logLocalError(ctx.type(), "could not resolve type " + ctx.type().getText());
+        }
+        if (type instanceof AggregateType == false && type instanceof InterfaceSymbol == false) {
+            return logLocalError(ctx.type(), "type checks are only valid for user types, not for " + type);
+        }
+        final Register target = allocFreedRegister(left.register);
+        emit(OpCode.TypeChk, target, left.register, (Symbol) type);
         return value(target, BuiltInType.BOOL.type());
     }
 

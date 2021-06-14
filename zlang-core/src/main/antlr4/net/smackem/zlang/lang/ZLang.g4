@@ -204,8 +204,8 @@ conditionalAndExpr
     ;
 
 relationalExpr
-    : additiveExpr
-    | additiveExpr relationalOp additiveExpr?
+    : typeCheckExpr
+    | typeCheckExpr relationalOp typeCheckExpr?
     ;
 
 relationalOp
@@ -216,7 +216,11 @@ relationalOp
     | Ge
     | Ne
     | In
-    | Is
+    ;
+
+typeCheckExpr
+    : additiveExpr
+    | additiveExpr Is type
     ;
 
 additiveExpr
