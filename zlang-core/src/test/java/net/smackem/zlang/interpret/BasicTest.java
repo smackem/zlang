@@ -134,7 +134,7 @@ public class BasicTest {
     }
 
     @Test
-    public void typeChecks() throws Exception {
+    public void runtimeTypeChecks() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 interface MyInterface {
                 }
