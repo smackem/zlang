@@ -130,8 +130,8 @@ public class AggregateTypesTest {
                 var dep1: Dep1Type = makeDep1Type()
                 var dep2: Dep2Type = makeDep2Type()
                 fn main() {
-                    dep1.f = 123
-                    dep2.f = 234
+                    dep1.setF(123)
+                    dep2.setF(234)
                 }
                 """;
         final String dep1Source = """
@@ -143,6 +143,9 @@ public class AggregateTypesTest {
                 fn makeDep1Type() -> Dep1Type {
                     return new Dep1Type {}
                 }
+                fn Dep1Type::setF(value: int) {
+                    self.f = value
+                }
                 """;
         final String dep2Source = """
                 struct Dep2Type {
@@ -150,6 +153,9 @@ public class AggregateTypesTest {
                 }
                 fn makeDep2Type() -> Dep2Type {
                     return new Dep2Type {}
+                }
+                fn Dep2Type::setF(value: int) {
+                    self.f = value
                 }
                 let x2: int = 555
                 """;

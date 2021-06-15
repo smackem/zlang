@@ -8,6 +8,7 @@ public abstract class Symbol {
     private int address;
     private int line;
     private int position;
+    private Scope definingScope;
 
     Symbol(String name, Type type) {
         this.name = Objects.requireNonNull(name);
@@ -44,6 +45,14 @@ public abstract class Symbol {
 
     void setCharPosition(int position) {
         this.position = position;
+    }
+
+    public Scope definingScope() {
+        return this.definingScope;
+    }
+
+    void setDefiningScope(Scope scope) {
+        this.definingScope = scope;
     }
 
     @Override

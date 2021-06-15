@@ -57,6 +57,7 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
             scope.define(symbol.name(), symbol);
             symbol.setLineNumber(ctx.getStart().getLine());
             symbol.setCharPosition(ctx.getStart().getCharPositionInLine());
+            symbol.setDefiningScope(scope);
         } catch (CompilationErrorException e) {
             logSemanticError(ctx, e.getMessage());
         }

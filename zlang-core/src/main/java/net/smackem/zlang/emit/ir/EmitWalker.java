@@ -177,6 +177,10 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             logLocalError(ctx, "incompatible types in assignment");
             return null;
         }
+        if (Scopes.enclosingModule(symbol.definingScope()) != Scopes.enclosingModule(currentScope())) {
+            logLocalError(ctx, "access to foreign variables not allowed");
+            return null;
+        }
         if (variable.isGlobal()) {
             if (rvalue.type.registerType().isReferenceType()) {
                 if (init == false) {
@@ -245,6 +249,10 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return;
             }
             final MemberScope memberScope = (MemberScope) primary.type;
+            if (Scopes.enclosingModule(memberScope) != Scopes.enclosingModule(currentScope())) {
+                logLocalError(ctx, "access to field of foreign type not allowed");
+                return;
+            }
             final Symbol field = memberScope.resolveMember(ctx.fieldAccessPostfix().Ident().getText());
             if (field instanceof FieldSymbol == false) {
                 logLocalError(ctx, "field id does not refer to a field");
@@ -683,6 +691,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return logLocalError(ctx, "field target is not an aggregate");
             }
             final MemberScope memberScope = (MemberScope) primary.type;
+            if (Scopes.enclosingModule(memberScope) != Scopes.enclosingModule(currentScope())) {
+                return logLocalError(ctx, "access to field of foreign type not allowed");
+            }
             final Symbol field = memberScope.resolveMember(ctx.fieldAccessPostfix().Ident().getText());
             if (field instanceof FieldSymbol == false) {
                 return logLocalError(ctx, "field id does not refer to a field");
@@ -792,7 +803,11 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (symbol instanceof VariableSymbol == false) {
                 return logLocalError(ctx, "'" + ctx.Ident() + "' is not a variable or constant");
             }
-            if (((VariableSymbol) symbol).isGlobal()) {
+            final VariableSymbol variable = (VariableSymbol) symbol;
+            if (variable.isGlobal()) {
+                if (variable.isAssignable() && Scopes.enclosingModule(variable.definingScope()) != Scopes.enclosingModule(currentScope())) {
+                    return logLocalError(ctx, "access to foreign variables not allowed");
+                }
                 final Register target = allocFreedRegister();
                 emit(OpCode.ldGlb(symbol.type()), target, symbol.address());
                 return value(target, symbol.type());
