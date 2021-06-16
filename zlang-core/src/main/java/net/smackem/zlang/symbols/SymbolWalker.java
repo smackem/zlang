@@ -1,5 +1,6 @@
 package net.smackem.zlang.symbols;
 
+import net.smackem.zlang.emit.ir.Naming;
 import net.smackem.zlang.lang.ZLangParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
@@ -109,13 +110,14 @@ class SymbolWalker extends ScopeWalker<Void> {
     @Override
     public Void visitUnionDecl(ZLangParser.UnionDeclContext ctx) {
         enterScope(ctx);
-        int size = 0;
+        final FieldSymbol flagField = new FieldSymbol(Naming.UNION_FLAG_FIELD_NAME, BuiltInType.BYTE.type(), (Type) currentScope());
+        final int flagFieldSize = flagField.type().byteSize();
+        defineSymbol(ctx, currentScope(), flagField);
         for (final var p : ctx.parameter()) {
             final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            symbol.setAddress(flagFieldSize);
             assert symbol.type().byteSize() > 0;
-            size = Math.max(size, symbol.type().byteSize());
         }
-        assert size == ((Type) currentScope()).byteSize();
         super.visitUnionDecl(ctx);
         popScope();
         return null;

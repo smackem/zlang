@@ -129,8 +129,12 @@ public class ByteCodeWriter implements AutoCloseable {
         }
         // ... then structs and lists
         for (final Type type : types) {
-            if (type instanceof StructSymbol || type instanceof ListType) {
-                this.constSegment.writeType((AggregateTypeSymbol) type);
+            if (type instanceof StructSymbol struct) {
+                this.constSegment.writeType(struct);
+            } else if (type instanceof ListType list) {
+                this.constSegment.writeType(list);
+            } else if (type instanceof UnionSymbol union) {
+                this.constSegment.writeType(union);
             }
         }
     }

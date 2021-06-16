@@ -42,7 +42,15 @@ class ConstSegmentWriter extends NativeValueWriter {
         }
     }
 
-    public void writeType(AggregateTypeSymbol symbol) throws IOException {
+    public void writeType(StructSymbol symbol) throws IOException {
+        writeType(symbol, symbol.implementedInterfaces(), symbol.buildVirtualTable(), symbol.symbols());
+    }
+
+    public void writeType(ListType symbol) throws IOException {
+        writeType(symbol, symbol.implementedInterfaces(), symbol.buildVirtualTable(), symbol.symbols());
+    }
+
+    public void writeType(UnionSymbol symbol) throws IOException {
         writeType(symbol, symbol.implementedInterfaces(), symbol.buildVirtualTable(), symbol.symbols());
     }
 

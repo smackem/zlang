@@ -98,9 +98,10 @@ public class SymbolExtractorTest {
                         - self: SelfSymbol{StructType}@1
                         > null: BlockScope
                     > UnionType: UnionSymbol
-                        - integer: FieldSymbol{int}@0
-                        - real: FieldSymbol{float}@0
-                        - str: FieldSymbol{string}@0
+                        - @flag: FieldSymbol{byte}@0
+                        - integer: FieldSymbol{int}@1
+                        - real: FieldSymbol{float}@1
+                        - str: FieldSymbol{string}@1
                 """);
         // one error is expected: main method signature does not fit
         assertThat(errors).hasSize(1);
@@ -302,9 +303,10 @@ public class SymbolExtractorTest {
                     > dep: ModuleSymbol
                         - Number: UnionSymbol{null}@0
                         > Number: UnionSymbol
-                            - integer: FieldSymbol{int}@0
-                            - real: FieldSymbol{float}@0
-                            - unsigned: FieldSymbol{byte}@0
+                            - @flag: FieldSymbol{byte}@0
+                            - integer: FieldSymbol{int}@1
+                            - real: FieldSymbol{float}@1
+                            - unsigned: FieldSymbol{byte}@1
                     > main: ModuleSymbol
                         - File: StructSymbol{null}@0
                         - main: FunctionSymbol{null}@0
