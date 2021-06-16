@@ -93,10 +93,8 @@ union Number {
     b: byte
 }
 
-fn Number::f() -> self.f
-fn mutable Number::f(v: float) {
-    self.f = v
-}
+let x: Number = new Number.f(123)
+let x: Number = new Number { n = 234 }
 
 fn Number::to_int() -> int {
     return switch self {
@@ -118,7 +116,7 @@ struct StringMethods {}
 let Strings: StringMethods = new StringMethods {}
 
 // alternative:
-// struct instance Strings {}
+// struct object Strings {}
 
 fn Strings::compare(a: string, b: string) -> int {
 }

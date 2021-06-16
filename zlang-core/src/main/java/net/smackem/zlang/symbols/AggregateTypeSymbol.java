@@ -16,6 +16,7 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
 
     void addImplementedInterface(InterfaceSymbol symbol) {
         this.implementedInterfaces.add(Objects.requireNonNull(symbol));
+        this.cachedVirtualTable = null;
     }
 
     String symbolTableString() {
@@ -51,6 +52,7 @@ public abstract class AggregateTypeSymbol extends Symbol implements AggregateTyp
     @Override
     public void define(String name, Symbol symbol) throws CompilationErrorException {
         this.symbolTable.define(name, symbol);
+        this.cachedVirtualTable = null;
     }
 
     @Override

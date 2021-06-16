@@ -8,9 +8,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.IntBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 class ConstSegmentWriter extends NativeValueWriter {
 
@@ -51,7 +49,14 @@ class ConstSegmentWriter extends NativeValueWriter {
     }
 
     public void writeType(UnionSymbol symbol) throws IOException {
-        writeType(symbol, symbol.implementedInterfaces(), symbol.buildVirtualTable(), symbol.symbols());
+        final Symbol flagField = symbol.flagField();
+        final List<Symbol> symbols = new ArrayList<>();
+        symbols.add(flagField);
+        symbol.symbols().stream()
+                .filter(s -> s != flagField)
+                .max(Comparator.comparingInt(s -> s.type().byteSize()))
+                .ifPresent(symbols::add);
+        writeType(symbol, symbol.implementedInterfaces(), symbol.buildVirtualTable(), symbols);
     }
 
     // typedef struct type_meta {

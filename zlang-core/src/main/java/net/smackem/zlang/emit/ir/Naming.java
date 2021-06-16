@@ -5,5 +5,4 @@ public final class Naming {
 
     public static final String GENERATED_FUNCTION_PREFIX = "@";
     public static final String GENERATED_INIT_FUNCTION_PREFIX = "@init:";
-    public static final String UNION_FLAG_FIELD_NAME = "@flag";
 }
