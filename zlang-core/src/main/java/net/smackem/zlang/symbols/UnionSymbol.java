@@ -7,6 +7,9 @@ import java.util.Map;
 import java.util.Objects;
 
 public class UnionSymbol extends AggregateTypeSymbol {
+
+    public static int MAX_FIELDS = 256;
+
     private static final String flagFieldName = "@flag";
     private final Map<String, Integer> fieldIds = new LinkedHashMap<>();
 
