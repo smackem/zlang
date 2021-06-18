@@ -68,7 +68,7 @@ public class SemanticsTest {
                 "main", mainSource,
                 "dep", depSource));
         final ParsedModule module = ParsedModule.parse("main", loc);
-        assertThatThrownBy(() -> run(module.flatten())).hasMessageContaining("foreign type");
+        assertThatThrownBy(() -> run(module.flatten())).hasMessageContaining("foreign struct");
     }
 
     @Test

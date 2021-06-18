@@ -229,6 +229,17 @@ class SymbolWalker extends ScopeWalker<Void> {
         return super.visitVarDeclStmt(ctx);
     }
 
+    @Override
+    public Void visitSwitchUnionFieldLabel(ZLangParser.SwitchUnionFieldLabelContext ctx) {
+        pushScope(ctx, new BlockScope(currentScope())); // scope for declaring the iterator variable
+        final var symbol = defineTypedIdent(ctx.parameter(),
+                (ident, type) -> new ConstantSymbol(ident, type, false));
+        addLocal(symbol);
+        super.visitSwitchUnionFieldLabel(ctx);
+        popScope();
+        return null;
+    }
+
     private <T extends Symbol> T defineTypedIdent(ZLangParser.ParameterContext ctx, BiFunction<String, Type, T> symbolFactory) {
         final String ident = ctx.Ident().getText();
         final Type type = resolveType(ctx.type());

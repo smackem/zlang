@@ -285,6 +285,7 @@ primary
     | Ident
     | functionInvocation
     | instanceCreation
+    | switchOverUnion
     | LParen expr RParen
     ;
 
@@ -302,14 +303,19 @@ runtimeFunctionInvocation
     ;
 
 instanceCreation
-    : structOrUnionInstanceCreation
+    : structInstanceCreation
+    | unionInstanceCreation
     | arrayInstanceCreation
     | listInstanceCreation
     | listInstanceCreationFromArray
     ;
 
-structOrUnionInstanceCreation
+structInstanceCreation
     : New Ident LBrace (fieldInitializer LineBreak)* RBrace
+    ;
+
+unionInstanceCreation
+    : New Ident Dot Ident LParen expr RParen
     ;
 
 fieldInitializer
@@ -327,6 +333,15 @@ listInstanceCreation
 
 listInstanceCreationFromArray
     : New type List LParen expr RParen
+    ;
+
+switchOverUnion
+    : Switch expr LBrace (switchUnionFieldLabel LineBreak)+ RBrace
+    ;
+
+switchUnionFieldLabel
+    : parameter Arrow expr
+    | Else Arrow expr
     ;
 
 literal

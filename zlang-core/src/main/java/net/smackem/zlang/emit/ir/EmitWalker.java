@@ -244,8 +244,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         if (ctx.fieldAccessPostfix() != null) {
-            if (primary.type instanceof AggregateType == false) {
-                logLocalError(ctx, "field target is not an aggregate");
+            if (primary.type instanceof StructSymbol == false) {
+                logLocalError(ctx, "field target is not a struct");
                 return;
             }
             final MemberScope memberScope = (MemberScope) primary.type;
@@ -687,12 +687,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         if (ctx.fieldAccessPostfix() != null) {
-            if (primary.type instanceof AggregateType == false) {
-                return logLocalError(ctx, "field target is not an aggregate");
+            if (primary.type instanceof StructSymbol == false) {
+                return logLocalError(ctx, "field target is not a struct");
             }
             final MemberScope memberScope = (MemberScope) primary.type;
             if (Scopes.enclosingModule(memberScope) != Scopes.enclosingModule(currentScope())) {
-                return logLocalError(ctx, "access to field of foreign type not allowed");
+                return logLocalError(ctx, "access to field of foreign struct not allowed");
             }
             final Symbol field = memberScope.resolveMember(ctx.fieldAccessPostfix().Ident().getText());
             if (field instanceof FieldSymbol == false) {
@@ -909,13 +909,13 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
-    public Value visitStructOrUnionInstanceCreation(ZLangParser.StructOrUnionInstanceCreationContext ctx) {
+    public Value visitStructInstanceCreation(ZLangParser.StructInstanceCreationContext ctx) {
         final Type type = resolveType(ctx, ctx.Ident().getText());
         if (type instanceof AggregateType == false) {
             return logLocalError(ctx, "'" + type + "' is not an aggregate type");
         }
         if (Scopes.enclosingModule((Scope) type) != Scopes.enclosingModule(currentScope())) {
-            return logLocalError(ctx, "instance creation of foreign type not allowed");
+            return logLocalError(ctx, "instance creation of foreign struct not allowed");
         }
         final Symbol typeSymbol = (Symbol) type;
         final MemberScope typeScope = (MemberScope) typeSymbol;
@@ -935,6 +935,58 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             freeRegister(rvalue.register);
         }
         return value(target, type);
+    }
+
+    @Override
+    public Value visitUnionInstanceCreation(ZLangParser.UnionInstanceCreationContext ctx) {
+        final Type type = resolveType(ctx, ctx.Ident(0).getText());
+        if (type instanceof UnionSymbol == false) {
+            return logLocalError(ctx, "'" + type + "' is not an aggregate type");
+        }
+        final UnionSymbol typeSymbol = (UnionSymbol) type;
+        final Register target = allocFreedRegister();
+        emit(OpCode.NewObj, target, typeSymbol);
+        final Symbol field = typeSymbol.resolveMember(ctx.Ident(1).getText());
+        if (field instanceof FieldSymbol == false) {
+            return logLocalError(ctx, "field id does not refer to a field: " + ctx.Ident(1).getText());
+        }
+        final int fieldId = typeSymbol.getFieldId(field);
+        final Symbol flagField = typeSymbol.flagField();
+        final Value rvalue = ctx.expr().accept(this);
+        if (Types.isAssignable(field.type(), rvalue.type) == false) {
+            return logLocalError(ctx, "incompatible types in union creation to '%s'.'%s'. left='%s', right='%s'"
+                    .formatted(typeSymbol.name(), field.name(), field.type(), rvalue.type));
+        }
+        emit(OpCode.stFld(rvalue.type), rvalue.register, target, field.address());
+        final Register flagRegister = allocFreedRegister(rvalue.register);
+        emit(OpCode.Ldc_i32, flagRegister, fieldId);
+        emit(OpCode.stFld(flagField.type()), flagRegister, target, flagField.address());
+        freeRegister(flagRegister);
+        return value(target, type);
+    }
+
+    @Override
+    public Value visitSwitchOverUnion(ZLangParser.SwitchOverUnionContext ctx) {
+        final Value union = ctx.expr().accept(this);
+        if (union.type instanceof UnionSymbol == false) {
+            return logLocalError(ctx, "switched symbol is not a union, but a " + union.type);
+        }
+        final UnionSymbol unionType = (UnionSymbol) union.type;
+        final Register flagRegister = allocFreedRegister();
+        emit(OpCode.ldFld(unionType.flagField().type()), flagRegister, union.register, unionType.flagField().address());
+        for (final var branch : ctx.switchUnionFieldLabel()) {
+            enterScope(branch);
+            final var fieldIdent = branch.parameter().Ident().getText();
+            final Symbol field = unionType.resolveMember(fieldIdent);
+            final Register fieldFlagRegister = allocFreedRegister();
+            emit(OpCode.Ldc_i32, fieldFlagRegister, unionType.getFieldId(field));
+            final Register cmpRegister = allocFreedRegister(fieldFlagRegister);
+            emit(OpCode.eq(unionType.flagField().type()), cmpRegister, fieldFlagRegister, flagRegister);
+            freeRegister(cmpRegister);
+            popScope();
+        }
+        freeRegister(flagRegister, union.register);
+        return super.visitSwitchOverUnion(ctx);
     }
 
     @Override
@@ -990,10 +1042,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     private void freeRegister(Register... registersToFree) {
-        for (final Register register : registersToFree) {
-            this.allocatedRegisters.remove(register);
-        }
-        log.info("allocated registers: {}", this.allocatedRegisters);
+        freeRegisters(Arrays.asList(registersToFree));
     }
 
     private void freeRegisters(List<Register> registersToFree) {
