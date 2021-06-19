@@ -1,9 +1,9 @@
 package net.smackem.zlang.symbols;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import net.smackem.zlang.lang.CompilationErrorException;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Objects;
 
 public class UnionSymbol extends AggregateTypeSymbol {
@@ -11,7 +11,7 @@ public class UnionSymbol extends AggregateTypeSymbol {
     public static int MAX_FIELDS = 256;
 
     private static final String flagFieldName = "@flag";
-    private final Map<String, Integer> fieldIds = new LinkedHashMap<>();
+    private final BiMap<String, Integer> fieldIds = HashBiMap.create();
 
     UnionSymbol(String name, Scope enclosingScope) {
         super(name, enclosingScope);
@@ -29,6 +29,11 @@ public class UnionSymbol extends AggregateTypeSymbol {
     public int getFieldId(Symbol field) {
         assert this.symbols().contains(field);
         return this.fieldIds.get(field.name());
+    }
+
+    public Symbol getFieldById(int id) {
+        final String fieldName = this.fieldIds.inverse().get(id);
+        return fieldName != null ? resolveMember(fieldName) : null;
     }
 
     @Override

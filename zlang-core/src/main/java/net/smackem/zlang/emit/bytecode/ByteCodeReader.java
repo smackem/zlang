@@ -73,6 +73,15 @@ public class ByteCodeReader {
         }
     }
 
+    private static void readUnion(ByteBuffer buf, int offset, int heapOffset, UnionSymbol union, Map<String, Object> out) {
+        final FieldSymbol flagField = union.flagField();
+        final Byte flag = (Byte) readValue(buf, offset, heapOffset, flagField);
+        assert flag != null;
+        final Symbol field = union.getFieldById(flag);
+        assert field != null;
+        out.put(field.name(), readValue(buf, offset, heapOffset, field));
+    }
+
     private static Object readValue(ByteBuffer buf, int offset, int heapOffset, Symbol symbol) {
         final Type type = symbol.type();
         final int index = offset + symbol.address();
@@ -109,6 +118,15 @@ public class ByteCodeReader {
             return type instanceof StringType
                     ? new String((byte[]) array, 0, count - 1, StandardCharsets.US_ASCII)
                     : array;
+        }
+        if (type instanceof UnionSymbol union) {
+            final int ref = buf.getInt(index);
+            if (ref == 0) {
+                return null;
+            }
+            final Map<String, Object> obj = new HashMap<>();
+            readUnion(buf, heapOffset + ref + ByteCode.HEAP_ENTRY_HEADER_SIZE, heapOffset, union, obj);
+            return obj;
         }
         if (type instanceof Scope scope) {
             final int ref = buf.getInt(index);

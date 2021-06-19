@@ -94,9 +94,9 @@ union Number {
 }
 
 let x: Number = new Number.f(123)
-let x: Number = new Number { n = 234 }
+let x: Number = new Number{ n: 234 }
 
-fn Number::to_int() -> int {
+fn Number.to_int() -> int {
     return switch self {
         f: float -> round(f)
         n: int -> n
@@ -125,4 +125,20 @@ fn make_list(numbers: int[]) -> int list {
     let number_list: int list = new int list {}
     number_list.add_array(numbers)
     return number_list
+}
+
+
+struct SyncPayload {
+    timeStamp: int
+}
+
+struct TimePayload {
+    time: string
+}
+
+union Datagram {
+    syncRequest: SyncPayload
+    syncResponse: SyncPayload
+    timeRequest: TimePayload
+    timeResponse: TimePayload
 }

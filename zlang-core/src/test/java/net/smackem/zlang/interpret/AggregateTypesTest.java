@@ -168,4 +168,27 @@ public class AggregateTypesTest {
         assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 123));
         assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 234));
     }
+
+    @Test
+    public void unionCreation() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n: int
+                    f: float
+                    s: string
+                }
+                let a: Value = new Value.n(123)
+                let b: Value = new Value.f(123.25)
+                let c: Value = new Value.s("abc")
+                fn main() {
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        //noinspection unchecked
+        assertThat(((Map<String, Object>) globals.get("a")).get("n")).isEqualTo(123);
+        //noinspection unchecked
+        assertThat(((Map<String, Object>) globals.get("b")).get("f")).isEqualTo(123.25);
+        //noinspection unchecked
+        assertThat(((Map<String, Object>) globals.get("c")).get("s")).isEqualTo("abc");
+    }
 }
