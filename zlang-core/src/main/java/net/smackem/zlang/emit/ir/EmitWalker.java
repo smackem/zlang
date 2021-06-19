@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 class EmitWalker extends ScopeWalker<EmitWalker.Value> {
@@ -976,37 +977,25 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Register flagRegister = allocFreedRegister();
         final Label exitLabel = addLabel();
         final Register resultRegister = allocFreedRegister();
+        final Set<String> unvisitedFieldNames = unionType.symbols().stream()
+                .filter(s -> s != unionType.flagField())
+                .map(Symbol::name)
+                .collect(Collectors.toSet());
         emit(OpCode.ldFld(unionType.flagField().type()), flagRegister, union.register, unionType.flagField().address());
 
         Type resultType = null;
         for (final var branch : ctx.switchUnionFieldClause()) {
-            enterScope(branch);
-            final Label skipLabel = addLabel();
-            final String fieldIdent = branch.parameter().Ident().getText();
-            final Symbol field = unionType.resolveMember(fieldIdent);
-            final Symbol fieldLocal = currentScope().resolve(fieldIdent);
-            if (fieldLocal.type() != field.type()) {
-                return logLocalError(branch, "type mismatch for union field " + field.name());
-            }
-            final Register fieldFlagRegister = allocFreedRegister();
-            emit(OpCode.Ldc_i32, fieldFlagRegister, unionType.getFieldId(field));
-            final Register cmpRegister = allocFreedRegister(fieldFlagRegister);
-            emit(OpCode.eq(unionType.flagField().type()), cmpRegister, fieldFlagRegister, flagRegister);
-            emitBranch(cmpRegister, skipLabel);
-            freeRegister(cmpRegister, fieldFlagRegister);
-            emit(OpCode.ldFld(field.type()), Register.fromNumber(fieldLocal.address()), union.register, field.address());
-            final Value branchValue = branch.expr().accept(this);
+            final Type branchType = emitSwitchUnionFieldClause(
+                    branch, unionType, union.register, flagRegister, resultRegister, exitLabel);
             if (resultType == null) {
-                resultType = branchValue.type;
+                resultType = branchType;
             } else {
-                if (Types.isImplicitlyConvertible(resultType, branchValue.type) == false) {
+                if (Types.isImplicitlyConvertible(resultType, branchType) == false) {
                     return logLocalError(branch.expr(), "incompatible result types in switch clauses");
                 }
             }
-            emit(OpCode.Mov, resultRegister, branchValue.register);
-            emitBranch(exitLabel);
-            skipLabel.setTarget(emitNop());
-            popScope();
+            final String fieldIdent = branch.parameter().Ident().getText();
+            unvisitedFieldNames.remove(fieldIdent);
         }
 
         if (ctx.switchUnionElseClause() != null) {
@@ -1014,11 +1003,46 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (Types.isImplicitlyConvertible(resultType, elseValue.type) == false) {
                 return logLocalError(ctx.switchUnionElseClause(), "incompatible result types in switch clauses");
             }
+            emit(OpCode.Mov, resultRegister, elseValue.register);
+        } else {
+            if (unvisitedFieldNames.isEmpty() == false) {
+                return logLocalError(ctx, "missing matches for union fields " + unvisitedFieldNames);
+            }
         }
 
         freeRegister(flagRegister, union.register);
         exitLabel.setTarget(emitNop());
         return value(resultRegister, resultType);
+    }
+
+    private Type emitSwitchUnionFieldClause(ZLangParser.SwitchUnionFieldClauseContext branch,
+                                            UnionSymbol union,
+                                            Register unionRegister,
+                                            Register flagRegister,
+                                            Register resultRegister,
+                                            Label exitLabel) {
+        enterScope(branch);
+        final Label skipLabel = addLabel();
+        final String fieldIdent = branch.parameter().Ident().getText();
+        final Symbol field = union.resolveMember(fieldIdent);
+        final Symbol fieldLocal = currentScope().resolve(fieldIdent);
+        if (fieldLocal.type() != field.type()) {
+            logLocalError(branch, "type mismatch for union field " + field.name());
+            return null;
+        }
+        final Register fieldFlagRegister = allocFreedRegister();
+        emit(OpCode.Ldc_i32, fieldFlagRegister, union.getFieldId(field));
+        final Register cmpRegister = allocFreedRegister(fieldFlagRegister);
+        emit(OpCode.eq(union.flagField().type()), cmpRegister, fieldFlagRegister, flagRegister);
+        emitBranch(cmpRegister, skipLabel);
+        freeRegister(cmpRegister, fieldFlagRegister);
+        emit(OpCode.ldFld(field.type()), Register.fromNumber(fieldLocal.address()), unionRegister, field.address());
+        final Value branchValue = branch.expr().accept(this);
+        emit(OpCode.Mov, resultRegister, branchValue.register);
+        emitBranch(exitLabel);
+        skipLabel.setTarget(emitNop());
+        popScope();
+        return branchValue.type;
     }
 
     @Override
@@ -1043,12 +1067,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             emit(OpCode.Ldc_zero, target);
             return value(target, BuiltInType.RUNTIME_PTR.type());
         }
-        if(ctx.StringLiteral() != null) {
+        if (ctx.StringLiteral() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_str, target, CharMatcher.is('"').trimFrom(ctx.StringLiteral().getText()));
             return value(target, BuiltInType.STRING.type());
         }
-        if(ctx.CharLiteral() != null) {
+        if (ctx.CharLiteral() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_i32, target, (int) ctx.CharLiteral().getText().charAt(1));
             return value(target, BuiltInType.BYTE.type());

@@ -248,4 +248,50 @@ public class AggregateTypesTest {
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("resultN")).isEqualTo(123);
     }
+
+    @Test
+    public void incompleteSwitchOverUnion() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n: int
+                    f: float
+                    s: string
+                }
+                var resultN: int
+                fn main() {
+                    let v: Value = new Value.n(123)
+                    resultN = switch v {
+                        f: float -> 0
+                    }
+                }
+                """);
+        assertThatThrownBy(() -> run(modules)).hasMessageContaining("missing matches");
+    }
+
+    @Test
+    public void incompleteSwitchOverUnionWithElse() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n: int
+                    f: float
+                    s: string
+                }
+                var resultN: int
+                var resultF: int
+                fn main() {
+                    let v: Value = new Value.n(123)
+                    resultN = switch v {
+                        f: float -> 0
+                        else -> 234
+                    }
+                    resultF = switch v {
+                        n: int -> n + 100
+                        else -> 666
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("resultN")).isEqualTo(234);
+        assertThat(globals.get("resultF")).isEqualTo(223);
+    }
 }
