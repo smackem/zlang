@@ -11,6 +11,7 @@ import java.util.Map;
 
 import static net.smackem.zlang.interpret.InterpreterTests.run;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class AggregateTypesTest {
 
@@ -190,5 +191,39 @@ public class AggregateTypesTest {
         assertThat(((Map<String, Object>) globals.get("b")).get("f")).isEqualTo(123.25);
         //noinspection unchecked
         assertThat(((Map<String, Object>) globals.get("c")).get("s")).isEqualTo("abc");
+    }
+
+    @Test
+    public void unionFieldAccessForbidden() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n: int
+                    f: float
+                    s: string
+                }
+                fn main() {
+                    let v: Value = new Value.n(123)
+                    let notAllowed: int = v.n
+                }
+                """);
+        assertThatThrownBy(() -> run(modules)).hasMessageContaining("not a struct");
+    }
+
+    @Test
+    public void unionCreationAsStructForbidden() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n: int
+                    f: float
+                    s: string
+                }
+                fn main() {
+                    let v: Value = new Value {
+                        n: 123
+                        f: 444.5
+                    }
+                }
+                """);
+        assertThatThrownBy(() -> run(modules)).hasMessageContaining("not a struct");
     }
 }

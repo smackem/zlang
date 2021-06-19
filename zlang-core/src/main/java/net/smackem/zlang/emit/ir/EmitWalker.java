@@ -911,8 +911,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     @Override
     public Value visitStructInstanceCreation(ZLangParser.StructInstanceCreationContext ctx) {
         final Type type = resolveType(ctx, ctx.Ident().getText());
-        if (type instanceof AggregateType == false) {
-            return logLocalError(ctx, "'" + type + "' is not an aggregate type");
+        if (type instanceof StructSymbol == false) {
+            return logLocalError(ctx, "'" + type + "' is not a struct");
         }
         if (Scopes.enclosingModule((Scope) type) != Scopes.enclosingModule(currentScope())) {
             return logLocalError(ctx, "instance creation of foreign struct not allowed");
@@ -941,7 +941,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     public Value visitUnionInstanceCreation(ZLangParser.UnionInstanceCreationContext ctx) {
         final Type type = resolveType(ctx, ctx.Ident(0).getText());
         if (type instanceof UnionSymbol == false) {
-            return logLocalError(ctx, "'" + type + "' is not an aggregate type");
+            return logLocalError(ctx, "'" + type + "' is not a union");
         }
         final UnionSymbol typeSymbol = (UnionSymbol) type;
         final Register target = allocFreedRegister();
