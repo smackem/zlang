@@ -226,4 +226,26 @@ public class AggregateTypesTest {
                 """);
         assertThatThrownBy(() -> run(modules)).hasMessageContaining("not a struct");
     }
+
+    @Test
+    public void switchOverUnion() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n: int
+                    f: float
+                    s: string
+                }
+                var resultN: int
+                fn main() {
+                    let v: Value = new Value.n(123)
+                    resultN = switch v {
+                        n: int -> n
+                        f: float -> 0
+                        s: string -> 0
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("resultN")).isEqualTo(123);
+    }
 }

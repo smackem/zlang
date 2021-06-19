@@ -230,12 +230,12 @@ class SymbolWalker extends ScopeWalker<Void> {
     }
 
     @Override
-    public Void visitSwitchUnionFieldLabel(ZLangParser.SwitchUnionFieldLabelContext ctx) {
+    public Void visitSwitchUnionFieldClause(ZLangParser.SwitchUnionFieldClauseContext ctx) {
         pushScope(ctx, new BlockScope(currentScope())); // scope for declaring the iterator variable
         final var symbol = defineTypedIdent(ctx.parameter(),
                 (ident, type) -> new ConstantSymbol(ident, type, false));
         addLocal(symbol);
-        super.visitSwitchUnionFieldLabel(ctx);
+        super.visitSwitchUnionFieldClause(ctx);
         popScope();
         return null;
     }

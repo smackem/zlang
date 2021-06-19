@@ -971,22 +971,54 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         if (union.type instanceof UnionSymbol == false) {
             return logLocalError(ctx, "switched symbol is not a union, but a " + union.type);
         }
+
         final UnionSymbol unionType = (UnionSymbol) union.type;
         final Register flagRegister = allocFreedRegister();
+        final Label exitLabel = addLabel();
+        final Register resultRegister = allocFreedRegister();
         emit(OpCode.ldFld(unionType.flagField().type()), flagRegister, union.register, unionType.flagField().address());
-        for (final var branch : ctx.switchUnionFieldLabel()) {
+
+        Type resultType = null;
+        for (final var branch : ctx.switchUnionFieldClause()) {
             enterScope(branch);
-            final var fieldIdent = branch.parameter().Ident().getText();
+            final Label skipLabel = addLabel();
+            final String fieldIdent = branch.parameter().Ident().getText();
             final Symbol field = unionType.resolveMember(fieldIdent);
+            final Symbol fieldLocal = currentScope().resolve(fieldIdent);
+            if (fieldLocal.type() != field.type()) {
+                return logLocalError(branch, "type mismatch for union field " + field.name());
+            }
             final Register fieldFlagRegister = allocFreedRegister();
             emit(OpCode.Ldc_i32, fieldFlagRegister, unionType.getFieldId(field));
             final Register cmpRegister = allocFreedRegister(fieldFlagRegister);
             emit(OpCode.eq(unionType.flagField().type()), cmpRegister, fieldFlagRegister, flagRegister);
-            freeRegister(cmpRegister);
+            emitBranch(cmpRegister, skipLabel);
+            freeRegister(cmpRegister, fieldFlagRegister);
+            emit(OpCode.ldFld(field.type()), Register.fromNumber(fieldLocal.address()), union.register, field.address());
+            final Value branchValue = branch.expr().accept(this);
+            if (resultType == null) {
+                resultType = branchValue.type;
+            } else {
+                if (Types.isImplicitlyConvertible(resultType, branchValue.type) == false) {
+                    return logLocalError(branch.expr(), "incompatible result types in switch clauses");
+                }
+            }
+            emit(OpCode.Mov, resultRegister, branchValue.register);
+            emitBranch(exitLabel);
+            skipLabel.setTarget(emitNop());
             popScope();
         }
+
+        if (ctx.switchUnionElseClause() != null) {
+            final Value elseValue = ctx.switchUnionElseClause().expr().accept(this);
+            if (Types.isImplicitlyConvertible(resultType, elseValue.type) == false) {
+                return logLocalError(ctx.switchUnionElseClause(), "incompatible result types in switch clauses");
+            }
+        }
+
         freeRegister(flagRegister, union.register);
-        return super.visitSwitchOverUnion(ctx);
+        exitLabel.setTarget(emitNop());
+        return value(resultRegister, resultType);
     }
 
     @Override

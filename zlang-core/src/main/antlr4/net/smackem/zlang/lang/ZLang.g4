@@ -336,12 +336,15 @@ listInstanceCreationFromArray
     ;
 
 switchOverUnion
-    : Switch expr LBrace (switchUnionFieldLabel LineBreak)+ RBrace
+    : Switch expr LBrace switchUnionFieldClause+ switchUnionElseClause? RBrace
     ;
 
-switchUnionFieldLabel
-    : parameter Arrow expr
-    | Else Arrow expr
+switchUnionFieldClause
+    : parameter Arrow expr LineBreak
+    ;
+
+switchUnionElseClause
+    : Else Arrow expr LineBreak
     ;
 
 literal
