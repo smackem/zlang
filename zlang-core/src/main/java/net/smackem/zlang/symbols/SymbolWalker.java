@@ -88,6 +88,14 @@ class SymbolWalker extends ScopeWalker<Void> {
     }
 
     @Override
+    public Void visitBlockExpr(ZLangParser.BlockExprContext ctx) {
+        pushScope(ctx, new BlockScope(currentScope()));
+        super.visitBlockExpr(ctx);
+        popScope();
+        return null;
+    }
+
+    @Override
     public Void visitStructDecl(ZLangParser.StructDeclContext ctx) {
         enterScope(ctx);
         int fieldAddr = 0;

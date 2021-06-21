@@ -98,6 +98,7 @@ statement
     | assertStmt
     | swapStmt
     | returnStmt
+    | yieldStmt
     )? LineBreak
     ;
 
@@ -186,6 +187,10 @@ swapStmt
 
 returnStmt
     : Return expr?
+    ;
+
+yieldStmt
+    : Yield expr
     ;
 
 expr
@@ -287,6 +292,11 @@ primary
     | instanceCreation
     | switchOverUnion
     | LParen expr RParen
+    | blockExpr
+    ;
+
+blockExpr
+    : LBrace statement* yieldStmt LineBreak? RBrace
     ;
 
 functionInvocation
@@ -315,7 +325,7 @@ structInstanceCreation
     ;
 
 unionInstanceCreation
-    : New Ident Dot Ident LParen expr RParen
+    : New Ident ColonColon Ident LParen expr RParen
     ;
 
 fieldInitializer
@@ -403,6 +413,7 @@ Nil         : 'nil';
 While       : 'while';
 Return      : 'return';
 Where       : 'where';
+Yield       : 'yield';
 Panic       : 'panic';
 Assert      : 'assert';
 Let         : 'let';

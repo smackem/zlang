@@ -178,9 +178,9 @@ public class AggregateTypesTest {
                     f: float
                     s: string
                 }
-                let a: Value = new Value.n(123)
-                let b: Value = new Value.f(123.25)
-                let c: Value = new Value.s("abc")
+                let a: Value = new Value::n(123)
+                let b: Value = new Value::f(123.25)
+                let c: Value = new Value::s("abc")
                 fn main() {
                 }
                 """);
@@ -202,7 +202,7 @@ public class AggregateTypesTest {
                     s: string
                 }
                 fn main() {
-                    let v: Value = new Value.n(123)
+                    let v: Value = new Value::n(123)
                     let notAllowed: int = v.n
                 }
                 """);
@@ -237,7 +237,7 @@ public class AggregateTypesTest {
                 }
                 var resultN: int
                 fn main() {
-                    let v: Value = new Value.n(123)
+                    let v: Value = new Value::n(123)
                     resultN = switch v {
                         n: int -> n
                         f: float -> 0
@@ -259,7 +259,7 @@ public class AggregateTypesTest {
                 }
                 var resultN: int
                 fn main() {
-                    let v: Value = new Value.n(123)
+                    let v: Value = new Value::n(123)
                     resultN = switch v {
                         f: float -> 0
                     }
@@ -279,7 +279,7 @@ public class AggregateTypesTest {
                 var resultN: int
                 var resultF: int
                 fn main() {
-                    let v: Value = new Value.n(123)
+                    let v: Value = new Value::n(123)
                     resultN = switch v {
                         f: float -> 0
                         else -> 234

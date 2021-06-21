@@ -12,6 +12,7 @@ import java.util.Map;
 
 import static net.smackem.zlang.interpret.InterpreterTests.run;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 
 public class BasicTest {
 
@@ -155,5 +156,71 @@ public class BasicTest {
         InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "typeChecks.zap"));
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("result")).isEqualTo(new int[] { 1, 1, 0, 0 });
+    }
+
+    @Test
+    public void nestedBlockExpr() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var numberA: int
+                var numberB: int
+                fn main() {
+                    numberA = {
+                        yield 100
+                    }
+                    numberB = {
+                        let x: int = {
+                            let y: int = 80 + 20
+                            yield y
+                        }
+                        yield x + 50
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("numberA")).isEqualTo(100);
+        assertThat(globals.get("numberB")).isEqualTo(150);
+    }
+
+    @Test
+    public void blockExprWithMultipleYields() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var numberA: int
+                var numberB: int
+                fn main() {
+                    let v: int = 100
+                    numberA = {
+                        if v > 666 {
+                            yield v / 2
+                        }
+                        yield v
+                    }
+                    numberB = {
+                        if v < 666 {
+                            yield v
+                        }
+                        yield v * 2
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("numberA")).isEqualTo(100);
+        assertThat(globals.get("numberB")).isEqualTo(200);
+    }
+
+    @Test
+    public void blockExprWithIncompatibleYields() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var numberA: int
+                fn main() {
+                    let v: int = 100
+                    numberA = {
+                        if v > 666 {
+                            yield "a"
+                        }
+                        yield v
+                    }
+                }
+                """);
+        assertThatThrownBy(() -> run(modules)).hasMessageContaining("incompatible result types");
     }
 }

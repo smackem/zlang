@@ -21,6 +21,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final Set<Register> allocatedRegisters = EnumSet.noneOf(Register.class);
     private final List<Instruction> initInstructions = new ArrayList<>();
     private final List<Label> labels = new ArrayList<>();
+    private final Deque<BlockExprInfo> blockExprInfos = new ArrayDeque<>();
     private List<Instruction> currentInstructions = instructions;
     private FunctionSymbol currentFunction;
     private Register firstVolatileRegister;
@@ -451,6 +452,22 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitYieldStmt(ZLangParser.YieldStmtContext ctx) {
+        final BlockExprInfo top = this.blockExprInfos.peek();
+        assert top != null;
+        final Value value = ctx.expr().accept(this);
+        if (top.resultType == null) {
+            top.resultType = value.type;
+        } else {
+            if (Types.isImplicitlyConvertible(top.resultType, value.type) == false) {
+                return logLocalError(ctx, "incompatible result types in block expr: " + value.type + " and " + top.resultType);
+            }
+        }
+        emit(OpCode.Mov, top.targetRegister, value.register);
+        return null;
+    }
+
+    @Override
     public Value visitExpr(ZLangParser.ExprContext ctx) {
         if (ctx.If() != null) {
             Label elseLabel = addLabel();
@@ -821,6 +838,18 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         return super.visitPrimary(ctx);
+    }
+
+    @Override
+    public Value visitBlockExpr(ZLangParser.BlockExprContext ctx) {
+        final BlockExprInfo blockExprInfo = new BlockExprInfo(allocFreedRegister());
+        this.blockExprInfos.push(blockExprInfo);
+        enterScope(ctx);
+        super.visitBlockExpr(ctx);
+        popScope();
+        final BlockExprInfo poppedInfo = this.blockExprInfos.pop();
+        assert poppedInfo == blockExprInfo;
+        return value(blockExprInfo.targetRegister, blockExprInfo.resultType);
     }
 
     @Override
@@ -1279,5 +1308,14 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private Value logLocalError(ParserRuleContext ctx, String message) {
         logSemanticError(ctx, message);
         return emptyValue();
+    }
+
+    private static class BlockExprInfo {
+        final Register targetRegister;
+        Type resultType;
+
+        BlockExprInfo(Register targetRegister) {
+            this.targetRegister = targetRegister;
+        }
     }
 }
