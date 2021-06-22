@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="zlang-pad" />
         <module name="zlang-cli" />
         <module name="zlang-core" />
       </profile>
@@ -14,12 +15,14 @@
       <module name="zlang" target="16" />
       <module name="zlang-cli" target="16" />
       <module name="zlang-core" target="16" />
+      <module name="zlang-pad" target="16" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="zlang-cli" options="-Xlint:all" />
       <module name="zlang-core" options="-Xlint:all -h target/headers" />
+      <module name="zlang-pad" options="-Xlint:all" />
     </option>
   </component>
 </project>

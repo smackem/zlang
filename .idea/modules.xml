@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/zlang.iml" filepath="$PROJECT_DIR$/zlang.iml" />
       <module fileurl="file://$PROJECT_DIR$/zlang-cli/zlang-cli.iml" filepath="$PROJECT_DIR$/zlang-cli/zlang-cli.iml" />
       <module fileurl="file://$PROJECT_DIR$/zlang-core/zlang-core.iml" filepath="$PROJECT_DIR$/zlang-core/zlang-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/zlang-pad/zlang-pad.iml" filepath="$PROJECT_DIR$/zlang-pad/zlang-pad.iml" />
     </modules>
   </component>
 </project>
