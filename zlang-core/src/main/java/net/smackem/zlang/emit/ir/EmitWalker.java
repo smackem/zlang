@@ -982,7 +982,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
         final int fieldId = typeSymbol.getFieldId(field);
         final Symbol flagField = typeSymbol.flagField();
-        final Value rvalue = ctx.expr().accept(this);
+        final Value rvalue = ctx.expr() != null
+                ? ctx.expr().accept(this)
+                : value(allocFreedRegister(), NilType.INSTANCE);
         if (Types.isAssignable(field.type(), rvalue.type) == false) {
             return logLocalError(ctx, "incompatible types in union creation to '%s'.'%s'. left='%s', right='%s'"
                     .formatted(typeSymbol.name(), field.name(), field.type(), rvalue.type));
@@ -1023,7 +1025,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                     return logLocalError(branch.expr(), "incompatible result types in switch clauses");
                 }
             }
-            final String fieldIdent = branch.parameter().Ident().getText();
+            final String fieldIdent = branch.unionParameter().Ident().getText();
             unvisitedFieldNames.remove(fieldIdent);
         }
 
@@ -1052,7 +1054,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                                             Label exitLabel) {
         enterScope(branch);
         final Label skipLabel = addLabel();
-        final String fieldIdent = branch.parameter().Ident().getText();
+        final String fieldIdent = branch.unionParameter().Ident().getText();
         final Symbol field = union.resolveMember(fieldIdent);
         final Symbol fieldLocal = currentScope().resolve(fieldIdent);
         if (fieldLocal.type() != field.type()) {

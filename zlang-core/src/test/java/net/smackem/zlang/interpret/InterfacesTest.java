@@ -31,7 +31,7 @@ public class InterfacesTest {
                 var result: int
                 fn main() {
                     let obj: NumberGetter = new NumberGetterImpl {
-                        x: 123
+                        x = 123
                     }
                     result = obj.getNumber()
                 }
@@ -66,7 +66,7 @@ public class InterfacesTest {
                 var result: int
                 fn main() {
                     let obj: NumberImpl = new NumberImpl {
-                        x: 0
+                        x = 0
                     }
                     obj.setNumber(123)
                     result = obj.getNumber()
@@ -98,7 +98,7 @@ public class InterfacesTest {
                 var result: int
                 fn main() {
                     let obj: NumberGetterImpl = new NumberGetterImpl {
-                        x: 123
+                        x = 123
                     }
                     result = getNumberFrom(obj)
                 }
@@ -133,7 +133,7 @@ public class InterfacesTest {
                 var result: int
                 fn main() {
                     let obj: NumberImpl = new NumberImpl {
-                        x: 0
+                        x = 0
                     }
                     let getter: NumberGetter = obj
                     let setter: NumberSetter = obj
@@ -166,7 +166,7 @@ public class InterfacesTest {
                 var result: int
                 fn main() {
                     let obj: NumberImpl = new NumberImpl {
-                        x: 100
+                        x = 100
                     }
                     let getter1: NumberGetter1 = obj
                     let getter2: NumberGetter2 = obj
@@ -200,7 +200,7 @@ public class InterfacesTest {
                 var result: int
                 fn main() {
                     let obj: NumberGetter = new NumberImpl {
-                        x: 123
+                        x = 123
                     }
                     result = obj.getNumber()
                 }

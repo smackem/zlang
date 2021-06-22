@@ -100,7 +100,11 @@ class SymbolWalker extends ScopeWalker<Void> {
         enterScope(ctx);
         int fieldAddr = 0;
         for (final var p : ctx.parameter()) {
-            final var symbol = defineField(p, fieldAddr);
+            final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            symbol.setAddress(fieldAddr);
+            if (symbol.type().byteSize() == 0) {
+                logSemanticError(p, "reference to undefined type " + symbol.type());
+            }
             fieldAddr += symbol.type().registerType().byteSize();
         }
         assert fieldAddr == ((Type) currentScope()).byteSize();
@@ -114,26 +118,21 @@ class SymbolWalker extends ScopeWalker<Void> {
         enterScope(ctx);
         final FieldSymbol flagField = ((UnionSymbol) currentScope()).flagField();
         final int flagFieldSize = flagField.type().byteSize();
-        if (ctx.parameter().size() > UnionSymbol.MAX_FIELDS) {
+        if (ctx.unionParameter().size() > UnionSymbol.MAX_FIELDS) {
             logSemanticError(ctx, "unions may only contain up to %d fields!".formatted(UnionSymbol.MAX_FIELDS));
             return null;
         }
-        for (final var p : ctx.parameter()) {
-            final var symbol = defineField(p, flagFieldSize);
+        for (final var p : ctx.unionParameter()) {
+            final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
+            symbol.setAddress(flagFieldSize);
+            if (symbol.type().byteSize() == 0) {
+                logSemanticError(p, "reference to undefined type " + symbol.type());
+            }
             assert symbol.type().byteSize() > 0;
         }
         super.visitUnionDecl(ctx);
         popScope();
         return null;
-    }
-
-    private FieldSymbol defineField(ZLangParser.ParameterContext p, int fieldAddr) {
-        final var symbol = defineTypedIdent(p, (name, type) -> new FieldSymbol(name, type, (Type) currentScope()));
-        symbol.setAddress(fieldAddr);
-        if (symbol.type().byteSize() == 0) {
-            logSemanticError(p, "reference to undefined type " + symbol.type());
-        }
-        return symbol;
     }
 
     @Override
@@ -240,7 +239,7 @@ class SymbolWalker extends ScopeWalker<Void> {
     @Override
     public Void visitSwitchUnionFieldClause(ZLangParser.SwitchUnionFieldClauseContext ctx) {
         pushScope(ctx, new BlockScope(currentScope())); // scope for declaring the iterator variable
-        final var symbol = defineTypedIdent(ctx.parameter(),
+        final var symbol = defineTypedIdent(ctx.unionParameter(),
                 (ident, type) -> new ConstantSymbol(ident, type, false));
         addLocal(symbol);
         super.visitSwitchUnionFieldClause(ctx);
@@ -251,6 +250,14 @@ class SymbolWalker extends ScopeWalker<Void> {
     private <T extends Symbol> T defineTypedIdent(ZLangParser.ParameterContext ctx, BiFunction<String, Type, T> symbolFactory) {
         final String ident = ctx.Ident().getText();
         final Type type = resolveType(ctx.type());
+        final T symbol = symbolFactory.apply(ident, type);
+        defineSymbol(ctx, currentScope(), symbol);
+        return symbol;
+    }
+
+    private <T extends Symbol> T defineTypedIdent(ZLangParser.UnionParameterContext ctx, BiFunction<String, Type, T> symbolFactory) {
+        final String ident = ctx.Ident().getText();
+        final Type type = ctx.Void() != null ? NilType.INSTANCE : resolveType(ctx.type());
         final T symbol = symbolFactory.apply(ident, type);
         defineSymbol(ctx, currentScope(), symbol);
         return symbol;

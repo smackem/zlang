@@ -69,9 +69,9 @@ public class ObjectLifetimeTest {
                     array: byte[]
                 }
                 let x: SomeType = new SomeType {
-                    others: new OtherType[] {
+                    others = new OtherType[] {
                         new OtherType {
-                            array: new byte[10]
+                            array = new byte[10]
                         }
                     }
                 }
@@ -99,9 +99,9 @@ public class ObjectLifetimeTest {
                 }
                 fn main() {
                     let x: SomeType = new SomeType {
-                        others: new OtherType[] {
+                        others = new OtherType[] {
                             new OtherType {
-                                array: new byte[10]
+                                array = new byte[10]
                             }
                         }
                     }

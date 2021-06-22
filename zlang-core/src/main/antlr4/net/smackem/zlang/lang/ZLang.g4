@@ -70,7 +70,11 @@ structDecl
     ;
 
 unionDecl
-    : Union Ident LBrace (parameter LineBreak)* RBrace implementsClause? LineBreak
+    : Union Ident LBrace (unionParameter LineBreak)* RBrace implementsClause? LineBreak
+    ;
+
+unionParameter
+    : Ident Colon (type | Void)
     ;
 
 implementsClause
@@ -325,11 +329,11 @@ structInstanceCreation
     ;
 
 unionInstanceCreation
-    : New Ident ColonColon Ident LParen expr RParen
+    : New Ident ColonColon Ident LParen expr? RParen
     ;
 
 fieldInitializer
-    : Ident Colon expr
+    : Ident Beq expr
     ;
 
 arrayInstanceCreation
@@ -350,7 +354,7 @@ switchOverUnion
     ;
 
 switchUnionFieldClause
-    : parameter Arrow expr LineBreak
+    : unionParameter Arrow expr LineBreak
     ;
 
 switchUnionElseClause
@@ -428,6 +432,7 @@ String      : 'string';
 Byte        : 'byte';
 Object      : 'object';
 RuntimePtr  : 'runtime_ptr';
+Void        : 'void';
 Struct      : 'struct';
 With        : 'with';
 Self        : 'self';

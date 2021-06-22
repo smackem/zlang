@@ -141,7 +141,7 @@ public class FunctionCallsTest {
                     return (float) self.x + 1.0
                 }
                 let r: MyStruct = new MyStruct{
-                    x: 123
+                    x = 123
                 }
                 fn main() {
                     r.x = (int) r.func()
@@ -162,7 +162,7 @@ public class FunctionCallsTest {
                     return self.x + a + (float) b + (float) c + d + (float) e + (float) f
                 }
                 let r: MyStruct = new MyStruct{
-                    x: 1.0
+                    x = 1.0
                 }
                 var ret: int
                 fn main() {

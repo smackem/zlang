@@ -86,7 +86,7 @@ public class SemanticsTest {
                 }
                 fn makeMyStruct(f: int) -> MyStruct {
                     return new MyStruct {
-                        f: f
+                        f = f
                     }
                 }
                 """;

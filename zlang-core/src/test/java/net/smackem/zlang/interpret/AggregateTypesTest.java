@@ -23,8 +23,8 @@ public class AggregateTypesTest {
                     value: float
                 }
                 let a: Sample = new Sample {
-                    index: 1
-                    value: 12.5
+                    index = 1
+                    value = 12.5
                 }
                 var index: int
                 var value: float
@@ -52,10 +52,10 @@ public class AggregateTypesTest {
                     sub: SubSample
                 }
                 let sample: Sample = new Sample {
-                    index: 123
-                    value: 12.5
-                    sub: new SubSample {
-                        id: (byte) 234
+                    index = 123
+                    value = 12.5
+                    sub = new SubSample {
+                        id = (byte) 234
                     }
                 }
                 fn main() {
@@ -85,8 +85,8 @@ public class AggregateTypesTest {
                 var firstSample: Sample
                 fn main() {
                     samples[0] = new Sample {
-                        id: 123
-                        data: new float[2]
+                        id = 123
+                        data = new float[2]
                     }
                     samples[0].data[0] = 12.5
                     samples[0].data[1] = 13.5
@@ -219,8 +219,8 @@ public class AggregateTypesTest {
                 }
                 fn main() {
                     let v: Value = new Value {
-                        n: 123
-                        f: 444.5
+                        n = 123
+                        f = 444.5
                     }
                 }
                 """);
@@ -239,9 +239,9 @@ public class AggregateTypesTest {
                 fn main() {
                     let v: Value = new Value::n(123)
                     resultN = switch v {
-                        n: int -> n
-                        f: float -> 0
-                        s: string -> 0
+                        n: int      -> n
+                        f: float    -> 0
+                        s: string   -> 0
                     }
                 }
                 """);
@@ -281,17 +281,41 @@ public class AggregateTypesTest {
                 fn main() {
                     let v: Value = new Value::n(123)
                     resultN = switch v {
-                        f: float -> 0
-                        else -> 234
+                        f: float    -> 0
+                        else        -> 234
                     }
                     resultF = switch v {
-                        n: int -> n + 100
-                        else -> 666
+                        n: int  -> n + 100
+                        else    -> 666
                     }
                 }
                 """);
         final Map<String, Object> globals = run(modules);
         assertThat(globals.get("resultN")).isEqualTo(234);
         assertThat(globals.get("resultF")).isEqualTo(223);
+    }
+
+    @Test
+    public void switchOverUnionWithVoidField() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                union Value {
+                    n:      int
+                    f:      float
+                    s:      string
+                    none:   void
+                }
+                var resultN: int
+                fn main() {
+                    let v: Value = new Value::none()
+                    resultN = switch v {
+                        n: int      -> 1
+                        f: float    -> 2
+                        s: string   -> 3
+                        none: void  -> 123
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("resultN")).isEqualTo(123);
     }
 }
