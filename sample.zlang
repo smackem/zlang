@@ -93,9 +93,9 @@ union Number {
     b: byte
 }
 
+let x: Number = new Number{ n: 234 }
 let x: Number = new Number.f(123)
 let x: Number = new Number::f(123)
-let x: Number = new Number{ n: 234 }
 
 fn Number::to_int() -> int {
     return switch self {
@@ -128,6 +128,14 @@ fn make_list(numbers: int[]) -> int list {
     return number_list
 }
 
+enum DatagramId {
+    syncRequest = 1
+    syncResponse = 2
+    timeRequest = 3
+    timeResponse = 4
+}
+
+let id: DatagramId = DatagramId::syncRequest
 
 struct SyncPayload {
     timeStamp: int
@@ -144,7 +152,7 @@ union Datagram {
     timeResponse: TimePayload
 }
 
-let d: Datagram = new Datagram::syncRequest(123)
+let d: Datagram = new Datagram::syncRequest(new SyncPayload { 123 })
 
 fn x(flag: bool) {
     let n: int = {
@@ -153,6 +161,17 @@ fn x(flag: bool) {
         yield a + b
     } if flag != false else {
         yield 666
+    }
+}
+
+fn y() {
+    switch d {
+        syncRequest: SyncPayload -> {
+            log "syncRequest"
+        }
+        syncResponse: SyncPayload -> {
+            log "syncResponse"
+        }
     }
 }
 
