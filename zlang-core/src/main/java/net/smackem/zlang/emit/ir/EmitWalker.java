@@ -602,6 +602,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             opc = OpCode.add(left.type);
         } else if(ctx.additiveOp().Minus() != null) {
             opc = OpCode.sub(left.type);
+        } else if(ctx.additiveOp().Band() != null) {
+            opc = OpCode.band(left.type);
+        } else if(ctx.additiveOp().Bor() != null) {
+            opc = OpCode.bor(left.type);
+        } else if(ctx.additiveOp().Xor() != null) {
+            opc = OpCode.xor(left.type);
         } else {
             throw new UnsupportedOperationException("unsupported additive operator");
         }
@@ -628,6 +634,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             opc = OpCode.mul(left.type);
         } else if(ctx.multiplicativeOp().Div() != null) {
             opc = OpCode.div(left.type);
+        } else if(ctx.multiplicativeOp().Mod() != null) {
+            opc = OpCode.mod(left.type);
+        } else if(ctx.multiplicativeOp().LShift() != null) {
+            opc = OpCode.leftShift(left.type);
+        } else if(ctx.multiplicativeOp().RShift() != null) {
+            opc = OpCode.rightShift(left.type);
         } else {
             throw new UnsupportedOperationException("unsupported multiplicative operator");
         }
@@ -1021,7 +1033,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             if (resultType == null) {
                 resultType = branchType;
             } else {
-                if (Types.isImplicitlyConvertible(resultType, branchType) == false) {
+                if (Types.isAssignable(resultType, branchType) == false) {
                     return logLocalError(branch.expr(), "incompatible result types in switch clauses");
                 }
             }
@@ -1031,7 +1043,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
         if (ctx.switchUnionElseClause() != null) {
             final Value elseValue = ctx.switchUnionElseClause().expr().accept(this);
-            if (Types.isImplicitlyConvertible(resultType, elseValue.type) == false) {
+            if (Types.isAssignable(resultType, elseValue.type) == false) {
                 return logLocalError(ctx.switchUnionElseClause(), "incompatible result types in switch clauses");
             }
             emit(OpCode.Mov, resultRegister, elseValue.register);

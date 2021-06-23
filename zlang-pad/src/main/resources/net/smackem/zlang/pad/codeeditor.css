@@ -1,0 +1,40 @@
+.text {
+    -fx-fill: #ccc;
+}
+.keyword {
+    -fx-fill: #CC8242;
+}
+.number {
+    -fx-fill: #4D8FC2;
+}
+.fncall {
+    -fx-fill: #FFC66D;
+}
+.paren {
+    -fx-fill: #FFC66D;
+}
+.string {
+    -fx-fill: #6A8743;
+}
+.comment {
+    -fx-fill: #666;
+}
+.doc {
+    -fx-fill: darkgreen;
+}
+
+.paragraph-box:has-caret {
+    -fx-background-color: #222;
+}
+.lineno {
+    -fx-background-color: black;
+}
+.lineno .text {
+    -fx-fill: #666;
+}
+.caret {
+    -fx-stroke: white;
+}
+.selection {
+    -fx-fill: #235;
+}

@@ -321,7 +321,50 @@ public enum OpCode {
      * type_check(REG r_target, REG r_source, INT const_addr)
      * r_target <- r_source != nil and r_source instance_of user_type @ const_addr
      */
-    TypeChk(101);
+    TypeChk(101),
+
+    /**
+     * mod(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left % r_right
+     */
+    Mod_i32(102),
+    Mod_f64(103),
+    Mod_u8(104),
+
+    /**
+     * bitwise_and(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left & r_right
+     */
+    Band_i32(105),
+    Band_u8(106),
+
+    /**
+     * bitwise_or(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left | r_right
+     */
+    Bor_i32(107),
+    Bor_u8(108),
+
+    /**
+     * bitwise_xor(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left ^ r_right
+     */
+    Xor_i32(109),
+    Xor_u8(110),
+
+    /**
+     * bitwise_left_shift(REG r_trget, REG r_left, REG r_right):
+     *      r_target <- r_left << r_right
+     */
+    LShift_i32(111),
+    LShift_u8(112),
+
+    /**
+     * bitwise_right_shift(REG r_trget, REG r_left, REG r_right):
+     *      r_target <- r_left >> r_right
+     */
+    RShift_i32(113),
+    RShift_u8(114);
 
     private final int code;
 
@@ -528,6 +571,55 @@ public enum OpCode {
 
     public static OpCode newArr(Type type) {
         return assertOpCode(newArr, type);
+    }
+
+    private static final Map<RegisterTypeId, OpCode> band = Map.of(
+            RegisterTypeId.Int32, Band_i32,
+            RegisterTypeId.Unsigned8, Band_u8);
+
+    public static OpCode band(Type type) {
+        return assertOpCode(band, type);
+    }
+
+    private static final Map<RegisterTypeId, OpCode> bor = Map.of(
+            RegisterTypeId.Int32, Bor_i32,
+            RegisterTypeId.Unsigned8, Bor_u8);
+
+    public static OpCode bor(Type type) {
+        return assertOpCode(bor, type);
+    }
+
+    private static final Map<RegisterTypeId, OpCode> xor = Map.of(
+            RegisterTypeId.Int32, Xor_i32,
+            RegisterTypeId.Unsigned8, Xor_u8);
+
+    public static OpCode xor(Type type) {
+        return assertOpCode(xor, type);
+    }
+
+    private static final Map<RegisterTypeId, OpCode> mod = Map.of(
+            RegisterTypeId.Int32, Mod_i32,
+            RegisterTypeId.Float64, Mod_f64,
+            RegisterTypeId.Unsigned8, Mod_u8);
+
+    public static OpCode mod(Type type) {
+        return assertOpCode(mod, type);
+    }
+
+    private static final Map<RegisterTypeId, OpCode> leftShift = Map.of(
+            RegisterTypeId.Int32, LShift_i32,
+            RegisterTypeId.Unsigned8, LShift_u8);
+
+    public static OpCode leftShift(Type type) {
+        return assertOpCode(leftShift, type);
+    }
+
+    private static final Map<RegisterTypeId, OpCode> rightShift = Map.of(
+            RegisterTypeId.Int32, RShift_i32,
+            RegisterTypeId.Unsigned8, RShift_u8);
+
+    public static OpCode rightShift(Type type) {
+        return assertOpCode(rightShift, type);
     }
 
     private static OpCode assertOpCode(Map<RegisterTypeId, OpCode> map, Type key) {

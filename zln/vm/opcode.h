@@ -325,6 +325,49 @@ enum op_code {
      * r_target <- r_source != nil and r_source instance_of user_type @ const_addr
      */
     OPC_TypeChk,
+
+    /**
+     * mod(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left % r_right
+     */
+    OPC_Mod_i32,
+    OPC_Mod_f64,
+    OPC_Mod_u8,
+
+    /**
+     * bitwise_and(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left & r_right
+     */
+    OPC_Band_i32,
+    OPC_Band_u8,
+
+    /**
+     * bitwise_or(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left | r_right
+     */
+    OPC_Bor_i32,
+    OPC_Bor_u8,
+
+    /**
+     * bitwise_xor(REG r_target, REG r_left, REG r_right):
+     *      r_target <- r_left ^ r_right
+     */
+    OPC_Xor_i32,
+    OPC_Xor_u8,
+
+    /**
+     * bitwise_left_shift(REG r_trget, REG r_left, REG r_right):
+     *      r_target <- r_left << r_right
+     */
+    OPC_LShift_i32,
+    OPC_LShift_u8,
+
+    /**
+     * bitwise_right_shift(REG r_trget, REG r_left, REG r_right):
+     *      r_target <- r_left >> r_right
+     */
+    OPC_RShift_i32,
+    OPC_RShift_u8,
 };
 
 typedef byte_t OpCode;

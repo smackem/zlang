@@ -175,7 +175,7 @@ public class ByteCodeWriter implements AutoCloseable {
                 }
             }
         }
-        return new RenderedCode(bytes, highestRegister + 1);
+        return new RenderedCode(bytes, Math.max(1, highestRegister + 1));
     }
 
     private static int getHighestRegister(Instruction instr) {
@@ -221,7 +221,9 @@ public class ByteCodeWriter implements AutoCloseable {
                     Ge_i32, Ge_f64, Ge_u8, Ge_str,
                     Lt_i32, Lt_f64, Lt_u8, Lt_str,
                     Le_i32, Le_f64, Le_u8, Le_str,
-                    And, Or -> {
+                    And, Or, Mod_i32, Mod_f64, Mod_u8,
+                    Band_i32, Band_u8, Bor_i32, Bor_u8, Xor_i32, Xor_u8,
+                    LShift_i32, LShift_u8, RShift_i32, RShift_u8 -> {
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeByte(instr.registerArg(1).number());
                 writer.writeByte(instr.registerArg(2).number());

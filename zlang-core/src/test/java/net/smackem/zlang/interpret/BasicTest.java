@@ -223,4 +223,30 @@ public class BasicTest {
                 """);
         assertThatThrownBy(() -> run(modules)).hasMessageContaining("incompatible result types");
     }
+
+    @Test
+    public void advancedOperators() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var result: int[]
+                fn main() {
+                    result = new int[] {
+                        10 % 9,
+                        1 << 3,
+                        8 >> 3,
+                        10 & 3,
+                        10 | 3,
+                        10 ^ 123,
+                    }
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo(new int[] {
+                10 % 9,
+                1 << 3,
+                8 >> 3,
+                10 & 3,
+                10 | 3,
+                10 ^ 123,
+        });
+    }
 }

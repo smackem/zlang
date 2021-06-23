@@ -1,0 +1,114 @@
+module main
+
+// ======================================================
+// Base Interfaces
+// ======================================================
+
+interface Equatable {
+    fn equals(other: object) -> bool
+}
+
+interface Comparable {
+    fn compareTo(other: object) -> int
+}
+
+
+// ======================================================
+// Int
+// ======================================================
+
+struct Int {
+    value: int
+} is Equatable, Comparable
+
+fn Int::equals(other: object) -> bool {
+    return other is Int and ((Int) other).value == self.value
+}
+
+fn Int::compareTo(other: object) -> int {
+    return self.value - ((Int) other).value if other is Int else {
+        panic -1
+        yield 0
+    }
+}
+
+
+// ======================================================
+// Ints
+// ======================================================
+
+struct IntMethods {
+    zeroStr: string
+}
+let Ints: IntMethods = new IntMethods {
+    zeroStr = "0"
+}
+
+fn IntMethods::box(value: int) -> Int {
+    return new Int {
+        value = value
+    }
+}
+
+fn IntMethods::boxArray(values: int[]) -> Int[] {
+    let result: Int[] = new Int[values.size()]
+    for index: int in 0 .. values.size() {
+        result[index] = Ints.box(values[index])
+    }
+    return result
+}
+
+fn IntMethods::toString(value: int) -> string {
+    let a: byte[] = new byte[12]
+    var i: int = 11
+    var n: int = value
+    if n == 0 {
+        return self.zeroStr
+    }
+    while n > 0 {
+        i = i - 1
+        a[i] = (byte) (n % 10 + (int) '0')
+        n = n / 10
+    }
+    return (string) a.copy(i, a.size() - i)
+}
+
+
+// ======================================================
+// Objects
+// ======================================================
+
+struct ObjectMethods {}
+let Objects: ObjectMethods = new ObjectMethods {}
+
+fn ObjectMethods::equals(a: Equatable, b: Equatable) -> bool {
+    if a == nil and b == nil {
+        return true
+    }
+    if (a == nil) != (b == nil) {
+        return false
+    }
+    return a.equals(b)
+}
+
+fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
+    return a.compareTo(b) if a != nil and b != nil else {
+        panic -1
+        yield 0
+    }
+}
+
+
+// ======================================================
+// main
+// ======================================================
+
+var x: Int
+var equal: bool
+var cmp: int
+
+fn main() {
+    x = Ints.box(100)
+    equal = Objects.equals(x, Ints.box(100))
+    cmp = Objects.compare(x, Ints.box(50))
+}

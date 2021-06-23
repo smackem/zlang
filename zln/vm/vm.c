@@ -108,6 +108,19 @@ static const char *const opcode_names[] = {
     "Invoke",
     "CallVirt",
     "TypeChk",
+    "Mod_i32",
+    "Mod_f64",
+    "Mod_u8",
+    "Band_i32",
+    "Band_u8",
+    "Bor_i32",
+    "Bor_u8",
+    "Xor_i32",
+    "Xor_u8",
+    "LShift_i32",
+    "LShift_u8",
+    "RShift_i32",
+    "RShift_u8",
 };
 
 static const char *const type_names[] = {
@@ -230,6 +243,19 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
         case OPC_Le_str:
         case OPC_And:
         case OPC_Or:
+        case OPC_Mod_i32:
+        case OPC_Mod_f64:
+        case OPC_Mod_u8:
+        case OPC_Band_i32:
+        case OPC_Band_u8:
+        case OPC_Bor_i32:
+        case OPC_Bor_u8:
+        case OPC_Xor_i32:
+        case OPC_Xor_u8:
+        case OPC_LShift_i32:
+        case OPC_LShift_u8:
+        case OPC_RShift_i32:
+        case OPC_RShift_u8:
             fprintf(f, "%12s r%d r%d r%d",
                     opcode_name(instr->opc),
                     get_byte(instr->args, 0),

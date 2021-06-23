@@ -1,5 +1,6 @@
 package net.smackem.zlang.interpret;
 
+import net.smackem.zlang.compiler.ZLCompiler;
 import net.smackem.zlang.emit.bytecode.ByteCodeReader;
 import net.smackem.zlang.emit.bytecode.ByteCodeWriter;
 import net.smackem.zlang.emit.bytecode.ByteCodeWriterOptions;
@@ -30,12 +31,12 @@ class InterpreterTests {
     private InterpreterTests() { }
 
     static Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
-        final CompilationResult result = compile(modules);
+        final ZLCompiler.CompilationResult result = compile(modules);
         return Interpreter.run(result.zap(), result.program());
     }
 
     static Collection<HeapEntry> runExtractingHeap(Collection<ParsedModule> modules) throws Exception {
-        final CompilationResult result = compile(modules);
+        final ZLCompiler.CompilationResult result = compile(modules);
         final int heapOffset = Interpreter.run(result.zap());
         return ByteCodeReader.readHeap(result.zap(), heapOffset);
     }
@@ -46,14 +47,13 @@ class InterpreterTests {
                 .hasHeapSizeLimit(true)
                 .heapSize(HEAP_SIZE)
                 .maxStackDepth(maxStackDepth);
-        final CompilationResult result = compile(modules, options);
-        final OutputStream os = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-        os.write(result.zap.array(), result.zap.arrayOffset(), result.zap.limit());
+        final ZLCompiler.CompilationResult result = compile(modules, options);
+        try (final OutputStream os = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+            os.write(result.zap().array(), result.zap().arrayOffset(), result.zap().limit());
+        }
     }
 
-    private static record CompilationResult(Program program, ByteBuffer zap) {}
-
-    private static CompilationResult compile(Collection<ParsedModule> modules) throws Exception {
+    private static ZLCompiler.CompilationResult compile(Collection<ParsedModule> modules) throws Exception {
         final ByteCodeWriterOptions options = new ByteCodeWriterOptions()
                 .isMemoryImage(true)
                 .heapSize(HEAP_SIZE)
@@ -62,7 +62,7 @@ class InterpreterTests {
         return compile(modules, options);
     }
 
-    private static CompilationResult compile(Collection<ParsedModule> modules, ByteCodeWriterOptions options) throws Exception {
+    private static ZLCompiler.CompilationResult compile(Collection<ParsedModule> modules, ByteCodeWriterOptions options) throws Exception {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);
         assertThat(errors).isEmpty();
@@ -74,6 +74,6 @@ class InterpreterTests {
             assertThat(zap.capacity()).isGreaterThan(HEAP_SIZE);
         }
         System.out.println(Instructions.print(program.instructions()));
-        return new CompilationResult(program, zap);
+        return new ZLCompiler.CompilationResult(program, zap);
     }
 }

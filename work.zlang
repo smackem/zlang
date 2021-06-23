@@ -1,0 +1,92 @@
+﻿struct Attribute {
+    name:   string
+    value:  Value
+}
+
+union Value {
+    n: int
+    f: float
+    s: string
+}
+
+union Option {
+    some:   object
+    none:   void
+}
+
+struct Entity {
+    name:       string
+    attributes: Attribute list
+    children:   Entity list
+}
+
+fn makeEntity(name: string, attributes: Attribute[], children: Entity[]) -> Entity {
+    return new Entity {
+        name        = name
+        attributes  = new Attribute list(attributes)
+        children    = new Entity list(children)
+    }
+}
+
+struct IntMethods {
+    zeroStr: string
+}
+let Ints: IntMethods = new IntMethods {
+    zeroStr = "0"
+}
+
+fn IntMethods::toString(value: int) -> string {
+    let a: byte[] = new byte[12]
+    var i: int = 11
+    var n: int = value
+    if n == 0 {
+        return self.zeroStr
+    }
+    while n > 0 {
+        i = i - 1
+        a[i] = (byte) (n % 10 + (int) '0')
+        n = n / 10
+    }
+    return (string) a.copy(i, a.size() - i)
+}
+
+struct FloatMethods {}
+let Floats: FloatMethods = new FloatMethods {}
+
+fn FloatMethods::toString(value: float) -> string {
+    return "float"
+}
+
+fn createSampleEntities() -> Entity list {
+    let entities: Entity list = new Entity list {}
+    for i: int in 0 .. 10 {
+        let entity: Entity = makeEntity("Entity" + Ints.toString(i),
+            new Attribute[] {
+                new Attribute {
+                    name = "attribute"
+                    value = new Value::n(i)
+                }
+            },
+            new Entity[0])
+        entities.add(entity)
+    }
+    return entities
+}
+
+fn printValue(value: Value) {
+    let str: string = switch value {
+        n: int      -> Ints.toString(n)
+        f: float    -> Floats.toString(f)
+        s: string   -> s
+        else        -> ""
+    }
+    log str
+}
+
+var entities: Entity list
+var x: string = Ints.toString(1000)
+
+fn main() {
+    entities = createSampleEntities()
+}
+

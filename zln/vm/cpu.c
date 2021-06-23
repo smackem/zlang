@@ -436,6 +436,57 @@ void execute(const byte_t *code,
                 size = 1 + 3;
                 break;
 
+            // -------------------- bitwise and
+            //
+            case OPC_Band_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 & reg(&cpu, r_right)->i32;
+                size = 1 + 3;
+                break;
+            case OPC_Band_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 & reg(&cpu, r_right)->i32) & 0xff);
+                size = 1 + 3;
+                break;
+
+            // -------------------- bitwise or
+            //
+            case OPC_Bor_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 | reg(&cpu, r_right)->i32;
+                size = 1 + 3;
+                break;
+            case OPC_Bor_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 | reg(&cpu, r_right)->i32) & 0xff);
+                size = 1 + 3;
+                break;
+
+            // -------------------- bitwise xor
+            //
+            case OPC_Xor_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 ^ reg(&cpu, r_right)->i32;
+                size = 1 + 3;
+                break;
+            case OPC_Xor_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 ^ reg(&cpu, r_right)->i32) & 0xff);
+                size = 1 + 3;
+                break;
+
             // -------------------- multiply
             //
             case OPC_Mul_i32:
@@ -481,6 +532,64 @@ void execute(const byte_t *code,
                 r_left = get_byte(instr->args, 1);
                 r_right = get_byte(instr->args, 2);
                 reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 / reg(&cpu, r_right)->i32) & 0xff);
+                size = 1 + 3;
+                break;
+
+            // -------------------- modulo
+            //
+            case OPC_Mod_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 % reg(&cpu, r_right)->i32;
+                size = 1 + 3;
+                break;
+            case OPC_Mod_f64:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->f64 = (int) reg(&cpu, r_left)->f64 % (int) reg(&cpu, r_right)->f64;
+                size = 1 + 3;
+                break;
+            case OPC_Mod_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 % reg(&cpu, r_right)->i32) & 0xff);
+                size = 1 + 3;
+                break;
+
+            // -------------------- modulo
+            //
+            case OPC_LShift_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 << reg(&cpu, r_right)->i32;
+                size = 1 + 3;
+                break;
+            case OPC_LShift_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 << reg(&cpu, r_right)->i32) & 0xff);
+                size = 1 + 3;
+                break;
+
+            // -------------------- modulo
+            //
+            case OPC_RShift_i32:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->i32 >> reg(&cpu, r_right)->i32;
+                size = 1 + 3;
+                break;
+            case OPC_RShift_u8:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                r_right = get_byte(instr->args, 2);
+                reg(&cpu, r_target)->i32 = (byte_t) ((reg(&cpu, r_left)->i32 >> reg(&cpu, r_right)->i32) & 0xff);
                 size = 1 + 3;
                 break;
 

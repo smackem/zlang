@@ -17,6 +17,7 @@ globalDecl
     | (bindingStmt LineBreak)
     | (varDeclStmt LineBreak)
     | typeDecl
+    | LineBreak
     ;
 
 functionDecl
@@ -240,6 +241,9 @@ additiveExpr
 additiveOp
     : Plus
     | Minus
+    | Band
+    | Bor
+    | Xor
     ;
 
 multiplicativeExpr
@@ -251,6 +255,8 @@ multiplicativeOp
     : Times
     | Div
     | Mod
+    | LShift
+    | RShift
     ;
 
 unaryExpr
@@ -338,11 +344,11 @@ fieldInitializer
 
 arrayInstanceCreation
     : New type LBracket expr RBracket
-    | New type LBracket RBracket LBrace arguments? LineBreak? RBrace
+    | New type LBracket RBracket LBrace (arguments Comma?)? LineBreak? RBrace
     ;
 
 listInstanceCreation
-    : New type List LBrace arguments? LineBreak? RBrace
+    : New type List LBrace (arguments Comma?)? LineBreak? RBrace
     ;
 
 listInstanceCreationFromArray
@@ -376,6 +382,11 @@ Minus       : '-';
 Times       : '*';
 Div         : '/';
 Mod         : '%';
+Bor         : '|';
+Band        : '&';
+Xor         : '^';
+LShift      : '<<';
+RShift      : '>>';
 Lt          : '<';
 Le          : '<=';
 Gt          : '>';
@@ -384,7 +395,6 @@ Eq          : '==';
 Ne          : '!=';
 FromTo      : '..';
 Swap        : '<=>';
-Pipe        : '|';
 Colon       : ':';
 ColonColon  : '::';
 Is          : 'is';

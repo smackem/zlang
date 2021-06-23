@@ -14,7 +14,6 @@ void init_call_stack(CallStack *call_stack,
     assert(register_buf != NULL);
     assert(stack_frame_buf != NULL);
     assert(max_stack_depth > 0);
-    assert(register_count > 0);
     call_stack->register_buf = register_buf;
     call_stack->stack_frame_buf = stack_frame_buf;
     call_stack->max_stack_depth = max_stack_depth;
