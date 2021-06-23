@@ -21,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.prefs.Preferences;
@@ -95,13 +96,14 @@ public class PrimaryController {
 
     private static String printGlobals(Map<String, Object> globals, String indent) {
         final StringBuilder sb = new StringBuilder();
-        for (final var entry : globals.entrySet()) {
-            sb.append(indent)
-                    .append(entry.getKey())
-                    .append(" = ")
-                    .append(printValue(entry.getValue(), indent))
-                    .append(System.lineSeparator());
-        }
+        globals.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEachOrdered(entry ->
+                        sb.append(indent)
+                            .append(entry.getKey())
+                            .append(" = ")
+                            .append(printValue(entry.getValue(), indent))
+                            .append(System.lineSeparator()));
         return sb.toString();
     }
 

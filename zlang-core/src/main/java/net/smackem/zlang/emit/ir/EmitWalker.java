@@ -1201,6 +1201,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     private void enterFunction(FunctionSymbol function, List<Instruction> instructions) {
+        log.info("entering function: {}", function.name());
         this.currentInstructions = instructions;
         this.codeMap.computeIfAbsent(function, ignored -> {
             final Instruction nop = emitNop();
