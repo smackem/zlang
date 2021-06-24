@@ -123,6 +123,29 @@ static void list_remove(Cpu *cpu, Register *result, const Register *first_arg) {
 }
 
 static void print(Cpu *cpu, Register *result, const Register *first_arg) {
+    const char *format;
+    const HeapEntry *entry;
+    switch (first_arg[1].i32) {
+        case TYPE_Unsigned8:
+            printf("%u", first_arg->i32 & 0xff);
+            break;
+        case TYPE_Int32:
+            printf("%d", first_arg->i32);
+            break;
+        case TYPE_Float64:
+            printf("%lf", first_arg->f64);
+            break;
+        case TYPE_NativePtr:
+            printf("ptr@%016llX", first_arg->ptr);
+            break;
+        case TYPE_Ref:
+            printf("ref@%08X", first_arg->ref);
+            break;
+        case TYPE_String:
+            entry = get_heap_entry(&cpu->heap, first_arg->ref);
+            puts((char *) entry->data);
+            break;
+    }
 }
 
 static void string_length(Cpu *cpu, Register *result, const Register *first_arg) {

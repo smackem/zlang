@@ -9,7 +9,7 @@ public class GlobalScope implements Scope {
 
     public GlobalScope() {
         this.symbolTable = new SymbolTable(null);
-        initTypeSystem();
+        defineBuiltInSymbols();
     }
 
     @Override
@@ -50,15 +50,26 @@ public class GlobalScope implements Scope {
         return this.symbolTable.symbols();
     }
 
-    private void initTypeSystem() {
+    private void defineBuiltInSymbols() {
         try {
             for (final Type t : BuiltInType.builtInTypes()) {
                 final Symbol symbol = (Symbol) t;
                 define(symbol.name(), symbol);
             }
+            defineBuiltInFunction(null, BuiltInFunction.PRINT, AnyType.INSTANCE, BuiltInType.INT.type());
         } catch (CompilationErrorException ignored) {
             // cannot happen for built-in types
         }
+    }
+
+    private void defineBuiltInFunction(Type returnType, BuiltInFunction bif, Type... parameterTypes) throws CompilationErrorException {
+        final BuiltInFunctionSymbol function = new BuiltInFunctionSymbol(bif, returnType, this);
+        int parameterIndex = 0;
+        for (final Type parameterType : parameterTypes) {
+            final String parameterName = "p" + parameterIndex++;
+            function.define(parameterName, new ConstantSymbol(parameterName, parameterType, false));
+        }
+        this.symbolTable.define(bif.ident(), function);
     }
 
     @Override

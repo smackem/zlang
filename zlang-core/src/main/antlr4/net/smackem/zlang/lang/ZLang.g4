@@ -126,7 +126,7 @@ invocationStmt
     ;
 
 methodInvocation
-    : primary methodInvocationPostfix
+    : postFixedPrimary methodInvocationPostfix
     ;
 
 ifStmt

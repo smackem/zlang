@@ -16,6 +16,9 @@
 .string {
     -fx-fill: #6A8743;
 }
+.char {
+    -fx-fill: #6A8743;
+}
 .comment {
     -fx-fill: #666;
 }

@@ -313,7 +313,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     @Override
     public Value visitMethodInvocation(ZLangParser.MethodInvocationContext ctx) {
-        final Value primary = ctx.primary().accept(this);
+        final Value primary = ctx.postFixedPrimary().accept(this);
         final Value retVal = emitMethodInvocation(primary, ctx.methodInvocationPostfix());
         if (retVal != null) {
             freeRegister(retVal.register); // discard return value

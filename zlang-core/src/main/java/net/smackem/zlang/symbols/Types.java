@@ -9,6 +9,9 @@ public final class Types {
         if (Objects.equals(lvalue, rvalue)) {
             return true;
         }
+        if (lvalue == AnyType.INSTANCE) {
+            return true;
+        }
         if (lvalue.registerType() == BuiltInType.OBJECT.type() && rvalue == NilType.INSTANCE) {
             return true;
         }
@@ -45,6 +48,9 @@ public final class Types {
 
     public static boolean isImplicitlyConvertible(Type target, Type source) {
         if (Objects.equals(target, source)) {
+            return true;
+        }
+        if (target == AnyType.INSTANCE) {
             return true;
         }
         if (target == BuiltInType.STRING.type()) {

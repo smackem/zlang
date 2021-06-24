@@ -12,6 +12,10 @@ interface Comparable {
     fn compareTo(other: object) -> int
 }
 
+interface Stringer {
+    fn toString() -> string
+}
+
 
 // ======================================================
 // Int
@@ -19,7 +23,7 @@ interface Comparable {
 
 struct Int {
     value: int
-} is Equatable, Comparable
+} is Equatable, Comparable, Stringer
 
 fn Int::equals(other: object) -> bool {
     return other is Int and ((Int) other).value == self.value
@@ -32,16 +36,23 @@ fn Int::compareTo(other: object) -> int {
     }
 }
 
+fn Int::toString() -> string {
+    return Ints.toString(self.value)
+}
 
 // ======================================================
 // Ints
 // ======================================================
 
 struct IntMethods {
-    zeroStr: string
+    cachedStrings: string[]
 }
 let Ints: IntMethods = new IntMethods {
-    zeroStr = "0"
+    cachedStrings = new string[] {
+        "0",
+        "1",
+        "2",
+    }
 }
 
 fn IntMethods::box(value: int) -> Int {
@@ -59,16 +70,24 @@ fn IntMethods::boxArray(values: int[]) -> Int[] {
 }
 
 fn IntMethods::toString(value: int) -> string {
-    let a: byte[] = new byte[12]
     var i: int = 11
     var n: int = value
-    if n == 0 {
-        return self.zeroStr
+    if n >= 0 and n < self.cachedStrings.size() {
+        return self.cachedStrings[n]
+    }
+    let a: byte[] = new byte[12]
+    let negative: bool = n < 0
+    if negative {
+        n = -n
     }
     while n > 0 {
         i = i - 1
         a[i] = (byte) (n % 10 + (int) '0')
         n = n / 10
+    }
+    if negative {
+        i = i - 1
+        a[i] = '-'
     }
     return (string) a.copy(i, a.size() - i)
 }
@@ -92,9 +111,91 @@ fn ObjectMethods::equals(a: Equatable, b: Equatable) -> bool {
 }
 
 fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
-    return a.compareTo(b) if a != nil and b != nil else {
-        panic -1
-        yield 0
+    if a == nil and b == nil {
+        return 0
+    }
+    if a != nil and b == nil {
+        return 1
+    }
+    if a == nil and b != nil {
+        return -1
+    }
+    return a.compareTo(b)
+}
+
+
+// ======================================================
+// StringBuilder
+// ======================================================
+
+struct StringBuilder {
+    strings: string list
+    length: int
+} is Stringer
+
+fn StringBuilder::append(s: string) -> StringBuilder {
+    self.strings.add(s)
+    if s != nil {
+        self.length = self.length + s.size()
+    }
+    return self
+}
+
+fn StringBuilder::toString() -> string {
+    let buffer: byte[] = new byte[self.length + 1]
+    var i: int = 0
+    for s: string in self.strings {
+        for ch: byte in s {
+            if ch != (byte) 0 {
+                buffer[i] = ch
+                i = i + 1
+            }
+        }
+    }
+    buffer[i] = (byte) 0
+    return (string) buffer
+}
+
+
+// ======================================================
+// Strings
+// ======================================================
+
+struct StringMethods {
+    emptyString: string
+    brStr: string
+    spaceStr: string
+}
+
+let Strings: StringMethods = new StringMethods {
+    emptyString = ""
+    brStr = (string) new byte[] { (byte) 10, (byte) 0 }
+    spaceStr = " "
+}
+
+fn StringMethods::empty() -> string {
+    return self.emptyString
+}
+
+fn StringMethods::br() -> string {
+    return self.brStr
+}
+
+fn StringMethods::space() -> string {
+    return self.spaceStr
+}
+
+fn StringMethods::newBuilder() -> StringBuilder {
+    return new StringBuilder {
+        strings = new string list {}
+        length = 0
+    }
+}
+
+fn StringMethods::newBuilderWith(s: string) -> StringBuilder {
+    return new StringBuilder {
+        strings = new string list { s }
+        length = s.length() if s != nil else 0
     }
 }
 
@@ -106,9 +207,20 @@ fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
 var x: Int
 var equal: bool
 var cmp: int
-
+var minus100: string
+var zero: string
+var plus1: string
+var plus100: string
+var output: string
 fn main() {
     x = Ints.box(100)
     equal = Objects.equals(x, Ints.box(100))
     cmp = Objects.compare(x, Ints.box(50))
+    minus100 = Ints.toString(-100)
+    zero = Ints.toString(0)
+    plus1 = Ints.toString(1)
+    plus100 = Ints.toString(100)
+    let sb: StringBuilder = Strings.newBuilder()
+    sb.append("hallo").append(Strings.space()).append("wasgeht?").append(Strings.space()).append(Ints.toString(123))
+    output = sb.toString()
 }

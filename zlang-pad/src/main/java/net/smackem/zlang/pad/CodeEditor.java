@@ -32,6 +32,7 @@ public class CodeEditor extends CodeArea {
     private static final String FNCALL_PATTERN = "(\\b(?!fn)(?:[A-Za-z0-9_]+))\\(";
     private static final String NUMBER_PATTERN = "\\b\\d[\\d_]*(\\.[\\d_]*\\d)?\\b";
     private static final String STRING_PATTERN = "\"([^\"\\\\]|\\\\.)*\"";
+    private static final String CHAR_PATTERN = "'.'";
     private static final String DOC_COMMENT_PATTERN = "///[^\n]*";
     private static final String COMMENT_PATTERN = "//[^\n]*";
 
@@ -40,6 +41,7 @@ public class CodeEditor extends CodeArea {
             + "|(?<PAREN>" + PAREN_PATTERN + ")"
             + "|(?<FNCALL>" + FNCALL_PATTERN + ")"
             + "|(?<NUMBER>" + NUMBER_PATTERN + ")"
+            + "|(?<CHAR>" + CHAR_PATTERN + ")"
             + "|(?<STRING>" + STRING_PATTERN + ")"
             + "|(?<DOC>" + DOC_COMMENT_PATTERN + ")"
             + "|(?<COMMENT>" + COMMENT_PATTERN + ")"
@@ -95,6 +97,7 @@ public class CodeEditor extends CodeArea {
                     matcher.group("FNCALL") != null ? "fncall" :
                     matcher.group("NUMBER") != null ? "number" :
                     matcher.group("STRING") != null ? "string" :
+                    matcher.group("CHAR") != null ? "char" :
                     matcher.group("DOC") != null ? "doc" :
                     matcher.group("COMMENT") != null ? "comment" :
                     null; // never happens
