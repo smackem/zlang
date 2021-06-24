@@ -30,7 +30,6 @@ public class SymbolExtractorTest {
         assertThat(ps.scopes()).hasSize(1);
         assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("main");
         assertThat(ps.scopes().values()).allMatch(scope -> scope instanceof ModuleSymbol);
-        assertThat(globalScope.symbols()).hasSize(BuiltInType.builtInTypes().size() + 1);
         // one error is expected: no main method
         assertThat(errors).hasSize(1);
         assertThat(errors).allMatch(s -> s.contains("main"));
@@ -298,6 +297,7 @@ public class SymbolExtractorTest {
                     - runtime_ptr: PrimitiveTypeSymbol{null}@0
                     - string: StringType{null}@0
                     - bool: PrimitiveTypeSymbol{null}@0
+                    - print: BuiltInFunctionSymbol{null}@20
                     - dep: ModuleSymbol{null}@0
                     - main: ModuleSymbol{null}@0
                     > dep: ModuleSymbol
