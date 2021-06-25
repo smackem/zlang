@@ -34,6 +34,12 @@ public final class Types {
         if (Objects.equals(left, right)) {
             return true;
         }
+        if (left == BuiltInType.INT.type() && right == BuiltInType.BYTE.type()) {
+            return true;
+        }
+        if (right == BuiltInType.INT.type() && left == BuiltInType.BYTE.type()) {
+            return true;
+        }
         if (left.registerType() == BuiltInType.OBJECT.type() && right == NilType.INSTANCE) {
             return true;
         }
@@ -59,6 +65,23 @@ public final class Types {
         if (source == BuiltInType.STRING.type()) {
             return target instanceof ArrayType a && a.elementType() == BuiltInType.BYTE.type();
         }
+        if (target == BuiltInType.INT.type() && source == BuiltInType.BYTE.type()) {
+            return true;
+        }
         return source.registerType().id() == RegisterTypeId.Ref && target.registerType().id() == RegisterTypeId.Ref;
+    }
+
+    public static boolean isEffectivelyInteger(Type type) {
+        return Types.isImplicitlyConvertible(BuiltInType.INT.type(), type);
+    }
+
+    public static Type promote(Type left, Type right) {
+        if (isImplicitlyConvertible(left, right)) {
+            return left;
+        }
+        if (isImplicitlyConvertible(right, left)) {
+            return right;
+        }
+        return null;
     }
 }

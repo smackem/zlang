@@ -224,7 +224,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return;
             }
             final Value index = ctx.arrayAccessPostfix().expr().accept(this);
-            if (index.type != BuiltInType.INT.type()) {
+            if (Types.isEffectivelyInteger(index.type) == false) {
                 logLocalError(ctx, "index is not of type int");
                 return;
             }
@@ -382,13 +382,13 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             emit(OpCode.Ldc_i32, r, 1);
             step = value(r, BuiltInType.INT.type());
         }
-        if (from.type != BuiltInType.INT.type()) {
+        if (Types.isEffectivelyInteger(from.type) == false) {
             return logLocalError(ctx, "lower bound in for statement must be of type int");
         }
-        if (to.type != BuiltInType.INT.type()) {
+        if (Types.isEffectivelyInteger(to.type) == false) {
             return logLocalError(ctx, "upper bound in for statement must be of type int");
         }
-        if (step.type != BuiltInType.INT.type()) {
+        if (Types.isEffectivelyInteger(step.type) == false) {
             return logLocalError(ctx, "step in for statement must be of type int");
         }
         final VariableSymbol index = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), from, true);
@@ -468,6 +468,17 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     @Override
+    public Value visitLogStmt(ZLangParser.LogStmtContext ctx) {
+        final Symbol print = (BuiltInFunctionSymbol) currentScope().resolve(BuiltInFunction.PRINT.ident());
+        final List<Register> argumentRegisters = allocRegisterRange(2);
+        for (final var argument : ctx.arguments().expr()) {
+            final Value value = argument.accept(this);
+
+        }
+        return super.visitLogStmt(ctx);
+    }
+
+    @Override
     public Value visitExpr(ZLangParser.ExprContext ctx) {
         if (ctx.If() != null) {
             Label elseLabel = addLabel();
@@ -478,15 +489,17 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             }
             emitBranch(condition.register, elseLabel);
             final Register target = allocFreedRegister(condition.register);
-            final Value result = ctx.conditionalOrExpr(0).accept(this);
+            Value result = ctx.conditionalOrExpr(0).accept(this);
             emit(OpCode.Mov, target, result.register);
             freeRegister(result.register);
             emitBranch(exitLabel);
             final int alternativeIndex = this.currentInstructions.size();
             final Value alternative = ctx.expr().accept(this);
-            if (Objects.equals(result.type, alternative.type) == false) {
+            final Type resultType = Types.promote(result.type, alternative.type);
+            if (resultType == null) {
                 return logLocalError(ctx, "incompatible types in ternary expression");
             }
+            result = value(result.register, resultType);
             emit(OpCode.Mov, target, alternative.register);
             freeRegister(alternative.register);
             elseLabel.setTarget(this.currentInstructions.get(alternativeIndex));
@@ -593,7 +606,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value left = ctx.additiveExpr().accept(this);
         final Value right = ctx.multiplicativeExpr().accept(this);
         final Register target = allocFreedRegister(left.register, right.register);
-        if (left.type != right.type) {
+        final Type targetType = Types.promote(left.type, right.type);
+        if (targetType == null) {
             return logLocalError(ctx, "incompatible operand types in additive expression");
         }
 
@@ -613,7 +627,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         emit(opc, target, left.register, right.register);
-        return value(target, left.type);
+        return value(target, targetType);
     }
 
     @Override
@@ -625,7 +639,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value left = ctx.multiplicativeExpr().accept(this);
         final Value right = ctx.unaryExpr().accept(this);
         final Register target = allocFreedRegister(left.register, right.register);
-        if (left.type != right.type) {
+        final Type targetType = Types.promote(left.type, right.type);
+        if (targetType == null) {
             return logLocalError(ctx, "incompatible operand types in multiplicative expression");
         }
 
@@ -645,7 +660,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         emit(opc, target, left.register, right.register);
-        return value(target, left.type);
+        return value(target, targetType);
     }
 
     @Override
@@ -708,7 +723,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             }
             final Type elementType = ((ArrayType) primary.type).elementType();
             final Value index = ctx.arrayAccessPostfix().expr().accept(this);
-            if (index.type != BuiltInType.INT.type()) {
+            if (Types.isEffectivelyInteger(index.type) == false) {
                 return logLocalError(ctx, "index is not of type int");
             }
             final Register target = allocFreedRegister(primary.register, index.register);
@@ -1130,14 +1145,22 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     public Value visitNumber(ZLangParser.NumberContext ctx) {
         final Register target = allocFreedRegister();
         if (ctx.IntegerNumber() != null) {
-            emit(OpCode.Ldc_i32, target, parseInteger(ctx.IntegerNumber().getText()));
-            return value(target, BuiltInType.INT.type());
+            final int literal = parseInteger(ctx.IntegerNumber().getText());
+            emit(OpCode.Ldc_i32, target, literal);
+            return value(target, getIntegerLiteralType(literal));
         }
         if (ctx.RealNumber() != null) {
             emit(OpCode.Ldc_f64, target, parseFloat(ctx.RealNumber().getText()));
             return value(target, BuiltInType.FLOAT.type());
         }
         throw new UnsupportedOperationException("unsupported number type");
+    }
+
+    private static Type getIntegerLiteralType(int literal) {
+        if (literal < 256) {
+            return BuiltInType.BYTE.type();
+        }
+        return BuiltInType.INT.type();
     }
 
     private void freeRegister(Register... registersToFree) {
@@ -1183,7 +1206,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
         return highest;
     }
-
     private static Value value(Register register, Type type) {
         return new Value(register, type);
     }

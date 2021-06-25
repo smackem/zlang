@@ -7,7 +7,7 @@ public enum BuiltInFunction {
     LIST_CAPACITY("capacity", 11),
     LIST_ADD("add", 12),
     LIST_REMOVE("remove", 13),
-    PRINT("print", 20),
+    PRINT("@print", 20),
     STRING_LENGTH("length", 30);
 
     private final String ident;

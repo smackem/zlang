@@ -175,7 +175,7 @@ whileStmt
     ;
 
 logStmt
-    : Log expr
+    : Log arguments
     ;
 
 panicStmt
