@@ -711,7 +711,10 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Value value = ctx.unaryExpr().accept(this);
 
         if (ctx.unaryOp().Minus() != null) {
-            final OpCode opcSub = OpCode.sub(value.type);
+            final OpCode opcSub = OpCode.sub(
+                    Types.isEffectivelyInteger(value.type)
+                            ? BuiltInType.INT.type()
+                            : value.type);
             final Register zero = allocFreedRegister();
             emit(OpCode.Ldc_zero, zero);
             final Register target = allocFreedRegister(value.register, zero);
@@ -1182,14 +1185,30 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     @Override
     public Value visitNumber(ZLangParser.NumberContext ctx) {
         final Register target = allocFreedRegister();
+        final boolean negative = ctx.Minus() != null;
         if (ctx.IntegerNumber() != null) {
-            final int literal = parseInteger(ctx.IntegerNumber().getText());
+            int literal = parseInteger(ctx.IntegerNumber().getText());
+            if (negative) {
+                literal = -literal;
+            }
             emit(OpCode.Ldc_i32, target, literal);
             return value(target, getIntegerLiteralType(literal));
         }
         if (ctx.RealNumber() != null) {
-            emit(OpCode.Ldc_f64, target, parseFloat(ctx.RealNumber().getText()));
+            double literal = parseFloat(ctx.RealNumber().getText());
+            if (negative) {
+                literal = -literal;
+            }
+            emit(OpCode.Ldc_f64, target, literal);
             return value(target, BuiltInType.FLOAT.type());
+        }
+        if (ctx.HexNumber() != null) {
+            int literal = parseHexNumber(ctx.HexNumber().getText());
+            if (negative) {
+                literal = -literal;
+            }
+            emit(OpCode.Ldc_i32, target, literal);
+            return value(target, getIntegerLiteralType(literal));
         }
         throw new UnsupportedOperationException("unsupported number type");
     }
@@ -1258,6 +1277,10 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     private static double parseFloat(String text) {
         return Double.parseDouble(CharMatcher.is('_').removeFrom(text));
+    }
+
+    private static int parseHexNumber(String text) {
+        return Integer.parseInt(CharMatcher.is('_').removeFrom(text.substring(2)), 16);
     }
 
     private void enterFunction(FunctionSymbol function, List<Instruction> instructions) {

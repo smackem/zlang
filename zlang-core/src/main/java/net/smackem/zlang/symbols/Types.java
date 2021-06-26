@@ -65,8 +65,8 @@ public final class Types {
         if (source == BuiltInType.STRING.type()) {
             return target instanceof ArrayType a && a.elementType() == BuiltInType.BYTE.type();
         }
-        if (target == BuiltInType.INT.type() && source == BuiltInType.BYTE.type()) {
-            return true;
+        if (target == BuiltInType.INT.type()) {
+            return source == BuiltInType.BYTE.type();
         }
         return source.registerType().id() == RegisterTypeId.Ref && target.registerType().id() == RegisterTypeId.Ref;
     }

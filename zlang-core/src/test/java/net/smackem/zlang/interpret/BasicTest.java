@@ -251,34 +251,34 @@ public class BasicTest {
     }
 
     @Test
-    public void assertFailedStmt() throws Exception {
+    public void unaryOperators() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
-                var numberA: int
-                var numberB: int
+                let numberA: int = -100
+                let numberB: float = -123.5
+                let boolA: bool = not true
+                let boolB: bool = not false
                 fn main() {
-                    numberA = 100
-                    assert numberA != 100
-                    numberB = 666
                 }
                 """);
         final Map<String, Object> globals = run(modules);
-        assertThat(globals.get("numberA")).isEqualTo(100);
-        assertThat(globals.get("numberB")).isEqualTo(0);
+        assertThat(globals.get("numberA")).isEqualTo(-100);
+        assertThat(globals.get("numberB")).isEqualTo(-123.5);
+        assertThat(globals.get("boolA")).isEqualTo(false);
+        assertThat(globals.get("boolB")).isEqualTo(true);
     }
 
     @Test
-    public void assertStmt() throws Exception {
+    public void hexNumbers() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
-                var numberA: int
-                var numberB: int
+                let numberA: byte = 0xff
+                let numberB: int = 0xff_ff
+                let numberC: int = -0xff
                 fn main() {
-                    numberA = 100
-                    assert numberA == 100
-                    numberB = 666
                 }
                 """);
         final Map<String, Object> globals = run(modules);
-        assertThat(globals.get("numberA")).isEqualTo(100);
-        assertThat(globals.get("numberB")).isEqualTo(666);
+        assertThat(globals.get("numberA")).isEqualTo((byte) 0xff);
+        assertThat(globals.get("numberB")).isEqualTo(0xffff);
+        assertThat(globals.get("numberC")).isEqualTo(-0xff);
     }
 }

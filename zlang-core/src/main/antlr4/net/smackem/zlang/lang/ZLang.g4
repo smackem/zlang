@@ -63,7 +63,8 @@ simpleType
 typeDecl
     : DocComment? (structDecl
     | unionDecl
-    | interfaceDecl)
+    | interfaceDecl
+    | enumDecl)
     ;
 
 structDecl
@@ -88,6 +89,14 @@ interfaceDecl
 
 interfaceMethodDecl
     : DocComment? Fn declaringTypePrefix? Ident LParen parameters? RParen returnType?
+    ;
+
+enumDecl
+    : Enum Ident LBrace (enumField LineBreak)+ RBrace
+    ;
+
+enumField
+    : Ident (Beq (Plus | Minus)? IntegerNumber)?
     ;
 
 statement
@@ -404,6 +413,16 @@ Arrow       : '->' LineBreak?;
 Or          : 'or' LineBreak?;
 And         : 'and' LineBreak?;
 Beq         : '=' LineBreak?;
+PlusEq      : '+=' LineBreak?;
+MinusEq     : '-=' LineBreak?;
+TimesEq     : '*=' LineBreak?;
+DivEq       : '/=' LineBreak?;
+ModEq       : '%=' LineBreak?;
+BandEq      : '&=' LineBreak?;
+BorEq       : '|=' LineBreak?;
+XorEq       : '^=' LineBreak?;
+LShiftEq    : '<<=' LineBreak?;
+RShiftEq    : '>>=' LineBreak?;
 Dot         : '.' LineBreak?;
 Comma       : ',' LineBreak?;
 LBrace      : '{' LineBreak?;
@@ -453,9 +472,10 @@ Mutable     : 'mutable';
 Runtime     : 'runtime';
 Interface   : 'interface';
 List        : 'list';
+Enum        : 'enum';
 
 number
-    : (Plus | Minus)? (IntegerNumber | RealNumber)
+    : (Plus | Minus)? (IntegerNumber | RealNumber | HexNumber)
     ;
 
 Ident
@@ -470,12 +490,12 @@ RealNumber
     : [0-9][0-9_]* '.' [0-9_]*[0-9]
     ;
 
-Color
-    : '#' HexLiteral+ ('@' HexLiteral HexLiteral)?
+HexNumber
+    : '0x' HexLiteral+
     ;
 
 HexLiteral
-    : ('a' .. 'f' | 'A' .. 'F' | '0' .. '9')
+    : ([a-f] | [A-F] | [0-9_])
     ;
 
 StringLiteral
