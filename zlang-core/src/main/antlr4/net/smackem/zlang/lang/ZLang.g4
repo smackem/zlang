@@ -176,6 +176,7 @@ whileStmt
 
 logStmt
     : Log arguments
+    | Log LParen arguments RParen
     ;
 
 panicStmt

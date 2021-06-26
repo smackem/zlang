@@ -297,7 +297,7 @@ public class SymbolExtractorTest {
                     - runtime_ptr: PrimitiveTypeSymbol{null}@0
                     - string: StringType{null}@0
                     - bool: PrimitiveTypeSymbol{null}@0
-                    - print: BuiltInFunctionSymbol{null}@20
+                    - @print: BuiltInFunctionSymbol{null}@20
                     - dep: ModuleSymbol{null}@0
                     - main: ModuleSymbol{null}@0
                     > dep: ModuleSymbol

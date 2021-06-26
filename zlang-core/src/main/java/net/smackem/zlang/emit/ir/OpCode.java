@@ -364,7 +364,13 @@ public enum OpCode {
      *      r_target <- r_left >> r_right
      */
     RShift_i32(113),
-    RShift_u8(114);
+    RShift_u8(114),
+
+    /**
+     * equals_zero(REG r_target, REG r_source):
+     *      r_target <- r_source == 0
+     */
+    Eq_zero(115);
 
     private final int code;
 

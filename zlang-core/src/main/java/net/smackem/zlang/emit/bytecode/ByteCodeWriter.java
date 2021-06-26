@@ -243,7 +243,7 @@ public class ByteCodeWriter implements AutoCloseable {
             case Ldc_zero, AddRef, RemoveRef ->
                 writer.writeByte(instr.registerArg(0).number());
             case NewArr_i32, NewArr_f64, NewArr_u8, NewArr_ref, NewArr_ptr,
-                    Mov -> {
+                    Mov, Eq_zero -> {
                 writer.writeByte(instr.registerArg(0).number());
                 writer.writeByte(instr.registerArg(1).number());
             }

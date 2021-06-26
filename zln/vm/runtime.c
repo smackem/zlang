@@ -123,7 +123,6 @@ static void list_remove(Cpu *cpu, Register *result, const Register *first_arg) {
 }
 
 static void print(Cpu *cpu, Register *result, const Register *first_arg) {
-    const char *format;
     const HeapEntry *entry;
     switch (first_arg[1].i32) {
         case TYPE_Unsigned8:
@@ -143,7 +142,7 @@ static void print(Cpu *cpu, Register *result, const Register *first_arg) {
             break;
         case TYPE_String:
             entry = get_heap_entry(&cpu->heap, first_arg->ref);
-            puts((char *) entry->data);
+            printf("%s", (char *) entry->data);
             break;
     }
 }

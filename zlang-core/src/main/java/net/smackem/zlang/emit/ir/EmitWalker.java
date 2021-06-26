@@ -13,6 +13,7 @@ import java.util.stream.Stream;
 
 class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final static Logger log = LoggerFactory.getLogger(EmitWalker.class);
+    private final String moduleName;
     private final List<Type> types = new ArrayList<>();
     private final List<FunctionSymbol> functions = new ArrayList<>();
     private final List<Instruction> instructions = new ArrayList<>();
@@ -28,6 +29,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     EmitWalker(String moduleName, ProgramStructure programStructure) {
         super(programStructure.globalScope(), programStructure.scopes());
+        this.moduleName = moduleName;
         this.initFunction = new FunctionSymbol(Naming.GENERATED_INIT_FUNCTION_PREFIX + moduleName, null, programStructure.globalScope());
         this.functions.add(this.initFunction);
     }
@@ -464,18 +466,55 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             }
         }
         emit(OpCode.Mov, top.targetRegister, value.register);
+        freeRegister(value.register);
         return null;
     }
 
     @Override
     public Value visitLogStmt(ZLangParser.LogStmtContext ctx) {
-        final Symbol print = (BuiltInFunctionSymbol) currentScope().resolve(BuiltInFunction.PRINT.ident());
+        final Symbol print = currentScope().resolve(BuiltInFunction.PRINT.ident());
         final List<Register> argumentRegisters = allocRegisterRange(2);
+        String prefix = "[%s] %s - ".formatted(this.moduleName, this.currentFunction.name());
+        if (this.currentFunction instanceof MethodSymbol method) {
+            prefix = method.definingScope().scopeName() + "::" + prefix;
+        }
+        emit(OpCode.Ldc_str, argumentRegisters.get(0), prefix);
+        emit(OpCode.Ldc_i32, argumentRegisters.get(1), BuiltInType.STRING.type().id().number());
+        emit(OpCode.Invoke, Register.R000, argumentRegisters.get(0), print);
         for (final var argument : ctx.arguments().expr()) {
             final Value value = argument.accept(this);
-
+            emit(OpCode.Mov, argumentRegisters.get(0), value.register);
+            emit(OpCode.Ldc_i32, argumentRegisters.get(1), value.type.registerType().id().number());
+            emit(OpCode.Invoke, Register.R000, argumentRegisters.get(0), print);
+            freeRegister(value.register);
         }
-        return super.visitLogStmt(ctx);
+        emit(OpCode.Ldc_str, argumentRegisters.get(0), "\n");
+        emit(OpCode.Ldc_i32, argumentRegisters.get(1), BuiltInType.STRING.type().id().number());
+        emit(OpCode.Invoke, Register.R000, argumentRegisters.get(0), print);
+        freeRegisters(argumentRegisters);
+        return null;
+    }
+
+    @Override
+    public Value visitAssertStmt(ZLangParser.AssertStmtContext ctx) {
+        final Value value = ctx.expr().accept(this);
+        if (Types.isImplicitlyConvertible(BuiltInType.BOOL.type(), value.type) == false) {
+            return logLocalError(ctx, "expression is not of type boolean");
+        }
+        final Label skipLabel = addLabel();
+        emit(OpCode.Eq_zero, value.register, value.register);
+        emitBranch(value.register, skipLabel);
+        freeRegister(value.register);
+        final String message = "[%s] %s - assertion failed @ line %d\n".formatted(
+                this.moduleName, this.currentFunction.name(), ctx.getStart().getLine());
+        final List<Register> args = allocRegisterRange(2);
+        emit(OpCode.Ldc_str, args.get(0), message);
+        emit(OpCode.Ldc_i32, args.get(1), BuiltInType.STRING.type().id().number());
+        emit(OpCode.Invoke, Register.R000, args.get(0), currentScope().resolve(BuiltInFunction.PRINT.ident()));
+        emit(OpCode.Ldc_i32, Register.R000, Integer.MIN_VALUE);
+        emit(OpCode.Halt);
+        skipLabel.setTarget(emitNop());
+        return null;
     }
 
     @Override
@@ -681,11 +720,8 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         if (ctx.unaryOp().Not() != null) {
-            final OpCode opcEq = OpCode.eq(value.type);
-            final Register zero = allocFreedRegister();
-            emit(OpCode.Ldc_zero, zero);
-            final Register target = allocFreedRegister(value.register, zero);
-            emit(opcEq, target, zero, value.register);
+            final Register target = allocFreedRegister(value.register);
+            emit(OpCode.Eq_zero, target, value.register);
             return value(target, value.type);
         }
 
@@ -749,7 +785,9 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         }
 
         if (ctx.methodInvocationPostfix() != null) {
-            return emitMethodInvocation(primary, ctx.methodInvocationPostfix());
+            final Value value = emitMethodInvocation(primary, ctx.methodInvocationPostfix());
+            freeRegister(primary.register);
+            return value;
         }
 
         throw new UnsupportedOperationException("unsupported postFixedPrimary");
@@ -814,7 +852,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         emit(getCallOpCode(function), retValRegister,
                 argRegisters.isEmpty() ? Register.R000 : argRegisters.get(0),
                 function);
-        freeRegister(argRegisters.toArray(new Register[0]));
+        freeRegisters(argRegisters);
         return function.type() != null
                 ? value(retValRegister, function.type())
                 : null;

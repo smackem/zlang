@@ -559,7 +559,7 @@ void execute(const byte_t *code,
                 size = 1 + 3;
                 break;
 
-            // -------------------- modulo
+            // -------------------- left shift
             //
             case OPC_LShift_i32:
                 r_target = get_byte(instr->args, 0);
@@ -576,7 +576,7 @@ void execute(const byte_t *code,
                 size = 1 + 3;
                 break;
 
-            // -------------------- modulo
+            // -------------------- right shift
             //
             case OPC_RShift_i32:
                 r_target = get_byte(instr->args, 0);
@@ -946,6 +946,13 @@ void execute(const byte_t *code,
                 value = get_addr(instr->args, 2);
                 reg(&cpu, r_target)->i32 = check_type(&cpu.heap, reg(&cpu, r_left)->ref, value);
                 size = 1 + 6;
+                break;
+
+            case OPC_Eq_zero:
+                r_target = get_byte(instr->args, 0);
+                r_left = get_byte(instr->args, 1);
+                reg(&cpu, r_target)->i32 = reg(&cpu, r_left)->ptr == 0;
+                size = 1 + 2;
                 break;
 
             default:

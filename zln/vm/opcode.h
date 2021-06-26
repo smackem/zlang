@@ -356,18 +356,24 @@ enum op_code {
     OPC_Xor_u8,
 
     /**
-     * bitwise_left_shift(REG r_trget, REG r_left, REG r_right):
+     * bitwise_left_shift(REG r_target, REG r_left, REG r_right):
      *      r_target <- r_left << r_right
      */
     OPC_LShift_i32,
     OPC_LShift_u8,
 
     /**
-     * bitwise_right_shift(REG r_trget, REG r_left, REG r_right):
+     * bitwise_right_shift(REG r_target, REG r_left, REG r_right):
      *      r_target <- r_left >> r_right
      */
     OPC_RShift_i32,
     OPC_RShift_u8,
+
+    /**
+     * equals_zero(REG r_target, REG r_source):
+     *      r_target <- r_source == 0
+     */
+    OPC_Eq_zero,
 };
 
 typedef byte_t OpCode;
