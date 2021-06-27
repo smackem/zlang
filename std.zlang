@@ -5,8 +5,8 @@ interface Equatable {
 }
 
 fn objects_are_equal(a: object, b: object) {
-    let ao: Equatable = (Equatable) a
-    let bo: Equatable = (Equatable) b
+    let ao: Equatable = a as Equatable
+    let bo: Equatable = b as Equatable
     return ao.equals(bo) if ao != nil and bo != nil else false
 }
 
@@ -64,7 +64,7 @@ fn Float64::equals(other: object) {
     return x.value == self.value if x != nil else false
 }
 
-let integerList: int<> = new int<> { 1, 2, 3 }
+let integerList: int list = new int list { 1, 2, 3 }
 let floatSet: set<float> = set<float>(new float[] { 1.0, 2.0, 3.0, 1.0 })
 let dictionary: map<string, int> = map<string, int>()
 

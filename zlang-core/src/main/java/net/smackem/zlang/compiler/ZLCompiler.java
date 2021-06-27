@@ -7,6 +7,7 @@ import net.smackem.zlang.emit.ir.Emitter;
 import net.smackem.zlang.emit.ir.Program;
 import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.modules.ParsedModule;
+import net.smackem.zlang.modules.SourceFileLocation;
 import net.smackem.zlang.symbols.GlobalScope;
 import net.smackem.zlang.symbols.ProgramStructure;
 import net.smackem.zlang.symbols.Symbol;
@@ -23,7 +24,8 @@ public class ZLCompiler {
 
     public static record CompilationResult(Program program, ByteBuffer zap) {}
 
-    public static CompilationResult compile(ParsedModule module, ByteCodeWriterOptions options) throws Exception {
+    public static CompilationResult compile(SourceFileLocation location, String moduleName, ByteCodeWriterOptions options) throws Exception {
+        final ParsedModule module = ParsedModule.parse(moduleName, location);
         final Collection<ParsedModule> modules = module.flatten();
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, new GlobalScope(), errors);

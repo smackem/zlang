@@ -9,8 +9,8 @@ import java.util.function.BiFunction;
 class SymbolWalker extends ScopeWalker<Void> {
     private int globalSegmentSize = 0;
 
-    SymbolWalker(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes, int globalSegmentSize) {
-        super(globalScope, scopes);
+    SymbolWalker(String moduleName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes, int globalSegmentSize) {
+        super(moduleName, globalScope, scopes);
         this.globalSegmentSize = globalSegmentSize;
     }
 

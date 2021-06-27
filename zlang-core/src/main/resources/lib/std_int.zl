@@ -1,0 +1,88 @@
+module std_int uses std_base
+
+// ======================================================
+// Int
+// ======================================================
+
+struct Int {
+    val: int
+} is Equatable, Comparable, Stringer
+
+fn Int::value() -> int {
+    return self.val
+}
+
+fn Int::equals(other: object) -> bool {
+    return other is Int and ((Int) other).val == self.val
+}
+
+fn Int::compareTo(other: object) -> int {
+    return self.val - ((Int) other).val if other is Int else {
+        panic -1
+        yield 0
+    }
+}
+
+fn Int::toString() -> string {
+    return Ints.toString(self.val)
+}
+
+// ======================================================
+// Ints
+// ======================================================
+
+struct IntMethods {
+    cachedStrings: string[]
+}
+let Ints: IntMethods = new IntMethods {
+    cachedStrings = new string[] {
+        "0",
+        "1",
+        "2",
+    }
+}
+
+fn IntMethods::box(value: int) -> Int {
+    return new Int {
+        val = value
+    }
+}
+
+fn IntMethods::boxArray(values: int[]) -> Int[] {
+    let result: Int[] = new Int[values.size()]
+    for index: int in 0 .. values.size() {
+        result[index] = self.box(values[index])
+    }
+    return result
+}
+
+fn IntMethods::unboxArray(boxes: Int[]) -> int[] {
+    let result: int[] = new int[boxes.size()]
+    for index: int in 0 .. boxes.size() {
+        result[index] = boxes[index].val
+    }
+    return result
+}
+
+fn IntMethods::toString(value: int) -> string {
+    var i: int = 11
+    var n: int = value
+    if n >= 0 and n < self.cachedStrings.size() {
+        return self.cachedStrings[n]
+    }
+    let a: byte[] = new byte[12]
+    let negative: bool = n < 0
+    if negative {
+        n = -n
+    }
+    while n > 0 {
+        i = i - 1
+        a[i] = (byte) (n % 10 + (int) '0')
+        n = n / 10
+    }
+    if negative {
+        i = i - 1
+        a[i] = '-'
+    }
+    return (string) a.copy(i, a.size() - i)
+}

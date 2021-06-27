@@ -6,16 +6,14 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import java.util.Map;
 
 class TypeWalker extends ScopeWalker<Void> {
-    private final String fileName;
 
     TypeWalker(String fileName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
-        super(globalScope, scopes);
-        this.fileName = fileName;
+        super(fileName, globalScope, scopes);
     }
 
     @Override
     public Void visitModule(ZLangParser.ModuleContext ctx) {
-        final ModuleSymbol module = new ModuleSymbol(this.fileName, currentScope());
+        final ModuleSymbol module = new ModuleSymbol(moduleName(), currentScope());
         defineSymbol(ctx, currentScope(), module);
         pushScope(ctx, module);
         super.visitModule(ctx);

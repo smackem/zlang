@@ -1,0 +1,80 @@
+module std uses
+    std_base,
+    std_int,
+    std_string,
+    std_float
+
+// ======================================================
+// StringBuilder
+// ======================================================
+
+struct StringBuilder {
+    strings: string list
+    length: int
+} is Stringer
+
+fn StringBuilder::append(s: string) -> StringBuilder {
+    self.strings.add(s)
+    if s != nil {
+        self.length = self.length + s.size()
+    }
+    return self
+}
+
+fn StringBuilder::toString() -> string {
+    let buffer: byte[] = new byte[self.length + 1]
+    var i: int = 0
+    for s: string in self.strings {
+        for ch: byte in s {
+            if ch != (byte) 0 {
+                buffer[i] = ch
+                i = i + 1
+            }
+        }
+    }
+    buffer[i] = (byte) 0
+    return (string) buffer
+}
+
+
+// ======================================================
+// Strings
+// ======================================================
+
+struct StringMethods {
+    emptyString: string
+    brStr: string
+    spaceStr: string
+}
+
+let Strings: StringMethods = new StringMethods {
+    emptyString = ""
+    brStr = (string) new byte[] { (byte) 10, (byte) 0 }
+    spaceStr = " "
+}
+
+fn StringMethods::empty() -> string {
+    return self.emptyString
+}
+
+fn StringMethods::br() -> string {
+    return self.brStr
+}
+
+fn StringMethods::space() -> string {
+    return self.spaceStr
+}
+
+fn StringMethods::newBuilder() -> StringBuilder {
+    return new StringBuilder {
+        strings = new string list {}
+        length = 0
+    }
+}
+
+fn StringMethods::newBuilderWith(s: string) -> StringBuilder {
+    return new StringBuilder {
+        strings = new string list { s }
+        length = s.length() if s != nil else 0
+    }
+}

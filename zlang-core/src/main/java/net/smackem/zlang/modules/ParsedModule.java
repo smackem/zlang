@@ -38,10 +38,14 @@ public class ParsedModule {
     public Collection<ParsedModule> flatten() {
         final List<ParsedModule> list = new ArrayList<>();
         final Deque<ParsedModule> queue = new LinkedList<>();
+        final Set<String> visitedModuleNames = new HashSet<>();
         queue.offer(this);
         while (queue.isEmpty() == false) {
             final ParsedModule item = queue.pollFirst();
-            list.add(item);
+            if (visitedModuleNames.contains(item.moduleName()) == false) {
+                list.add(item);
+            }
+            visitedModuleNames.add(item.moduleName());
             queue.addAll(item.dependencies);
         }
         Collections.reverse(list);

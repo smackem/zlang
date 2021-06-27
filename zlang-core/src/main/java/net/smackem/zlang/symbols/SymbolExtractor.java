@@ -33,7 +33,7 @@ public final class SymbolExtractor {
             module.ast().accept(typeWalker);
         }
         for (final ParsedModule module : modules) {
-            final SymbolWalker symbolWalker = new SymbolWalker(globalScope, scopes, globalSegmentSize);
+            final SymbolWalker symbolWalker = new SymbolWalker(module.moduleName(), globalScope, scopes, globalSegmentSize);
             module.ast().accept(symbolWalker);
             globalSegmentSize = symbolWalker.globalSegmentSize();
         }

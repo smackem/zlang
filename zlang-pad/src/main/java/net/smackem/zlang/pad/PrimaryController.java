@@ -19,7 +19,11 @@ import net.smackem.zlang.modules.ParsedModule;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Map;
@@ -69,29 +73,28 @@ public class PrimaryController {
         final String text = this.editor.getText();
         final String mainModuleName = "main";
 
-        final ParsedModule module;
-        try {
-            module = ParsedModule.parse(mainModuleName, moduleName -> {
-                if (Objects.equals(mainModuleName, moduleName) == false) {
-                    throw new FileNotFoundException("module not found: " + moduleName);
-                }
-                return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
-            });
-        } catch (IOException | CompilationErrorException e) {
-            this.output.setText("ERROR: " + e.getMessage());
-            return;
-        }
-
         final ZLCompiler.CompilationResult result;
         try {
-            result = ZLCompiler.compile(module, new ByteCodeWriterOptions().isMemoryImage(true));
+            result = ZLCompiler.compile(moduleName -> {
+                if (Objects.equals(mainModuleName, moduleName)) {
+                    return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
+                }
+                return openStdLibFile(moduleName);
+            }, mainModuleName, new ByteCodeWriterOptions().isMemoryImage(true));
         } catch (Exception e) {
             this.output.setText("ERROR: " + e.getMessage());
+            e.printStackTrace();
             return;
         }
 
         final Map<String, Object> globals = Interpreter.run(result.zap(), result.program());
         this.output.setText(printGlobals(globals, ""));
+    }
+
+    private InputStream openStdLibFile(String moduleName) throws IOException {
+        final String stdLibDir = System.getProperty("zl.stdlib.dir");
+        final Path modulePath = Path.of(stdLibDir, moduleName + ".zl");
+        return Files.newInputStream(modulePath, StandardOpenOption.READ);
     }
 
     private static String printGlobals(Map<String, Object> globals, String indent) {

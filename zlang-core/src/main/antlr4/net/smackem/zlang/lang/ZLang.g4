@@ -433,7 +433,7 @@ LParen      : '(' LineBreak?;
 RParen      : ')';
 
 Module      : 'module';
-Uses        : 'uses';
+Uses        : 'uses' LineBreak?;
 Fn          : 'fn';
 If          : 'if';
 Else        : 'else';

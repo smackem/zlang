@@ -6,16 +6,23 @@ import net.smackem.zlang.lang.ZLangParser;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.util.Map;
+import java.util.Objects;
 
 public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
+    private final String moduleName;
     private final Map<ParserRuleContext, Scope> scopes;
     private final GlobalScope globalScope;
     private Scope currentScope;
 
-    protected ScopeWalker(GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
+    protected ScopeWalker(String moduleName, GlobalScope globalScope, Map<ParserRuleContext, Scope> scopes) {
+        this.moduleName = Objects.requireNonNull(moduleName);
         this.globalScope = globalScope;
         this.currentScope = globalScope;
         this.scopes = scopes;
+    }
+
+    protected final String moduleName() {
+        return this.moduleName;
     }
 
     protected final Scope currentScope() {
@@ -39,7 +46,8 @@ public abstract class ScopeWalker<T> extends ZLangBaseVisitor<T> {
     }
 
     protected void logSemanticError(ParserRuleContext ctx, String message) {
-        throw new RuntimeException("%d:%d %s".formatted(ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(), message));
+        throw new RuntimeException("%s %d:%d %s".formatted(
+                this.moduleName, ctx.getStart().getLine(), ctx.getStart().getCharPositionInLine(), message));
     }
 
     void pushScope(ParserRuleContext ctx, Scope scope) {

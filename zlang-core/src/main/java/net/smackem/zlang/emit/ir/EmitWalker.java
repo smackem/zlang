@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 
 class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final static Logger log = LoggerFactory.getLogger(EmitWalker.class);
-    private final String moduleName;
     private final List<Type> types = new ArrayList<>();
     private final List<FunctionSymbol> functions = new ArrayList<>();
     private final List<Instruction> instructions = new ArrayList<>();
@@ -28,8 +27,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private Register firstVolatileRegister;
 
     EmitWalker(String moduleName, ProgramStructure programStructure) {
-        super(programStructure.globalScope(), programStructure.scopes());
-        this.moduleName = moduleName;
+        super(moduleName, programStructure.globalScope(), programStructure.scopes());
         this.initFunction = new FunctionSymbol(Naming.GENERATED_INIT_FUNCTION_PREFIX + moduleName, null, programStructure.globalScope());
         this.functions.add(this.initFunction);
     }
@@ -474,11 +472,13 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     public Value visitLogStmt(ZLangParser.LogStmtContext ctx) {
         final Symbol print = currentScope().resolve(BuiltInFunction.PRINT.ident());
         final List<Register> argumentRegisters = allocRegisterRange(2);
-        String prefix = "[%s] %s - ".formatted(this.moduleName, this.currentFunction.name());
+        final StringBuilder prefix = new StringBuilder()
+                .append('[').append(moduleName()).append(']').append(' ');
         if (this.currentFunction instanceof MethodSymbol method) {
-            prefix = method.definingScope().scopeName() + "::" + prefix;
+            prefix.append(method.definingScope().scopeName()) .append("::");
         }
-        emit(OpCode.Ldc_str, argumentRegisters.get(0), prefix);
+        prefix.append(this.currentFunction.name()).append(" - ");
+        emit(OpCode.Ldc_str, argumentRegisters.get(0), prefix.toString()    );
         emit(OpCode.Ldc_i32, argumentRegisters.get(1), BuiltInType.STRING.type().id().number());
         emit(OpCode.Invoke, Register.R000, argumentRegisters.get(0), print);
         for (final var argument : ctx.arguments().expr()) {
@@ -506,7 +506,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         emitBranch(value.register, skipLabel);
         freeRegister(value.register);
         final String message = "[%s] %s - assertion failed @ line %d\n".formatted(
-                this.moduleName, this.currentFunction.name(), ctx.getStart().getLine());
+                moduleName(), this.currentFunction.name(), ctx.getStart().getLine());
         final List<Register> args = allocRegisterRange(2);
         emit(OpCode.Ldc_str, args.get(0), message);
         emit(OpCode.Ldc_i32, args.get(1), BuiltInType.STRING.type().id().number());

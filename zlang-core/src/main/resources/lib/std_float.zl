@@ -1,0 +1,73 @@
+module std_float uses std_int
+
+// ======================================================
+// Float
+// ======================================================
+
+struct Float {
+    val: float
+} is Equatable, Comparable, Stringer
+
+fn Float::value() -> float {
+    return self.val
+}
+
+fn Float::equals(other: object) -> bool {
+    return other is Float and ((Float) other).val == self.val
+}
+
+fn Float::compareTo(other: object) -> int {
+    return {
+        let peer: Float = (Float) other
+        if self.val > peer.val {
+            yield 1
+        }
+        if self.val < peer.val {
+            yield -1
+        }
+        yield 0
+    } if other is Float else {
+        panic -1
+        yield 0
+    }
+}
+
+fn Float::toString() -> string {
+    return Floats.toString(self.val)
+}
+
+// ======================================================
+// Floats
+// ======================================================
+
+struct FloatMethods {}
+
+let Floats: FloatMethods = new FloatMethods {}
+
+fn FloatMethods::box(val: float) -> Float {
+    return new Float {
+        val = val
+    }
+}
+
+fn FloatMethods::boxArray(values: float[]) -> Float[] {
+    let result: Float[] = new Float[values.size()]
+    for index: int in 0 .. values.size() {
+        result[index] = self.box(values[index])
+    }
+    return result
+}
+
+fn FloatMethods::unboxArray(boxes: Float[]) -> float[] {
+    let result: float[] = new float[boxes.size()]
+    for index: int in 0 .. boxes.size() {
+        result[index] = boxes[index].val
+    }
+    return result
+}
+
+fn FloatMethods::toString(val: float) -> string {
+    let integer: int = (int) val
+    let frac: int = (int) ((val - (float) integer) * 1000.0)
+    return Ints.toString(integer) + "." + Ints.toString(frac)
+}

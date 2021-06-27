@@ -1,0 +1,48 @@
+module std_base
+
+// ======================================================
+// Base Interfaces
+// ======================================================
+
+interface Equatable {
+    fn equals(other: object) -> bool
+}
+
+interface Comparable {
+    fn compareTo(other: object) -> int
+}
+
+interface Stringer {
+    fn toString() -> string
+}
+
+// ======================================================
+// Objects
+// ======================================================
+
+struct ObjectMethods {}
+
+let Objects: ObjectMethods = new ObjectMethods {}
+
+fn ObjectMethods::equals(a: Equatable, b: Equatable) -> bool {
+    if a == nil and b == nil {
+        return true
+    }
+    if (a == nil) != (b == nil) {
+        return false
+    }
+    return a.equals(b)
+}
+
+fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
+    if a == nil and b == nil {
+        return 0
+    }
+    if a != nil and b == nil {
+        return 1
+    }
+    if a == nil and b != nil {
+        return -1
+    }
+    return a.compareTo(b)
+}
