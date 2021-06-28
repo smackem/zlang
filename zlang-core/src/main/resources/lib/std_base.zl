@@ -6,6 +6,7 @@ module std_base
 
 interface Equatable {
     fn equals(other: object) -> bool
+    fn hashCode() -> int
 }
 
 interface Comparable {
@@ -45,4 +46,10 @@ fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
         return -1
     }
     return a.compareTo(b)
+}
+
+fn ObjectMethods::require(obj: object) {
+    if obj == nil {
+        panic -100
+    }
 }

@@ -127,12 +127,12 @@ public class AggregateTypesTest {
     @Test
     public void multiModuleTypes() throws Exception {
         final String mainSource = """
-                module main uses dep1
-                var dep1: Dep1Type = makeDep1Type()
-                var dep2: Dep2Type = makeDep2Type()
+                module entry uses dep1
+                var d1: Dep1Type = makeDep1Type()
+                var d2: Dep2Type = makeDep2Type()
                 fn main() {
-                    dep1.setF(123)
-                    dep2.setF(234)
+                    d1.setF(123)
+                    d2.setF(234)
                 }
                 """;
         final String dep1Source = """
@@ -161,13 +161,13 @@ public class AggregateTypesTest {
                 let x2: int = 555
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep1", dep1Source,
                 "dep2", dep2Source));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         final Map<String, Object> globals = run(module.flatten());
-        assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 123));
-        assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 234));
+        assertThat(globals.get("d1")).isEqualTo(Map.of("f", 123));
+        assertThat(globals.get("d2")).isEqualTo(Map.of("f", 234));
     }
 
     @Test

@@ -19,6 +19,9 @@ public class ModuleSymbol extends Symbol implements MemberScope {
 
     @Override
     public void define(String name, Symbol symbol) throws CompilationErrorException {
+        if (this.enclosingScope().resolve(name) != null) {
+            throw new CompilationErrorException("duplicate definition of global symbol " + name);
+        }
         this.symbolTable.define(name, symbol);
     }
 

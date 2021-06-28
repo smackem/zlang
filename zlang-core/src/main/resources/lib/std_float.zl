@@ -16,6 +16,10 @@ fn Float::equals(other: object) -> bool {
     return other is Float and ((Float) other).val == self.val
 }
 
+fn Float::hashCode() -> int {
+    return (int) self.val
+}
+
 fn Float::compareTo(other: object) -> int {
     return {
         let peer: Float = (Float) other

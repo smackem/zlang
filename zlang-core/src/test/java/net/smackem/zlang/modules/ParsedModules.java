@@ -10,7 +10,7 @@ public final class ParsedModules {
     private ParsedModules() { }
 
     public static List<ParsedModule> single(String source) throws IOException, CompilationErrorException {
-        return List.of(ParsedModule.parse("main",
-                SourceFileLocations.ofMap(Map.of("main", source))));
+        return List.of(ParsedModule.parse("entry",
+                SourceFileLocations.ofMap(Map.of("entry", source))));
     }
 }

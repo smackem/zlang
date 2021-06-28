@@ -12,13 +12,12 @@ public final class Types {
         if (lvalue == AnyType.INSTANCE) {
             return true;
         }
-        if (lvalue.registerType() == BuiltInType.OBJECT.type() && rvalue == NilType.INSTANCE) {
-            return true;
+        if (lvalue.registerType() == BuiltInType.OBJECT.type()) {
+            return rvalue == NilType.INSTANCE
+                    || rvalue.registerType() == BuiltInType.OBJECT.type()
+                    || rvalue.registerType() == BuiltInType.STRING.type();
         }
         if (lvalue.registerType() == BuiltInType.STRING.type() && rvalue == NilType.INSTANCE) {
-            return true;
-        }
-        if (lvalue == BuiltInType.OBJECT.type() && rvalue.registerType() == BuiltInType.OBJECT.type()) {
             return true;
         }
         if (lvalue == BuiltInType.INT.type()) {

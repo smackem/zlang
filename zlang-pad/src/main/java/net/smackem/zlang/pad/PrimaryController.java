@@ -71,16 +71,16 @@ public class PrimaryController {
     @FXML
     private void runProgram() {
         final String text = this.editor.getText();
-        final String mainModuleName = "main";
+        final String entryModuleName = "start";
 
         final ZLCompiler.CompilationResult result;
         try {
             result = ZLCompiler.compile(moduleName -> {
-                if (Objects.equals(mainModuleName, moduleName)) {
+                if (Objects.equals(entryModuleName, moduleName)) {
                     return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
                 }
                 return openStdLibFile(moduleName);
-            }, mainModuleName, new ByteCodeWriterOptions().isMemoryImage(true));
+            }, entryModuleName, new ByteCodeWriterOptions().isMemoryImage(true));
         } catch (Exception e) {
             this.output.setText("ERROR: " + e.getMessage());
             e.printStackTrace();

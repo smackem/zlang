@@ -205,7 +205,7 @@
 					"name": "keyword.statements.zlang"
 				},
 				{
-					"match": "\\b(let|var|new|mutable|struct|int|float|string|bool|byte|union|with)\\b",
+					"match": "\\b(let|var|new|mutable|struct|int|float|string|bool|byte|union|with|interface)\\b",
 					"name": "keyword.types.zlang"
 				},
 				{

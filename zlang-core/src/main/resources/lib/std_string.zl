@@ -19,6 +19,16 @@ fn String::equals(other: object) -> bool {
     return self.val == ((String) other).val
 }
 
+fn String::hashCode() -> int {
+    var hash: int = 31
+    var i: int = 0
+    for ch: byte in self.val {
+        hash = hash ^ ((int) ch << i)
+        i = (i + 8) % 24
+    }
+    return hash
+}
+
 fn String::compareTo(other: object) -> int {
     if other is String == false {
         panic -1

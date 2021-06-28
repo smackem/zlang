@@ -28,7 +28,7 @@ public class SymbolExtractorTest {
         final Collection<String> errors = new ArrayList<>();
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         assertThat(ps.scopes()).hasSize(1);
-        assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("main");
+        assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("entry");
         assertThat(ps.scopes().values()).allMatch(scope -> scope instanceof ModuleSymbol);
         // one error is expected: no main method
         assertThat(errors).hasSize(1);
@@ -47,7 +47,7 @@ public class SymbolExtractorTest {
         final ProgramStructure ps = SymbolExtractor.extractSymbols(modules, globalScope, errors);
         assertThat(ps.scopes()).isNotEmpty();
         assertThat(ps.scopes()).hasSize(2);
-        assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("main", "StructType");
+        assertThat(ps.scopes().values()).extracting(Scope::scopeName).contains("entry", "StructType");
         System.out.println(symbolText(modules, globalScope, ps.scopes()));
         // one error is expected: no main method
         assertThat(errors).hasSize(1);
@@ -80,7 +80,7 @@ public class SymbolExtractorTest {
         final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
-                > main: ModuleSymbol
+                > entry: ModuleSymbol
                     - StructType: StructSymbol{null}@0
                     - UnionType: UnionSymbol{null}@0
                     - main: FunctionSymbol{int}@0
@@ -125,7 +125,7 @@ public class SymbolExtractorTest {
         final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
-                > main: ModuleSymbol
+                > entry: ModuleSymbol
                     - Readable: InterfaceSymbol{null}@0
                     - Socket: StructSymbol{null}@0
                     > Readable: InterfaceSymbol
@@ -216,7 +216,7 @@ public class SymbolExtractorTest {
         final String symText = symbolText(modules, null, ps.scopes());
         System.out.println(symText);
         assertThat(symText).isEqualTo("""
-                > main: ModuleSymbol
+                > entry: ModuleSymbol
                     - X: StructSymbol{null}@0
                     - noParams: FunctionSymbol{null}@0
                     - twoParams: FunctionSymbol{null}@0
@@ -261,7 +261,7 @@ public class SymbolExtractorTest {
     @Test
     public void testMultiModule() throws IOException, CompilationErrorException {
         final String mainSource = """
-                module main uses dep
+                module entry uses dep
                 struct File {
                     handle: runtime_ptr
                     name: string
@@ -279,9 +279,9 @@ public class SymbolExtractorTest {
                 }
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep", depSource));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         final Collection<ParsedModule> modules = module.flatten();
         final GlobalScope globalScope = new GlobalScope();
         final Collection<String> errors = new ArrayList<>();
@@ -299,7 +299,7 @@ public class SymbolExtractorTest {
                     - bool: PrimitiveTypeSymbol{null}@0
                     - @print: BuiltInFunctionSymbol{null}@20
                     - dep: ModuleSymbol{null}@0
-                    - main: ModuleSymbol{null}@0
+                    - entry: ModuleSymbol{null}@0
                     > dep: ModuleSymbol
                         - Number: UnionSymbol{null}@0
                         > Number: UnionSymbol
@@ -307,7 +307,7 @@ public class SymbolExtractorTest {
                             - integer: FieldSymbol{int}@1
                             - real: FieldSymbol{float}@1
                             - unsigned: FieldSymbol{byte}@1
-                    > main: ModuleSymbol
+                    > entry: ModuleSymbol
                         - File: StructSymbol{null}@0
                         - main: FunctionSymbol{null}@0
                         > File: StructSymbol

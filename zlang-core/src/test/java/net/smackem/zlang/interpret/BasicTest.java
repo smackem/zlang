@@ -114,7 +114,7 @@ public class BasicTest {
     @Test
     public void multiModule() throws Exception {
         final String mainSource = """
-                module main uses dep
+                module entry uses dep
                 let mainX: int = 123
                 var depYCopy: int
                 fn main() {
@@ -125,9 +125,9 @@ public class BasicTest {
                 let depY: int = 234
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep", depSource));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         final Map<String, Object> globals = run(module.flatten());
         assertThat(globals.get("mainX")).isEqualTo(123);
         assertThat(globals.get("depY")).isEqualTo(234);

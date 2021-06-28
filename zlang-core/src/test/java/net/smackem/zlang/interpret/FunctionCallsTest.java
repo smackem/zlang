@@ -250,12 +250,12 @@ public class FunctionCallsTest {
     @Test
     public void multiModuleMethods() throws Exception {
         final String mainSource = """
-                module main uses dep1
-                var dep1: Dep1Type = makeDep1Type()
-                var dep2: Dep2Type = makeDep2Type()
+                module entry uses dep1
+                var d1: Dep1Type = makeDep1Type()
+                var d2: Dep2Type = makeDep2Type()
                 var r: int
                 fn main() {
-                    r = dep2.func(dep1.func(1))
+                    r = d2.func(d1.func(1))
                 }
                 """;
         final String dep1Source = """
@@ -284,13 +284,13 @@ public class FunctionCallsTest {
                 }
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep1", dep1Source,
                 "dep2", dep2Source));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         final Map<String, Object> globals = run(module.flatten());
-        assertThat(globals.get("dep1")).isEqualTo(Map.of("f", 1));
-        assertThat(globals.get("dep2")).isEqualTo(Map.of("f", 2));
+        assertThat(globals.get("d1")).isEqualTo(Map.of("f", 1));
+        assertThat(globals.get("d2")).isEqualTo(Map.of("f", 2));
         assertThat(globals.get("r")).isEqualTo(3);
     }
 

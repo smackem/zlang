@@ -1,0 +1,113 @@
+﻿
+// ======================================================
+// Map
+// ======================================================
+
+struct MapEntry {
+    key: Equatable
+    value: object
+}
+
+interface Map {
+    fn get(key: Equatable) -> object
+    fn put(key: Equatable, value: object) -> object
+    fn size() -> int
+    fn entries() -> MapEntry list
+    fn remove(key: Equatable) -> object
+}
+
+struct HashMap {
+    buckets: MapEntry list[]
+} is Map
+
+fn HashMap::get(key: Equatable) -> object {
+    Objects.require(key)
+    let hash: int = key.hashCode()
+    let bucketIndex: int = hash & 0xff
+    let bucket: MapEntry list = self.buckets[bucketIndex]
+    if bucket == nil {
+        return nil
+    }
+    for entry: MapEntry in bucket {
+        if entry.key.equals(key) {
+            return entry.value
+        }
+    }
+    return nil
+}
+
+fn HashMap::put(key: Equatable, value: object) -> object {
+    Objects.require(key)
+    let hash: int = key.hashCode()
+    let bucketIndex: int = hash & 0xff
+    var bucket: MapEntry list = self.buckets[bucketIndex]
+    if bucket == nil {
+        bucket = new MapEntry list {}
+        self.buckets[bucketIndex] = bucket
+    }
+    for entry: MapEntry in bucket {
+        if entry.key.equals(key) {
+            let old: object = entry.value
+            entry.value = value
+            return old
+        }
+    }
+    bucket.add(new MapEntry {
+        key = key
+        value = value
+    })
+    return nil
+}
+
+fn HashMap::size() -> int {
+    var size: int = 0
+    for bucket: MapEntry list in self.buckets {
+        size = size + bucket.size()
+    }
+    return size
+}
+
+fn HashMap::entries() -> MapEntry list {
+    let entries: MapEntry list = new MapEntry list {}
+    for bucket: MapEntry list in self.buckets {
+        for entry: MapEntry in bucket {
+            entries.add(entry)
+        }
+    }
+    return entries
+}
+
+fn HashMap::remove(key: Equatable) -> object {
+    Objects.require(key)
+    let hash: int = key.hashCode()
+    let bucketIndex: int = hash & 0xff
+    var bucket: MapEntry list = self.buckets[bucketIndex]
+    if bucket == nil {
+        bucket = new MapEntry list {}
+        self.buckets[bucketIndex] = bucket
+    }
+    var i: int = 0
+    for entry: MapEntry in bucket {
+        if entry.key.equals(key) {
+            bucket.remove(i)
+            return entry.value
+        }
+        i = i + 1
+    }
+    return nil
+}
+
+
+// ======================================================
+// Maps
+// ======================================================
+
+struct MapMethods {}
+
+let Maps: MapMethods = new MapMethods {}
+
+fn MapMethods::newHashMap() -> Map {
+    return new HashMap {
+        buckets = new MapEntry list[256]
+    }
+}

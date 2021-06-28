@@ -16,7 +16,7 @@ public class SemanticsTest {
     @Test
     public void hiddenForeignGlobalVariables() throws Exception {
         final String mainSource = """
-                module main uses dep
+                module entry uses dep
                 fn main() {
                     depY = 666
                 }
@@ -25,16 +25,16 @@ public class SemanticsTest {
                 var depY: int = 234
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep", depSource));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         assertThatThrownBy(() -> run(module.flatten())).hasMessageContaining("foreign variable");
     }
 
     @Test
     public void visibleForeignGlobalConstants() throws Exception {
         final String mainSource = """
-                module main uses dep
+                module entry uses dep
                 var result: int
                 fn main() {
                     result = depY
@@ -44,9 +44,9 @@ public class SemanticsTest {
                 let depY: int = 123
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep", depSource));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         final Map<String, Object> globals = run(module.flatten());
         assertThat(globals.get("result")).isEqualTo(123);
     }
@@ -54,7 +54,7 @@ public class SemanticsTest {
     @Test
     public void hiddenForeignStructCreation() throws Exception {
         final String mainSource = """
-                module main uses dep
+                module entry uses dep
                 fn main() {
                     let s: MyStruct = new MyStruct {}
                 }
@@ -65,16 +65,16 @@ public class SemanticsTest {
                 }
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep", depSource));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         assertThatThrownBy(() -> run(module.flatten())).hasMessageContaining("foreign struct");
     }
 
     @Test
     public void hiddenForeignFields() throws Exception {
         final String mainSource = """
-                module main uses dep
+                module entry uses dep
                 fn main() {
                     let s: MyStruct = makeMyStruct(123)
                     s.f = 666
@@ -91,9 +91,9 @@ public class SemanticsTest {
                 }
                 """;
         final SourceFileLocation loc = SourceFileLocations.ofMap(Map.of(
-                "main", mainSource,
+                "entry", mainSource,
                 "dep", depSource));
-        final ParsedModule module = ParsedModule.parse("main", loc);
+        final ParsedModule module = ParsedModule.parse("entry", loc);
         assertThatThrownBy(() -> run(module.flatten())).hasMessageContaining("field of foreign type");
     }
 }

@@ -60,7 +60,7 @@ public class InterfaceSymbol extends Symbol implements Type, MemberScope {
 
     @Override
     public int byteSize() {
-        throw new UnsupportedOperationException("not implemented");
+        return BuiltInType.OBJECT.type().byteSize();
     }
 
     @Override

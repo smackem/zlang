@@ -16,6 +16,10 @@ fn Int::equals(other: object) -> bool {
     return other is Int and ((Int) other).val == self.val
 }
 
+fn Int::hashCode() -> int {
+    return self.val
+}
+
 fn Int::compareTo(other: object) -> int {
     return self.val - ((Int) other).val if other is Int else {
         panic -1
