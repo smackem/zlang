@@ -50,6 +50,7 @@ fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
 
 fn ObjectMethods::require(obj: object) {
     if obj == nil {
+        log obj, "is null"
         panic -100
     }
 }

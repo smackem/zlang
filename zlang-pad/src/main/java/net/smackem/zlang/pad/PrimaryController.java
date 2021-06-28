@@ -16,10 +16,7 @@ import net.smackem.zlang.interpret.Interpreter;
 import net.smackem.zlang.lang.CompilationErrorException;
 import net.smackem.zlang.modules.ParsedModule;
 
-import java.io.ByteArrayInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,24 +68,46 @@ public class PrimaryController {
     @FXML
     private void runProgram() {
         final String text = this.editor.getText();
-        final String entryModuleName = "start";
+        final String mainModuleName = "start";
+        final ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         final ZLCompiler.CompilationResult result;
         try {
             result = ZLCompiler.compile(moduleName -> {
-                if (Objects.equals(entryModuleName, moduleName)) {
+                if (Objects.equals(mainModuleName, moduleName)) {
                     return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8));
                 }
                 return openStdLibFile(moduleName);
-            }, entryModuleName, new ByteCodeWriterOptions().isMemoryImage(true));
+            }, mainModuleName, new ByteCodeWriterOptions().isMemoryImage(true));
         } catch (Exception e) {
             this.output.setText("ERROR: " + e.getMessage());
             e.printStackTrace();
             return;
         }
 
-        final Map<String, Object> globals = Interpreter.run(result.zap(), result.program());
-        this.output.setText(printGlobals(globals, ""));
+        final Map<String, Object> globals;
+        try (final AutoCloseable ignored = captureStdOut(output)) {
+            globals = Interpreter.run(result.zap(), result.program());
+        } catch (Exception e) {
+            this.output.setText("ERROR: " + e.getMessage());
+            e.printStackTrace();
+            return;
+        }
+        final String sb = printGlobals(globals, "") +
+                          "--------------------------------------------" +
+                          output.toString(StandardCharsets.US_ASCII);
+        this.output.setText(sb);
+    }
+
+    private AutoCloseable captureStdOut(ByteArrayOutputStream os) {
+        final PrintStream oldOut = System.out;
+        final PrintStream out = new PrintStream(os, false, StandardCharsets.US_ASCII);
+        System.setOut(out);
+        return () -> {
+            out.flush();
+            System.setOut(oldOut);
+            out.close();
+        };
     }
 
     private InputStream openStdLibFile(String moduleName) throws IOException {

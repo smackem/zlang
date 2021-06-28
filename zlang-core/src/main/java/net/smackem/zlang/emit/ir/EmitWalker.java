@@ -1255,7 +1255,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     }
 
     private Register getHighestAllocatedRegister() {
-        Register highest = Register.R000;
+        Register highest = this.firstVolatileRegister;
         for (final Register r : this.allocatedRegisters) {
             if (r.number() > highest.number()) {
                 highest = r;

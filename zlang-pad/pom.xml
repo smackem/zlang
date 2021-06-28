@@ -11,7 +11,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <properties>
-        <project.runtime.mainClass>net.smackem.zlang.pad.App</project.runtime.mainClass>
+        <project.runtime.mainClass>net.smackem.zlang.pad.JarMain</project.runtime.mainClass>
     </properties>
 
     <dependencies>
@@ -60,6 +60,9 @@
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>${project.runtime.mainClass}</mainClass>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
