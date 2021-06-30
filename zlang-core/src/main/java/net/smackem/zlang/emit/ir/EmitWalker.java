@@ -197,9 +197,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         } else {
             final Register r = Register.fromNumber(symbol.address());
             if (rvalue.type.registerType().isReferenceType()) {
-                if (init == false) {
-                    emit(OpCode.RemoveRef, r);
-                }
+                emit(OpCode.RemoveRef, r);
                 emit(OpCode.AddRef, rvalue.register);
             }
             emit(OpCode.Mov, r, rvalue.register);
