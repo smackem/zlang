@@ -2,4 +2,5 @@ module std uses
     std_base,
     std_int,
     std_string,
-    std_float
+    std_float,
+    std_obj

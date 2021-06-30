@@ -18,9 +18,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,13 +30,13 @@ class InterpreterTests {
 
     static Map<String, Object> run(Collection<ParsedModule> modules) throws Exception {
         final ZLCompiler.CompilationResult result = compile(modules);
-        return Interpreter.run(result.zap(), result.program());
+        return Interpreter.run(result.firstZap(), result.program());
     }
 
     static Collection<HeapEntry> runExtractingHeap(Collection<ParsedModule> modules) throws Exception {
         final ZLCompiler.CompilationResult result = compile(modules);
-        final int heapOffset = Interpreter.run(result.zap());
-        return ByteCodeReader.readHeap(result.zap(), heapOffset);
+        final int heapOffset = Interpreter.run(result.firstZap());
+        return ByteCodeReader.readHeap(result.firstZap(), heapOffset);
     }
 
     static void writeZap(Collection<ParsedModule> modules, Path path) throws Exception {
@@ -49,7 +47,7 @@ class InterpreterTests {
                 .maxStackDepth(maxStackDepth);
         final ZLCompiler.CompilationResult result = compile(modules, options);
         try (final OutputStream os = Files.newOutputStream(path, StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-            os.write(result.zap().array(), result.zap().arrayOffset(), result.zap().limit());
+            os.write(result.firstZap().array(), result.firstZap().arrayOffset(), result.firstZap().limit());
         }
     }
 
@@ -74,6 +72,6 @@ class InterpreterTests {
             assertThat(zap.capacity()).isGreaterThan(HEAP_SIZE);
         }
         System.out.println(Instructions.print(program.instructions()));
-        return new ZLCompiler.CompilationResult(program, zap);
+        return new ZLCompiler.CompilationResult(program, List.of(zap));
     }
 }

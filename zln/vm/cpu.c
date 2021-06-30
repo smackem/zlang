@@ -106,7 +106,7 @@ void execute(const byte_t *code,
     base_assertions();
     init_cpu(&cpu, memory, config, entry_point);
 
-    for (;;) {
+    while (get_fatal_error() == 0) {
         const Instruction *instr = (const Instruction *) &code[pc];
         int size = 0;
 
@@ -962,6 +962,7 @@ void execute(const byte_t *code,
 
         pc += size;
     }
+    free_cpu(&cpu);
 }
 
 inline addr_t exec_call(Cpu *cpu, byte_t r_ret_val, byte_t r_first_arg, const FunctionMeta *func, addr_t pc) {
@@ -1057,6 +1058,7 @@ inline void conv_ref(Register *target, Type target_type, const Register *source)
             target->f64 = (double) source->ref;
             break;
         case TYPE_Ref:
+        case TYPE_String:
             target->ref = source->ref;
             break;
         case TYPE_Int32:

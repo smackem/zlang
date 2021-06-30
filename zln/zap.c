@@ -29,7 +29,7 @@ int32_t execute_zap(const ZapHeader *header, byte_t *memory, uint32_t memory_siz
             .total_size = memory_size - non_memory_size,
             .heap_size_limit = header->max_heap_size,
     };
-    trace("code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: %u\nheap_offset: %u\ntotal_memory: %u\n",
+    trace("code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: 0x%x\nheap_offset: %u\ntotal_memory: %u\n",
           header->code_segment_size,
           header->const_segment_size,
           header->global_segment_size,

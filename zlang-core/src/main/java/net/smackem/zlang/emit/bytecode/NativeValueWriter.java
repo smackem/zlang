@@ -103,7 +103,7 @@ class NativeValueWriter implements AutoCloseable {
     }
 
     private void writeZeroTerminated(byte[] bytes) throws IOException {
-        final int length = bytes.length;
+        final int length = bytes.length + 1;
         if (this.buf.remaining() < length) {
             flush();
         }

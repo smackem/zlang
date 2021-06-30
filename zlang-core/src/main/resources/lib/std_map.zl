@@ -1,8 +1,16 @@
 module std_map uses std_base
 
 struct MapEntry {
-    key: Equatable
-    value: object
+    k: Equatable
+    v: object
+}
+
+fn MapEntry::key() -> Equatable {
+    return self.k
+}
+
+fn MapEntry::value() -> object {
+    return self.v
 }
 
 interface Map {
@@ -26,8 +34,8 @@ fn HashMap::get(key: Equatable) -> object {
         return nil
     }
     for entry: MapEntry in bucket {
-        if entry.key.equals(key) {
-            return entry.value
+        if entry.k.equals(key) {
+            return entry.v
         }
     }
     return nil
@@ -43,15 +51,15 @@ fn HashMap::put(key: Equatable, value: object) -> object {
         self.buckets[bucketIndex] = bucket
     }
     for entry: MapEntry in bucket {
-        if entry.key.equals(key) {
-            let old: object = entry.value
-            entry.value = value
+        if entry.k.equals(key) {
+            let old: object = entry.v
+            entry.v = value
             return old
         }
     }
     bucket.add(new MapEntry {
-        key = key
-        value = value
+        k = key
+        v = value
     })
     return nil
 }
@@ -67,8 +75,10 @@ fn HashMap::size() -> int {
 fn HashMap::entries() -> MapEntry list {
     let entries: MapEntry list = new MapEntry list {}
     for bucket: MapEntry list in self.buckets {
-        for entry: MapEntry in bucket {
-            entries.add(entry)
+        if (object) bucket != nil {
+            for entry: MapEntry in bucket {
+                entries.add(entry)
+            }
         }
     }
     return entries
@@ -85,9 +95,9 @@ fn HashMap::remove(key: Equatable) -> object {
     }
     var i: int = 0
     for entry: MapEntry in bucket {
-        if entry.key.equals(key) {
+        if entry.k.equals(key) {
             bucket.remove(i)
-            return entry.value
+            return entry.v
         }
         i = i + 1
     }

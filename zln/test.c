@@ -762,6 +762,10 @@ int main() {
         memory.stack_frame_segment_size = config.max_stack_depth * sizeof(StackFrame);
         test_ptr->proc(code_segment, &memory);
         config.debug_callback = NULL;
+        if (get_fatal_error() != 0) {
+            fprintf(stdout, "<<< tests failures");
+            return 1;
+        }
     }
 
     fprintf(stdout, "<<< tests completed successfully\n");

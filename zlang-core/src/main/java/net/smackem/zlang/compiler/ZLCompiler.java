@@ -15,16 +15,18 @@ import net.smackem.zlang.symbols.SymbolExtractor;
 import org.antlr.v4.runtime.ParserRuleContext;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map;
+import java.util.*;
 
 public class ZLCompiler {
     private ZLCompiler() { throw new AssertionError("no instance"); }
 
-    public static record CompilationResult(Program program, ByteBuffer zap) {}
+    public static record CompilationResult(Program program, List<ByteBuffer> zaps) {
+        public ByteBuffer firstZap() {
+            return zaps.get(0);
+        }
+    }
 
-    public static CompilationResult compile(SourceFileLocation location, String moduleName, ByteCodeWriterOptions options) throws Exception {
+    public static CompilationResult compile(SourceFileLocation location, String moduleName, ByteCodeWriterOptions... options) throws Exception {
         final ParsedModule module = ParsedModule.parse(moduleName, location);
         final Collection<ParsedModule> modules = module.flatten();
         final Collection<String> errors = new ArrayList<>();
@@ -34,8 +36,12 @@ public class ZLCompiler {
         }
         final Program program = Emitter.emit(ps, modules);
         final ByteCodeWriter writer = new ByteCodeWriter();
-        final ByteBuffer zap = writer.writeProgram(program, options);
-        assert zap.isDirect() == options.isMemoryImage();
-        return new CompilationResult(program, zap);
+        final List<ByteBuffer> zaps = new ArrayList<>();
+        for (final ByteCodeWriterOptions o: options) {
+            final ByteBuffer zap = writer.writeProgram(program, o);
+            assert zap.isDirect() == o.isMemoryImage();
+            zaps.add(zap);
+        }
+        return new CompilationResult(program, Collections.unmodifiableList(zaps));
     }
 }

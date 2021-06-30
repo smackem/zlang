@@ -1,0 +1,43 @@
+module std_obj uses std_base, std_int
+
+// ======================================================
+// Objects
+// ======================================================
+
+struct ObjectMethods {}
+
+let Objects: ObjectMethods = new ObjectMethods {}
+
+fn ObjectMethods::equals(a: Equatable, b: Equatable) -> bool {
+    if a == nil and b == nil {
+        return true
+    }
+    if (a == nil) != (b == nil) {
+        return false
+    }
+    return a.equals(b)
+}
+
+fn ObjectMethods::compare(a: Comparable, b: Comparable) -> int {
+    if a == nil and b == nil {
+        return 0
+    }
+    if a != nil and b == nil {
+        return 1
+    }
+    if a == nil and b != nil {
+        return -1
+    }
+    return a.compareTo(b)
+}
+
+fn ObjectMethods::require(obj: object) {
+    if obj == nil {
+        log obj, " is null"
+        panic -100
+    }
+}
+
+fn ObjectMethods::toString(obj: object) -> string {
+    return ((Stringer) obj).toString() if obj is Stringer else Ints.toString((int) obj)
+}

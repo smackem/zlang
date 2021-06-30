@@ -32,6 +32,8 @@ void assert_equal_f(double actual, double expected, const char *category);
 
 void assert_not_null(void *ptr, const char *category);
 
+int get_fatal_error();
+
 #ifndef min
 #define min(a, b) ((a) < (b) ? (a) : (b))
 #endif
