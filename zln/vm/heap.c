@@ -23,6 +23,7 @@ static addr_t find_free_slot(Heap *heap, uint32_t data_size, uint32_t *alloc_siz
                 return entry_addr;
             }
             if (entry->alloc_size >= entry->data_size + data_size + HEAP_ENTRY_HEADER_SIZE) {
+                trace("split entry 0x%04x\n", entry_addr);
                 *alloc_size = entry->alloc_size - entry->data_size - HEAP_ENTRY_HEADER_SIZE;
                 entry->alloc_size = entry->data_size;
                 return entry_addr + entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
@@ -58,8 +59,8 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
         alloc_size = data_size;
         heap->tail += entry_size;
     } else {
-        trace("find free heap slot\n");
         entry_addr = find_free_slot(heap, data_size, &alloc_size);
+        trace("find free heap slot: 0x%04x\n", entry_addr);
         if (entry_addr == 0) {
             compact_heap(heap);
             entry_addr = find_free_slot(heap, data_size, &alloc_size);

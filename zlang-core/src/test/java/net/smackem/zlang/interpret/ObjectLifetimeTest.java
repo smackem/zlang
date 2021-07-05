@@ -255,4 +255,26 @@ public class ObjectLifetimeTest {
                 .containsExactly(
                         Tuple.tuple(largeObjSize, 0, "Unsigned8[]"));
     }
+
+    @Test
+    public void crash() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn main() {
+                    for i: int in 0 .. 5000 {
+                        let a: string = "abcdefghij"
+                        let b: string = "bcdefghijk"
+                        let c: string = "cdefghijkl"
+                        let d: string = "defghijklm"
+                        let ab: string = a + b
+                        let bc: string = b + c
+                        let cd: string = c + d
+                        let x: string = ab + bc + cd
+                        log i
+                    }
+                }
+                """);
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "crash.zap"));
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+    }
 }
