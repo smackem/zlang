@@ -101,6 +101,21 @@ public class StringTest {
     }
 
     @Test
+    public void stringConcatenationBuffered() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                var result: string
+                fn main() {
+                    let a: string = "abc"
+                    let b: string = "."
+                    let c: string = "def"
+                    result = "" + a + b + c
+                }
+                """);
+        final Map<String, Object> globals = run(modules);
+        assertThat(globals.get("result")).isEqualTo("abc.def");
+    }
+
+    @Test
     public void stringConcatenation() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 var result: string

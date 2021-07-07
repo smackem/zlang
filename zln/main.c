@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
         return 0;
     }
 
+    setbuf(stdout, NULL);
     FILE *file = fopen(argv[1], "rb");
     ZapHeader header;
     byte_t *memory = NULL;
@@ -44,7 +45,7 @@ int main(int argc, char **argv) {
             printf("i/o error while reading from zap file!\n");
             break;
         }
-        execute_zap(&header, memory, memory_size, true);
+        execute_zap(&header, memory, memory_size, false);//true);
     } while (false);
 
     if (file != NULL) {

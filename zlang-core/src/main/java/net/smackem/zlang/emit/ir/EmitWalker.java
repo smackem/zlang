@@ -144,23 +144,28 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             enterFunction(this.initFunction, this.initInstructions);
         }
         if (expr != null) {
-            final Value rvalue = expr.accept(this);
-            emitIdentAssign(ctx, ident, rvalue, true);
+            emitIdentAssign(ctx, ident, expr, true);
         }
     }
 
     @Override
     public Value visitAssignStmt(ZLangParser.AssignStmtContext ctx) {
-        final Value rvalue = ctx.expr().accept(this);
         if (ctx.postFixedPrimary() != null) {
-            emitPostFixedPrimaryAssign(ctx.postFixedPrimary(), rvalue);
+            emitPostFixedPrimaryAssign(ctx.postFixedPrimary(), ctx.expr());
         } else {
-            emitIdentAssign(ctx, ctx.Ident().getText(), rvalue, false);
+            emitIdentAssign(ctx, ctx.Ident().getText(), ctx.expr(), false);
         }
         return null;
     }
 
-    private VariableSymbol emitIdentAssign(ParserRuleContext ctx, String ident, Value rvalue, boolean init) {
+    private void emitIdentAssign(ParserRuleContext ctx, String ident, ZLangParser.ExprContext rvalueCtx, boolean init) {
+        final VariableSymbol variable = resolveAssignableVariable(ctx, ident, init);
+        assert variable != null;
+        final Value rvalue = rvalueCtx.accept(this);
+        emitIdentAssign(ctx, variable, rvalue);
+    }
+
+    private VariableSymbol resolveAssignableVariable(ParserRuleContext ctx, String ident, boolean init) {
         final Symbol symbol = currentScope().resolve(ident);
         if (symbol == null) {
             logLocalError(ctx, "'" + ident + "' is not defined in this context");
@@ -175,38 +180,51 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
             logLocalError(ctx, "'" + ident + "' is not assignable");
             return null;
         }
+        if (variable.isGlobal()) {
+            if (variable.type().registerType().isReferenceType() && init == false) {
+                final Register r = allocFreedRegister();
+                emit(OpCode.ldGlb(variable.type()), r, variable.address());
+                emit(OpCode.RemoveRef, r);
+                freeRegister(r);
+            }
+        } else {
+            final Register r = Register.fromNumber(variable.address());
+            if (variable.type().registerType().isReferenceType()) {
+                emit(OpCode.RemoveRef, r);
+            }
+        }
+        return variable;
+    }
+
+    private VariableSymbol emitIdentAssign(ParserRuleContext ctx, String ident, Value rvalue, boolean init) {
+        final VariableSymbol variable = resolveAssignableVariable(ctx, ident, init);
+        assert variable != null;
+        return emitIdentAssign(ctx, variable, rvalue);
+    }
+
+    private VariableSymbol emitIdentAssign(ParserRuleContext ctx, VariableSymbol variable, Value rvalue) {
         if (Types.isAssignable(variable.type(), rvalue.type) == false) {
             logLocalError(ctx, "incompatible types in assignment");
             return null;
         }
-        if (Scopes.enclosingModule(symbol.definingScope()) != Scopes.enclosingModule(currentScope())) {
+        if (Scopes.enclosingModule(variable.definingScope()) != Scopes.enclosingModule(currentScope())) {
             logLocalError(ctx, "access to foreign variables not allowed");
             return null;
         }
         if (variable.isGlobal()) {
-            if (rvalue.type.registerType().isReferenceType()) {
-                if (init == false) {
-                    final Register r = allocFreedRegister();
-                    emit(OpCode.ldGlb(symbol.type()), r, symbol.address());
-                    emit(OpCode.RemoveRef, r);
-                    freeRegister(r);
-                }
-                emit(OpCode.AddRef, rvalue.register);
-            }
-            emit(OpCode.stGlb(symbol.type()), rvalue.register, symbol.address());
+            emit(OpCode.stGlb(variable.type()), rvalue.register, variable.address());
         } else {
-            final Register r = Register.fromNumber(symbol.address());
-            if (rvalue.type.registerType().isReferenceType()) {
-                emit(OpCode.RemoveRef, r);
-                emit(OpCode.AddRef, rvalue.register);
-            }
+            final Register r = Register.fromNumber(variable.address());
             emit(OpCode.Mov, r, rvalue.register);
+        }
+        if (rvalue.type.registerType().isReferenceType()) {
+            emit(OpCode.AddRef, rvalue.register);
         }
         freeRegister(rvalue.register);
         return variable;
     }
 
-    public void emitPostFixedPrimaryAssign(ZLangParser.PostFixedPrimaryContext ctx, Value rvalue) {
+    public void emitPostFixedPrimaryAssign(ZLangParser.PostFixedPrimaryContext ctx, ZLangParser.ExprContext exprCtx) {
         Value primary = ctx.primary() != null
                 ? ctx.primary().accept(this)
                 : ctx.postFixedPrimary().accept(this);
@@ -227,16 +245,19 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 return;
             }
             final ArrayType arrayType = (ArrayType) primary.type;
+            if (arrayType.elementType().registerType().isReferenceType()) {
+                final Register r = allocFreedRegister();
+                emit(OpCode.ldElem(arrayType.elementType()), r, primary.register, index.register);
+                emit(OpCode.RemoveRef, r);
+                freeRegister(r);
+            }
+            final Value rvalue = exprCtx.accept(this);
             if (Types.isAssignable(arrayType.elementType(), rvalue.type) == false) {
                 logLocalError(ctx, "incompatible types in assignment");
                 return;
             }
-            if (rvalue.type.registerType().isReferenceType()) {
-                final Register r = allocFreedRegister();
-                emit(OpCode.ldElem(arrayType.elementType()), r, primary.register, index.register);
-                emit(OpCode.RemoveRef, r);
+            if (arrayType.elementType().registerType().isReferenceType()) {
                 emit(OpCode.AddRef, rvalue.register);
-                freeRegister(r);
             }
             emit(OpCode.stElem(arrayType.elementType()), rvalue.register, primary.register, index.register);
             freeRegister(rvalue.register, primary.register, index.register);
@@ -258,16 +279,19 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 logLocalError(ctx, "field id does not refer to a field");
                 return;
             }
+            if (field.type().registerType().isReferenceType()) {
+                final Register r = allocFreedRegister();
+                emit(OpCode.ldFld(field.type()), r, primary.register, field.address());
+                emit(OpCode.RemoveRef, r);
+                freeRegister(r);
+            }
+            final Value rvalue = exprCtx.accept(this);
             if (Types.isAssignable(field.type(), rvalue.type) == false) {
                 logLocalError(ctx, "incompatible types in assignment");
                 return;
             }
-            if (rvalue.type.registerType().isReferenceType()) {
-                final Register r = allocFreedRegister();
-                emit(OpCode.ldFld(field.type()), r, primary.register, field.address());
-                emit(OpCode.RemoveRef, r);
+            if (field.type().registerType().isReferenceType()) {
                 emit(OpCode.AddRef, rvalue.register);
-                freeRegister(r);
             }
             emit(OpCode.stFld(field.type()), rvalue.register, primary.register, field.address());
             freeRegister(rvalue.register, primary.register);

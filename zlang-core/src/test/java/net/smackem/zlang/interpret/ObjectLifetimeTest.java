@@ -260,11 +260,11 @@ public class ObjectLifetimeTest {
     public void crash() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 fn main() {
-                    for i: int in 0 .. 5000 {
-                        let a: string = "abcdefghij"
-                        let b: string = "bcdefghijk"
-                        let c: string = "cdefghijkl"
-                        let d: string = "defghijklm"
+                    for i: int in 0 .. 500 {
+                        let a: string = "0abcdefgh0"
+                        let b: string = "1abcdefgh1"
+                        let c: string = "2abcdefgh2"
+                        let d: string = "3abcdefgh3"
                         let ab: string = a + b
                         let bc: string = b + c
                         let cd: string = c + d
@@ -274,6 +274,26 @@ public class ObjectLifetimeTest {
                 }
                 """);
         InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "crash.zap"));
+        final Collection<HeapEntry> heap = runExtractingHeap(modules);
+        System.out.println(heap);
+    }
+
+    @Test
+    public void crash2() throws Exception {
+        final List<ParsedModule> modules = ParsedModules.single("""
+                fn main() {
+                    for i: int in 0 .. 500 {
+                        let a: byte[] = new byte[1000]
+                        let b: byte[] = new byte[100]
+                        let c: byte[] = new byte[750]
+                        let d: byte[] = new byte[123]
+                        let e: byte[] = new byte[445]
+                        let f: byte[] = new byte[76]
+                        //log i
+                    }
+                }
+                """);
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "crash2.zap"));
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
     }

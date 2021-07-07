@@ -29,13 +29,14 @@ int32_t execute_zap(const ZapHeader *header, byte_t *memory, uint32_t memory_siz
             .total_size = memory_size - non_memory_size,
             .heap_size_limit = header->max_heap_size,
     };
-    trace("code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_pc: 0x%x\nheap_offset: %u\ntotal_memory: %u\n",
+    trace("code_size: %u\nconst_size: %u\nglob_size: %u\nentry_point_addr: 0x%x\nheap_offset: %u\ntotal_memory: %u\nentry_point_pc: 0x%x\n",
           header->code_segment_size,
           header->const_segment_size,
           header->global_segment_size,
           header->entry_point_address,
           (uint32_t) (heap_segment_addr(&layout) - memory),
-          layout.total_size);
+          layout.total_size,
+          ((FunctionMeta *) &layout.base[header->entry_point_address])->pc);
 #ifndef NDEBUG
     print_code(stdout, code_segment, header->code_segment_size);
 #endif

@@ -347,13 +347,13 @@ void dump_cpu(addr_t pc,
               const StackFrame *stack_frame,
               const Register *registers,
               uint32_t register_count) {
-    fprintf(stdout, "-----------------------");
-    for (stack_frame -= stack_depth - 1; stack_depth > 0; stack_depth--, stack_frame++) {
-        fprintf(stdout, " %s", stack_frame->meta->name);
-    }
-    fputc('\n', stdout);
-    print_registers(stdout, registers, (int) register_count);
-    fprintf(stdout, "%08x ", pc);
+//    fprintf(stdout, "-----------------------");
+//    for (stack_frame -= stack_depth - 1; stack_depth > 0; stack_depth--, stack_frame++) {
+//        fprintf(stdout, " %s", stack_frame->meta->name);
+//    }
+//    fputc('\n', stdout);
+//    print_registers(stdout, registers, (int) register_count);
+//    fprintf(stdout, "%08x ", pc);
     print_instruction(stdout, instr);
     fputc('\n', stdout);
 }
