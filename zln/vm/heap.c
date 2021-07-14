@@ -70,7 +70,7 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
     trace("allocated %d bytes @ 0x%04x\n", data_size, entry_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
-    entry->ref_count = 0;
+    entry->ref_count = 1;
     entry->data_size = data_size;
     entry->alloc_size = alloc_size;
     zero_memory(entry->data, alloc_size);

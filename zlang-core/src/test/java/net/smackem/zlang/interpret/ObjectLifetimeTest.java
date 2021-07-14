@@ -1,6 +1,5 @@
 package net.smackem.zlang.interpret;
 
-import com.google.common.io.Files;
 import net.smackem.zlang.emit.bytecode.ByteCode;
 import net.smackem.zlang.emit.bytecode.HeapEntry;
 import net.smackem.zlang.modules.ParsedModule;
@@ -234,17 +233,25 @@ public class ObjectLifetimeTest {
 
     @Test
     public void compactHeap() throws Exception {
-        final int blobSize = InterpreterTests.HEAP_SIZE - (ByteCode.HEAP_ENTRY_HEADER_SIZE + ByteCode.HEAP_RESERVED_BYTES);
-        final int smallObjSize = blobSize / 10;
+        final int blobSize = InterpreterTests.HEAP_SIZE - ByteCode.HEAP_RESERVED_BYTES;
+        final int smallObjSize = blobSize / 10 - ByteCode.HEAP_ENTRY_HEADER_SIZE;
         final int largeObjSize = smallObjSize * 5;
         final List<ParsedModule> modules = ParsedModules.single("""
-                fn consume(a: byte[]) -> byte[] {
-                    return a
+                fn consumeMemory() {
+                    let size: int = %d
+                    let a0: byte[] = new byte[size]
+                    let a1: byte[] = new byte[size]
+                    let a2: byte[] = new byte[size]
+                    let a3: byte[] = new byte[size]
+                    let a4: byte[] = new byte[size]
+                    let a5: byte[] = new byte[size]
+                    let a6: byte[] = new byte[size]
+                    let a7: byte[] = new byte[size]
+                    let a8: byte[] = new byte[size]
+                    let a9: byte[] = new byte[size]
                 }
                 fn main() {
-                    for i: int in 0 .. 10 {
-                        consume(new byte[%d])
-                    }
+                    consumeMemory()
                     let a: byte[] = new byte[%d]
                 }
                 """.formatted(smallObjSize, largeObjSize));
@@ -257,7 +264,7 @@ public class ObjectLifetimeTest {
     }
 
     @Test
-    public void crash() throws Exception {
+    public void stringAllocationsMustNotCrashVM() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
                 fn main() {
                     for i: int in 0 .. 500 {
@@ -273,28 +280,36 @@ public class ObjectLifetimeTest {
                     }
                 }
                 """);
-        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "crash.zap"));
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "stringAllocationsMustNotCrashVM.zap"));
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
+        // no VM crash (out of memory) expected
     }
 
     @Test
-    public void crash2() throws Exception {
+    public void arrayAllocationsMustNotCrashVM() throws Exception {
         final List<ParsedModule> modules = ParsedModules.single("""
+                struct Container {
+                    c: byte[]
+                    d: byte[]
+                }
                 fn main() {
+                    let arr: byte[][] = new byte[][2]
+                    let container: Container = new Container {}
                     for i: int in 0 .. 500 {
                         let a: byte[] = new byte[1000]
                         let b: byte[] = new byte[100]
-                        let c: byte[] = new byte[750]
-                        let d: byte[] = new byte[123]
-                        let e: byte[] = new byte[445]
-                        let f: byte[] = new byte[76]
-                        //log i
+                        container.c = new byte[750]
+                        container.d = new byte[123]
+                        arr[0] = new byte[445]
+                        arr[1] = new byte[76]
+                        log i
                     }
                 }
                 """);
-        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "crash2.zap"));
+        InterpreterTests.writeZap(modules, Paths.get(System.getProperty("user.home"), "arrayAllocationsMustNotCrashVM.zap"));
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
+        // no VM crash (out of memory) expected
     }
 }

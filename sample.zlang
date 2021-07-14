@@ -167,10 +167,10 @@ fn x(flag: bool) {
 fn y() {
     switch d {
         syncRequest: SyncPayload -> {
-            log "syncRequest"
+            log new "syncRequest"
         }
         syncResponse: SyncPayload -> {
-            log "syncResponse"
+            log new "syncResponse"
         }
     }
 }
@@ -182,3 +182,6 @@ interface Comparer {
 let c: Comparer = new Comparer::compare(a: object, b: object) -> int {
     return a - b
 }
+
+// ---------------------------------------------------------------
+
