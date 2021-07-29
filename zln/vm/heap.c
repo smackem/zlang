@@ -13,12 +13,20 @@ static inline uint32_t unallocated_byte_count(Heap *heap) {
     return heap->size - heap->tail;
 }
 
+static inline bool is_free_entry(const HeapEntry *entry) {
+    return (entry->ref_count & 0x80000000) != 0;
+}
+
+static inline void free_entry(HeapEntry *entry) {
+    entry->ref_count = 0x80000000;
+}
+
 static addr_t find_free_slot(Heap *heap, uint32_t data_size, uint32_t *alloc_size, bool split) {
     addr_t entry_addr = HEAP_RESERVED_BYTES;
     while (entry_addr < heap->tail) {
         HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
         if (entry->alloc_size == data_size || split && entry->alloc_size > data_size) {
-            if (entry->ref_count == 0) {
+            if (is_free_entry(entry)) {
                 *alloc_size = entry->alloc_size;
                 return entry_addr;
             }
@@ -40,7 +48,7 @@ static void compact_heap(Heap *heap) {
     HeapEntry *prev_entry = NULL;
     while (entry_addr < heap->tail) {
         HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
-        if (entry->ref_count == 0 && prev_entry != NULL && prev_entry->ref_count == 0) {
+        if (is_free_entry(entry) && prev_entry != NULL && is_free_entry(prev_entry)) {
             prev_entry->alloc_size += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
         } else {
             prev_entry = entry;
@@ -70,7 +78,7 @@ static addr_t alloc_chunk(Heap *heap, uint32_t data_size, addr_t header) {
     trace("allocated %d bytes @ 0x%04x\n", data_size, entry_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
     entry->header = header;
-    entry->ref_count = 1;
+    entry->ref_count = 0;
     entry->data_size = data_size;
     entry->alloc_size = alloc_size;
     zero_memory(entry->data, alloc_size);
@@ -160,6 +168,9 @@ HeapEntry *get_heap_entry(const Heap *heap, addr_t heap_addr) {
 uint32_t add_ref(Heap *heap, addr_t heap_addr) {
     assert_not_nil(heap_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
+    if (is_free_entry(entry)) {
+        return 0;
+    }
     entry->ref_count++;
     trace("obj @ 0x%04x refcount = %d\n", heap_addr, entry->ref_count);
     if (entry->ref_count > 1) {
@@ -198,6 +209,9 @@ uint32_t add_ref(Heap *heap, addr_t heap_addr) {
 uint32_t remove_ref(Heap *heap, addr_t heap_addr) {
     assert_not_nil(heap_addr);
     HeapEntry *entry = (HeapEntry *) &heap->memory[heap_addr];
+    if (is_free_entry(entry)) {
+        return 0;
+    }
     if (entry->ref_count > 0) {
         entry->ref_count--;
     }
@@ -271,4 +285,16 @@ bool check_type(const Heap *heap, addr_t heap_addr, addr_t type_addr) {
         }
     }
     return false;
+}
+
+void collect_heap_memory(Heap *heap) {
+    trace("collect heap memory\n");
+    addr_t entry_addr = HEAP_RESERVED_BYTES;
+    while (entry_addr < heap->tail) {
+        HeapEntry *entry = (HeapEntry *) &heap->memory[entry_addr];
+        if (entry->ref_count == 0) {
+            free_entry(entry);
+        }
+        entry_addr += entry->alloc_size + HEAP_ENTRY_HEADER_SIZE;
+    }
 }

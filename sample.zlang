@@ -185,3 +185,41 @@ let c: Comparer = new Comparer::compare(a: object, b: object) -> int {
 
 // ---------------------------------------------------------------
 
+struct Date {
+    year: int
+    month: int
+    day: int
+}
+
+fn makeDate(year: int, month: int, day: int) -> Date {
+    return new Date {
+        year = year
+        month = month
+        day = day
+    }
+}
+
+struct Person {
+    firstName: string
+    lastName: string
+    born: Date
+    address: remote Address
+}
+
+struct Address {
+    street: string
+    number: int
+    city: string
+}
+
+fn doIt() {
+    use address: Address = new Address {
+        street = new "abc"
+    }
+    use person: Person = new Person {
+        firstName = new "Henry"
+        lastName = new "Gurk"
+        born = makeDate(2000, 01, 31)
+        address = address
+    }
+}

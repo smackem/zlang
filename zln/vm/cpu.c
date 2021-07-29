@@ -955,6 +955,11 @@ void execute(const byte_t *code,
                 size = 1 + 2;
                 break;
 
+            case OPC_Collect:
+                collect_heap_memory(&cpu.heap);
+                size = 1 + 0;
+                break;
+
             default:
                 assert_that(false, "pc=%08x: unsupported opcode %d", pc, instr->opc);
                 break;

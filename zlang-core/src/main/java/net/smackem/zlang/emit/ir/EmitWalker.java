@@ -22,7 +22,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private final List<Instruction> initInstructions = new ArrayList<>();
     private final List<Label> labels = new ArrayList<>();
     private final Deque<BlockExprInfo> blockExprInfos = new ArrayDeque<>();
-    private final Set<Register> refRegisters = EnumSet.noneOf(Register.class);
     private List<Instruction> currentInstructions = instructions;
     private FunctionSymbol currentFunction;
     private Register firstVolatileRegister;
@@ -106,14 +105,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     @Override
     public Value visitGlobalDecl(ZLangParser.GlobalDeclContext ctx) {
         super.visitGlobalDecl(ctx);
-        assert this.refRegisters.isEmpty();
         return null;
     }
 
     @Override
     public Value visitStatement(ZLangParser.StatementContext ctx) {
         super.visitStatement(ctx);
-        //assert this.refRegisters.isEmpty();
         return null;
     }
 
@@ -318,10 +315,12 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
 
     @Override
     public Value visitReturnStmt(ZLangParser.ReturnStmtContext ctx) {
+        final boolean returnsReference;
         if (ctx.expr() == null) {
             if (this.currentFunction.type() != null) {
                 return logLocalError(ctx, "function signature requires a return value");
             }
+            returnsReference = false;
         } else {
             if (this.currentFunction.type() == null) {
                 return logLocalError(ctx, "function signature does not allow a return value");
@@ -332,9 +331,16 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                         this.currentFunction.type(), value.type()));
             }
             emit(OpCode.Mov, Register.R000, value.register);
+            returnsReference = value.type().registerType().isReferenceType();
+            if (returnsReference) {
+                emit(OpCode.AddRef, Register.R000);
+            }
             freeRegister(value.register);
         }
         emitFunctionCleanup(this.currentFunction);
+        if (returnsReference) {
+            emit(OpCode.RemoveRef, Register.R000);
+        }
         emit(this.currentFunction.isEntryPoint() ? OpCode.Halt : OpCode.Ret);
         return null;
     }
@@ -371,6 +377,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         emitBranch(condition.register, exitLabel);
         freeRegister(condition.register);
         ctx.block().accept(this);
+        emit(OpCode.Collect);
         emitBranch(loopLabel);
         exitLabel.setTarget(emitNop());
         return null;
@@ -438,6 +445,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         loopLabel.setTarget(this.currentInstructions.get(this.currentInstructions.size() - 1));
         emitBranch(condRegister, exitLabel);
         ctx.block().accept(this);
+        emit(OpCode.Collect);
         emit(OpCode.Add_i32, indexRegister, indexRegister, step.register);
         emitBranch(loopLabel);
         exitLabel.setTarget(emitNop());
@@ -481,6 +489,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         VariableSymbol iterator = emitIdentAssign(ctx.parameter(), ctx.parameter().Ident().getText(), target, true);
         assert iterator != null && iterator.isGlobal() == false;
         ctx.block().accept(this);
+        emit(OpCode.Collect);
         emit(OpCode.Add_i32, from.register, from.register, stepRegister);
         emitBranch(loopLabel);
         exitLabel.setTarget(emitNop());
@@ -546,7 +555,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
                 moduleName(), this.currentFunction.name(), ctx.getStart().getLine());
         final List<Register> args = allocRegisterRange(2);
         emit(OpCode.Ldc_str, args.get(0), message);
-        this.refRegisters.add(args.get(0));
         emit(OpCode.Ldc_i32, args.get(1), BuiltInType.STRING.type().id().number());
         emit(OpCode.Invoke, Register.R000, args.get(0), currentScope().resolve(BuiltInFunction.PRINT.ident()));
         freeRegisters(args);
@@ -971,7 +979,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Type elementType = resolveType(ctx.type());
         final Register target = allocFreedRegister(size.register);
         emit(OpCode.newArr(elementType), target, size.register);
-        this.refRegisters.add(target);
         final Type arrayType = defineArrayType(elementType);
         final Value array = value(target, arrayType);
         if (ctx.arguments() != null) {
@@ -1000,7 +1007,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final Register arrayRegister = registers.get(1);
         final ListType listType = defineListType(elementType);
         emit(OpCode.NewObj, target, listType);
-        this.refRegisters.add(target);
         emit(OpCode.Ldc_i32, sizeRegister, 0);
         emit(OpCode.stFld(elementType), sizeRegister, target, listType.sizeField().address());
         emit(OpCode.Ldc_i32, sizeRegister, 16);
@@ -1061,7 +1067,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final MemberScope typeScope = (MemberScope) typeSymbol;
         final Register target = allocFreedRegister();
         emit(OpCode.NewObj, target, typeSymbol);
-        this.refRegisters.add(target);
         for (final var initializer : ctx.fieldInitializer()) {
             final Symbol field = typeScope.resolveMember(initializer.Ident().getText());
             if (field instanceof FieldSymbol == false) {
@@ -1087,7 +1092,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         final UnionSymbol typeSymbol = (UnionSymbol) type;
         final Register target = allocFreedRegister();
         emit(OpCode.NewObj, target, typeSymbol);
-        this.refRegisters.add(target);
         final Symbol field = typeSymbol.resolveMember(ctx.Ident(1).getText());
         if (field instanceof FieldSymbol == false) {
             return logLocalError(ctx, "field id does not refer to a field: " + ctx.Ident(1).getText());
@@ -1213,7 +1217,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         if (ctx.StringLiteral() != null) {
             final Register target = allocFreedRegister();
             emit(OpCode.Ldc_str, target, CharMatcher.is('"').trimFrom(ctx.StringLiteral().getText()));
-            this.refRegisters.add(target);
             return value(target, BuiltInType.STRING.type());
         }
         if (ctx.CharLiteral() != null) {
@@ -1272,10 +1275,6 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
     private void freeRegisters(List<Register> registersToFree) {
         for (final Register register : registersToFree) {
             this.allocatedRegisters.remove(register);
-            if (this.refRegisters.contains(register)) {
-                emit(OpCode.RemoveRef, register);
-                this.refRegisters.remove(register);
-            }
         }
         log.info("allocated registers: {}", this.allocatedRegisters);
     }
@@ -1352,6 +1351,7 @@ class EmitWalker extends ScopeWalker<EmitWalker.Value> {
         Stream.concat(function.symbols().stream(), function.locals().stream())
                 .filter(s -> s instanceof VariableSymbol && s.type().registerType().isReferenceType())
                 .forEach(s -> emit(OpCode.RemoveRef, Register.fromNumber(s.address())));
+        emit(OpCode.Collect);
     }
 
     private Instruction emitNop() {

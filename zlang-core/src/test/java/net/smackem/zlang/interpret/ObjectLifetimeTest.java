@@ -5,6 +5,7 @@ import net.smackem.zlang.emit.bytecode.HeapEntry;
 import net.smackem.zlang.modules.ParsedModule;
 import net.smackem.zlang.modules.ParsedModules;
 import org.assertj.core.groups.Tuple;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.file.Paths;
@@ -26,7 +27,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(Tuple.tuple(40, 0, "Int32[]"));
+                .containsExactly(Tuple.tuple(40, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Int32[]"));
     }
 
     @Test
@@ -110,10 +111,10 @@ public class ObjectLifetimeTest {
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(
-                        Tuple.tuple(4, 0, "SomeType"),
-                        Tuple.tuple(4, 0, "Ref[]"),
-                        Tuple.tuple(4, 0, "OtherType"),
-                        Tuple.tuple(10, 0, "Unsigned8[]"));
+                        Tuple.tuple(4, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "SomeType"),
+                        Tuple.tuple(4, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Ref[]"),
+                        Tuple.tuple(4, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "OtherType"),
+                        Tuple.tuple(10, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"));
     }
 
     @Test
@@ -144,7 +145,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(Tuple.tuple(0, 0, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(0, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"));
     }
 
     @Test
@@ -185,7 +186,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(Tuple.tuple(0, 0, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(0, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"));
     }
 
     @Test
@@ -205,7 +206,7 @@ public class ObjectLifetimeTest {
         final Collection<HeapEntry> heap = runExtractingHeap(modules);
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
-                .containsExactly(Tuple.tuple(blobSize, 0, "Unsigned8[]"));
+                .containsExactly(Tuple.tuple(blobSize, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"));
     }
 
     @Test
@@ -216,9 +217,14 @@ public class ObjectLifetimeTest {
                 fn consume(a: byte[]) -> byte[] {
                     return a
                 }
+                fn nop() {
+                    // call this just to emit OpCode.Collect
+                }
                 fn main() {
                     consume(new byte[%d])
+                    nop()
                     let a: byte[] = consume(new byte[10])
+                    nop()
                     let b: byte[] = consume(new byte[100])
                 }
                 """.formatted(blobSize));
@@ -227,8 +233,8 @@ public class ObjectLifetimeTest {
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(
-                        Tuple.tuple(10, 0, "Unsigned8[]"),
-                        Tuple.tuple(100, 0, "Unsigned8[]"));
+                        Tuple.tuple(10, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"),
+                        Tuple.tuple(100, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"));
     }
 
     @Test
@@ -260,7 +266,7 @@ public class ObjectLifetimeTest {
         System.out.println(heap);
         assertThat(heap).extracting(HeapEntry::dataSize, HeapEntry::refCount, HeapEntry::typeName)
                 .containsExactly(
-                        Tuple.tuple(largeObjSize, 0, "Unsigned8[]"));
+                        Tuple.tuple(largeObjSize, ByteCode.FREE_HEAP_ENTRY_REF_COUNT, "Unsigned8[]"));
     }
 
     @Test
@@ -297,12 +303,12 @@ public class ObjectLifetimeTest {
                     let arr: byte[][] = new byte[][2]
                     let container: Container = new Container {}
                     for i: int in 0 .. 500 {
-                        let a: byte[] = new byte[1000]
-                        let b: byte[] = new byte[100]
-                        container.c = new byte[750]
-                        container.d = new byte[123]
-                        arr[0] = new byte[445]
-                        arr[1] = new byte[76]
+                        let a: byte[] = new byte[100]
+                        let b: byte[] = new byte[10]
+                        container.c = new byte[75]
+                        container.d = new byte[12]
+                        arr[0] = new byte[45]
+                        arr[1] = new byte[7]
                         log i
                     }
                 }

@@ -10,4 +10,5 @@ public final class ByteCode {
     public static final int HEAP_ENTRY_TYPE_META_FLAG = 0x80000000;
     public static final int HEAP_RESERVED_BYTES = 0x10;
     public static final int TYPE_META_HEADER_SIZE = 16;
+    public static final int FREE_HEAP_ENTRY_REF_COUNT = 0x80000000;
 }

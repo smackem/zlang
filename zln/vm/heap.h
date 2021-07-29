@@ -249,4 +249,12 @@ const FunctionMeta *get_impl_function(const Heap *heap, addr_t heap_addr, addr_t
  */
 bool check_type(const Heap *heap, addr_t heap_addr, addr_t type_addr);
 
+/**
+ * frees memory allocated by unreferenced entries.
+ *
+ * @param heap
+ *      This heap.
+ */
+void collect_heap_memory(Heap *heap);
+
 #endif //ZLN_HEAP_H

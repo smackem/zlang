@@ -122,6 +122,7 @@ static const char *const opcode_names[] = {
     "RShift_i32",
     "RShift_u8",
     "Eq_zero",
+    "Collect",
 };
 
 static const char *const type_names[] = {
@@ -148,6 +149,7 @@ uint32_t print_instruction(FILE *f, const Instruction *instr) {
         case OPC_Nop:
         case OPC_Ret:
         case OPC_Halt:
+        case OPC_Collect:
             fprintf(f, "%12s", opcode_name(instr->opc));
             return 1 + 0;
         case OPC_Ldc_zero:

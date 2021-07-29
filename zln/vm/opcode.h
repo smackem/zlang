@@ -374,6 +374,12 @@ enum op_code {
      *      r_target <- r_source == 0
      */
     OPC_Eq_zero,
+
+    /**
+     * collect()
+     *      collects heap memory.
+     */
+    OPC_Collect,
 };
 
 typedef byte_t OpCode;

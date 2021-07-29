@@ -196,7 +196,7 @@ public class ByteCodeWriter implements AutoCloseable {
         instr.setAddress(writer.bytesWritten());
         writer.writeByte(instr.opCode().code());
         switch (instr.opCode()) {
-            case Nop, Ret, Halt -> { }
+            case Nop, Ret, Halt, Collect -> { }
             case LdGlb_i32, LdGlb_f64, LdGlb_u8, LdGlb_ref, LdGlb_ptr,
                     StGlb_i32, StGlb_f64, StGlb_u8, StGlb_ref, StGlb_ptr,
                     Ldc_i32 -> {

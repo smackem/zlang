@@ -370,7 +370,13 @@ public enum OpCode {
      * equals_zero(REG r_target, REG r_source):
      *      r_target <- r_source == 0
      */
-    Eq_zero(115);
+    Eq_zero(115),
+
+    /**
+     * collect()
+     *      collect heap memory
+     */
+    Collect(116);
 
     private final int code;
 
