@@ -90,3 +90,7 @@ fn IntMethods::toString(value: int) -> string {
     }
     return (string) a.copy(i, a.size() - i)
 }
+
+fn IntMethods::parseOrNil(s: string) -> Int {
+    return nil
+}

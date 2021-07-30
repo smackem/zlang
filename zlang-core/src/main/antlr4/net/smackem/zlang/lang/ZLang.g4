@@ -68,7 +68,7 @@ typeDecl
     ;
 
 structDecl
-    : Struct Ident LBrace (Remote? parameter LineBreak)* RBrace implementsClause? LineBreak
+    : Struct Ident LBrace (parameter LineBreak)* RBrace implementsClause? LineBreak
     ;
 
 unionDecl
@@ -102,7 +102,6 @@ enumField
 statement
     : (bindingStmt
     | varDeclStmt
-    | resourceBindingStmt
     | assignStmt
     | invocationStmt
     | ifStmt
@@ -119,10 +118,6 @@ statement
 
 bindingStmt
     : DocComment? Let parameter Beq expr
-    ;
-
-resourceBindingStmt
-    : DocComment? Use parameter Beq expr
     ;
 
 varDeclStmt
@@ -457,7 +452,6 @@ Panic       : 'panic';
 Assert      : 'assert';
 Let         : 'let';
 Var         : 'var';
-Use         : 'use';
 Log         : 'log';
 NullPtr     : 'null_ptr';
 
@@ -471,7 +465,6 @@ RuntimePtr  : 'runtime_ptr';
 Void        : 'void';
 Struct      : 'struct';
 With        : 'with';
-Remote      : 'remote';
 Self        : 'self';
 New         : 'new';
 Union       : 'union';
