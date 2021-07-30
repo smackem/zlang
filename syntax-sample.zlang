@@ -1,0 +1,58 @@
+﻿
+module start uses std
+
+// Discriminated union to hold values that are either int, float or string
+//
+union Value {
+    i32:    int
+    f64:    float
+    str:    string
+    none:   void
+}
+
+// An interface to read such values
+//
+interface ValueReader {
+    fn read() -> Value
+}
+
+// Define a SampleValueReader that implements ValueReader
+//
+struct SampleValueReader {
+    v: Value
+} is ValueReader
+
+fn SampleValueReader::read() -> Value {
+    return self.v
+}
+
+fn createValueReader() -> ValueReader {
+    let reader: SampleValueReader = new SampleValueReader {
+        v = new Value::i32(Random.nextInt(100))
+    }
+    return reader
+}
+
+// A list (resizable array) to keep boxed integers
+//
+var result: Int list = new Int list {}
+
+// Application entry point
+//
+fn main() {
+    let value: ValueReader = createValueReader()
+    for i: int in 0 .. 10 {
+        let boxedInteger: Int = switch value.read() {
+            i32: int    -> Ints.box(i32)
+            f64: float  -> Ints.box((int) f64)
+            str: string -> Ints.parseOrNil(str)
+            none: void  -> {
+                log "no value present"
+                yield nil
+            }
+        }
+        result.add(boxedInteger)
+    }
+}
+
+
